@@ -1,7 +1,7 @@
 <html>
 	<head>
 		<title>CrimildJS Demo</title>
-        <script data-main="build/crimild" src="lib/require.js"></script>
+        <script data-main="src/crimild" src="lib/require.js"></script>
         <script id="shader-fs" type="x-shader/x-fragment">
         	precision mediump float;
         	
@@ -32,9 +32,28 @@
                                         type: crimild.core.primitive.types.LINES,
                                         vertexFormat: crimild.core.vertexFormat()
                                     })
-                                ]
+                                ],
+                                local: crimild.math.transformation({
+                                    translate: [-1.5, 0, 0]
+                                })
+                            }),
+                            crimild.core.geometryNode({
+                                name: "a klein bottle",
+                                primitives: [
+                                    crimild.primitives.kleinBottlePrimitive({
+                                        type: crimild.core.primitive.types.LINES,
+                                        vertexFormat: crimild.core.vertexFormat()
+                                    })
+                                ],
+                                local: crimild.math.transformation({
+                                    translate: [1.5, 0, 0],
+                                    scale: 0.15
+                                })
                             })
-                        ]
+                        ],
+                        local: crimild.math.transformation({
+                            translate: [0, 0, -5]
+                        })
                     });
 
                     scene.renderComponent = crimild.rendering.renderComponent({
@@ -58,10 +77,10 @@
 			}
 		</script>
 	</head>
-	<body onload="initCrimild('webGLCanvas');" style="background-color: #000;">
+	<body onload="initCrimild('webGLCanvas');">
     	<div align="center">
             <h1>Crimild JS Demo</h1>
-            <canvas id="webGLCanvas" style="border: none;" width="640" height="480">
+            <canvas id="webGLCanvas" style="border: none;" width="800" height="600">
     	       Your browser does not support WebGL
             </canvas>
         </div>

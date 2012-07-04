@@ -1,5 +1,4 @@
-define(["./crimild.core", "./crimild.rendering"], function(core, rendering) {
-
+define(["./crimild.core", "./crimild.rendering", "lib/webgl-utils.js"], function(core, rendering, webgl) {
 	var simulator = {};
 
 	var task = function(spec) {
@@ -113,6 +112,7 @@ define(["./crimild.core", "./crimild.rendering"], function(core, rendering) {
 		simulator.setScene = function(aScene) {
 			scene = aScene;
 
+			scene.perform(core.worldStateUpdate());
 			scene.perform(rendering.renderStateUpdate());
 		};
 

@@ -1,4 +1,5 @@
 define(["./crimild.core"], function(core) {
+	"use strict";
 
 	var renderComponent = function(spec) {
 		var that = core.nodeComponent(spec);
@@ -371,8 +372,7 @@ define(["./crimild.core"], function(core) {
 			},
 
 			renderGeometryNode: function(geometry) {
-        		mat4.identity(mvMatrix);
-        		mat4.translate(mvMatrix, [0.0, 0.0, -7.0]);
+        		geometry.world.toMat4(mvMatrix);
 
         		var grc = geometry.geometryRenderComponent;
 

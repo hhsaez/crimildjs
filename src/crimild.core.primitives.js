@@ -1,4 +1,5 @@
 define(["crimild.core"], function(core) {
+	"use strict";
 
 	var parametricPrimitive = function(spec) {
 		var that = core.primitive(spec);

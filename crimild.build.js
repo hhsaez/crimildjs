@@ -2,8 +2,8 @@
 // node lib/r.js -o crimild.build.js
 
 ({
-	appDir: "src",
-	baseUrl: ".",
+	appDir: ".",
+	baseUrl: "src",
 	dir: "build",
 	modules: [
 		{

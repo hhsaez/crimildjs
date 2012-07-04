@@ -1,11 +1,49 @@
-define(["../lib/glMatrix-1.3.7.min.js"], function(glMatrix) {
+define(["lib/glMatrix-1.3.7.min.js"], function(glMatrix) {
 	"use strict";
+
+	mat3.multiplyScalar = function(mat, s, dest) {
+		if (!dest) { dest = mat; }
+
+		dest[0] = mat[0] * s;
+		dest[1] = mat[1] * s;
+		dest[2] = mat[2] * s;
+		dest[3] = mat[3] * s;
+		dest[4] = mat[4] * s;
+		dest[5] = mat[5] * s;
+		dest[6] = mat[6] * s;
+		dest[7] = mat[7] * s;
+		dest[8] = mat[8] * s;
+		return dest;
+	};
+
+	mat3.createFromAxisAngle = function(axis, angle, dest) {
+		if (!dest) { dest = mat3.create(); }
+
+		var cosine = Math.cos(angle);
+		var sine = Math.sin(angle);
+		var oneMinusCosine = 1.0 - cosine;
+		var a0 = axis[0], a1 = axis[1], a2 = axis[2];
+
+		dest[0] = cosine + oneMinusCosine * a0 * a0;
+		dest[1] = oneMinusCosine * a0 * a1 - sine * a2;
+		dest[2] = oneMinusCosine * a0 * a2 - sine * a1;
+		
+		dest[3] = oneMinusCosine * a0 * a1 - sine * a2;
+		dest[4] = cosine + oneMinusCosine * a1 * a1;
+		dest[5] = oneMinusCosine * a1 * a2 - sine * a0;
+
+		dest[6] = oneMinusCosine * a0 * a2 - sine * a1;
+		dest[7] = oneMinusCosine * a1 * a2 - sine * a0;
+		dest[8] = cosine + oneMinusCosine * a2 * a2;
+		return dest;
+	};
 
 	var transformation = function(spec) {
 		var that = {};
 
 		var _translate = vec3.create();
-		var _rotate = mat3.create();
+		var _rotate = mat3.identity();
+		var _scale = 1.0;
 		var _identity = true;
 
 		Object.defineProperties(that,{
@@ -26,8 +64,38 @@ define(["../lib/glMatrix-1.3.7.min.js"], function(glMatrix) {
 					_rotate = value;
 					_identity = false;
 				}	
+			},
+			scale: {
+				get: function() {
+					return _scale;
+				},
+				set: function(value) {
+					_scale = value;
+					_identity = false;
+				}
+			},
+			direction: {
+				get: function() {
+					return that.isIdentity() ? vec3.createFrom(0, 0, -1) : vec3.create();
+				}
+			},
+			up: {
+				get: function() {
+					return that.isIdentity() ? vec3.createFrom(0, 1, 0) : vec3.create();
+				}
+			},
+			right: {
+				get: function() {
+					return that.isIdentity() ? vec3.createFrom(1, 0, 0) : vec3.create();
+				}
 			}
 		});
+
+		if (spec) {
+			if (spec.translate) { that.translate = spec.translate; }
+			if (spec.rotate) { that.rotate = spec.rotate; }
+			if (spec.scale) { that.scale = spec.scale; }
+		}
 
 		that.isIdentity = function() {
 			return _identity;
@@ -35,10 +103,106 @@ define(["../lib/glMatrix-1.3.7.min.js"], function(glMatrix) {
 
 		that.makeIdentity = function() {
 			that.translate = vec3.create();
-			that.rotate = mat3.create();
+			that.rotate = mat3.identity();
+			that.scale = 1;
 
 			_identity = true;
 		};
+
+		that.applyToPoint = function(p) {
+			if (_identity) {
+				return vec3.create(p);
+			}
+
+			return vec3.add(mat3.multiplyVec3(mat3.multiplyScalar(_rotate, _scale), p), _translate);
+		};
+
+		that.applyInverseToPoint = function(p) {
+
+		};
+
+		that.applyToVector = function(v) {
+
+		};
+
+		that.applyInverseToVector = function(v) {
+
+		};
+
+		that.applyToUnitVector = function(v) {
+
+		};
+
+		that.applyInverseToUnitVector = function(v) {
+
+		};
+
+		that.applyToPlane = function(p) {
+
+		};
+
+		that.applyInverseToPlane = function(p) {
+
+		};
+
+		that.computeFrom = function(a, b) {
+			if (a.isIdentity()) {
+				that.set(b);
+			}
+			else if (b.isIdentity()) {
+				that.set(a);
+			}
+			else {
+				// translate = (a.rotate * a.scale) * b.translate + a.translate
+				vec3.add(mat3.multiplyVec3(a.rotate, b.translate), a.translate, _translate);
+
+				// rotate = a.rotate * b.rotate
+				mat3.multiply(a.rotate, b.rotate, _rotate);
+
+				_scale = a.scale * b.scale;
+				_identity = false;
+			}
+		};
+
+		that.set = function(tx) {
+			_translate = tx.translate;
+			_rotate = tx.rotate;
+			_scale = tx.scale;
+			_identity = tx.isIdentity();
+		}
+
+		that.lookAt = function(target, upReference) {
+
+		};
+
+		that.toMat4 = function(dest) {
+			if (!dest) { dest = mat4.create(); }
+
+			if (_identity) {
+				return mat4.identity(dest);
+			}
+
+			dest[0] = _rotate[0] * _scale;
+			dest[1] = _rotate[3] * _scale;
+			dest[2] = _rotate[6] * _scale;
+			dest[3] = 0;
+			
+			dest[4] = _rotate[1] * _scale;
+			dest[5] = _rotate[4] * _scale;
+			dest[6] = _rotate[7] * _scale;
+			dest[7] = 0;
+			
+			dest[8] = _rotate[2] * _scale;
+			dest[9] = _rotate[5] * _scale;
+			dest[10] = _rotate[8] * _scale;
+			dest[11] = 0;
+
+			dest[12] = _translate[0];
+			dest[13] = _translate[1];
+			dest[14] = _translate[2];
+			dest[15] = 1;
+			return dest;
+		}
 
 		return that;
 	};

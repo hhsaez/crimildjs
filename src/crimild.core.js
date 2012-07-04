@@ -1,4 +1,6 @@
-define(["./crimild.math", "../lib/webgl-utils.js"], function(math, webgl) {
+define(["./crimild.math"], function(math) {
+	"use strict";
+
 	var version = "0.1.0";
 
 	var object = function(spec) {
@@ -24,8 +26,31 @@ define(["./crimild.math", "../lib/webgl-utils.js"], function(math, webgl) {
 		var that = object(spec);
 		var parent = null;
 
+		var _local = math.transformation();
+		var _world = math.transformation();
+
+		Object.defineProperties(that, {
+			local: {
+				get: function() {
+					return _local;
+				},
+				set: function(value) {
+					_local = value;
+				}
+			},
+			world: {
+				get: function() {
+					return _world;
+				},
+				set: function(value) {
+					_world = value;
+				}
+			}
+		});
+
 		if (spec) {
-			parent = spec.parent;
+			if (spec.parent) { parent = spec.parent }; 
+			if (spec.local) { that.local = spec.local; }
 		}
 
 		that.getParent = function() {
@@ -50,14 +75,9 @@ define(["./crimild.math", "../lib/webgl-utils.js"], function(math, webgl) {
 		var that = node(spec);
 		var nodes = [];
 
-		if (spec) {
-			if (spec.nodes) {
-				nodes = spec.nodes;
-			}
-		}
-
 		that.addNode = function(aNode) {
 			nodes.push(aNode);
+			aNode.setParent(that);
 		};
 
 		that.getNodeCount = function() {
@@ -71,6 +91,14 @@ define(["./crimild.math", "../lib/webgl-utils.js"], function(math, webgl) {
 		that.accept = function(visitor) {
 			visitor.visitGroupNode(this);
 		};
+
+		if (spec) {
+			if (spec.nodes) {
+				for (var i = 0; i < spec.nodes.length; i++) {
+					that.addNode(spec.nodes[i]);
+				}
+			}
+		}
 
 		return that;
 	};
@@ -269,6 +297,26 @@ define(["./crimild.math", "../lib/webgl-utils.js"], function(math, webgl) {
 	var worldStateUpdate = function(spec) {
 		var that = nodeVisitor(spec);
 
+		that.visitNode = function(aNode) {
+			if (aNode.getParent()) {
+				aNode.world.computeFrom(aNode.getParent().world, aNode.local);
+			}
+			else {
+				aNode.world.set(aNode.local);
+			}
+		};
+
+		that.visitGroupNode = function(aGroup) {
+			that.visitNode(aGroup);
+			for (var i = 0; i < aGroup.getNodeCount(); i++) {
+				aGroup.getNodeAt(i).accept(this);
+			}
+		};
+
+		that.visitGeometryNode = function(aGeometry) {
+			that.visitNode(aGeometry);
+		};
+
 		return that;
 	}
 
@@ -290,6 +338,7 @@ define(["./crimild.math", "../lib/webgl-utils.js"], function(math, webgl) {
 		geometryNode: geometryNode,
 		nodeComponent: nodeComponent,
 		nodeVisitor: nodeVisitor,
+		worldStateUpdate: worldStateUpdate,
 	}
 });
 

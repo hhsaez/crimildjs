@@ -1,4 +1,6 @@
 crimild.utils = (function () {
+	"use strict";
+	
 	var printScene = function(spec) {
 		var that = crimild.core.nodeVisitor(spec);
 		var identCout = 0;
