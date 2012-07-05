@@ -75,8 +75,8 @@ define(["crimild.core"], function(core) {
 						vec3.subtract(that.evaluate(that.computeDomain(s, t + 0.01)), p, v);
 						vec3.cross(u, v, normal);
 						vec3.normalize(normal);
-						if (that.invertNormal()) {
-							vec3.negate(normal, normal);
+						if (that.invertNormal(domain)) {
+							vec3.negate(normal);
 						}
 						vertices.push(normal[0]);
 						vertices.push(normal[1]);
@@ -147,7 +147,7 @@ define(["crimild.core"], function(core) {
 			var v = domain[1];
 			var x = radius * (1.0 - v) * Math.cos(u);
 			var y = height * (v - 0.5);
-			var z = radius * (1.0 - v) * Math.sin(u);
+			var z = radius * (1.0 - v) * -Math.sin(u);
 
 			return vec3.createFrom(x, y, z);
 		};
@@ -164,6 +164,11 @@ define(["crimild.core"], function(core) {
 		var scale = 1.0;
 		var divisions = vec2.createFrom(20, 20);
 
+		if (spec) {
+			if (spec.scale) { scale = spec.scale; }
+			if (spec.divisions) { divisions = spec.divisions; }
+		}
+
 		that.evaluate = function(domain) {
 			var v = 1.0 - domain[0];
 			var u = domain[1];
@@ -173,11 +178,15 @@ define(["crimild.core"], function(core) {
 			var y1 = 8 * Math.sin(u);
 
 			var range = vec3.create();
-			range[0] = u < Math.PI ? x0 : x1;
-			range[1] = u < Math.PI ? -y0 : -y1;
-			range[2] = (-2.0 * (1.0 - Math.cos(u) / 2)) * Math.sin(v);
+			range[0] = (u < Math.PI ? x0 : x1) * scale;
+			range[1] = (u < Math.PI ? -y0 : -y1) * scale;
+			range[2] = ((-2.0 * (1.0 - Math.cos(u) / 2)) * Math.sin(v)) * scale;
 			return range;
 		};
+
+		that.invertNormal = function(domain) {
+			return domain[1] > 3 * Math.PI / 2;
+		}
 
 		that.setInterval({divisions: divisions, upperBound: vec2.createFrom(2.0 * Math.PI, 2.0 * Math.PI)});
 		that.generate();
@@ -186,7 +195,7 @@ define(["crimild.core"], function(core) {
 	};
 
 	var spherePrimitive = function(spec) {
-		var that = crimild.core.primitive(spec);
+		var that = core.primitive(spec);
         var latitudeBands = 30;
         var longitudeBands = 30;
         var radius = 1;
@@ -231,8 +240,8 @@ define(["crimild.core"], function(core) {
                 }
             }
 
-            that.setVertexBuffer(crimild.core.vertexBufferObject({vertexFormat: vertexFormat, count: vertexPositionData.length / 3, data: new Float32Array(vertexPositionData)}));
-            that.setIndexBuffer(crimild.core.indexBufferObject({indexCount: indexData.length, data: new Uint16Array(indexData)}));
+            that.setVertexBuffer(core.vertexBufferObject({vertexFormat: vertexFormat, count: vertexPositionData.length / 3, data: new Float32Array(vertexPositionData)}));
+            that.setIndexBuffer(core.indexBufferObject({indexCount: indexData.length, data: new Uint16Array(indexData)}));
 		};
 
 		that.generate();

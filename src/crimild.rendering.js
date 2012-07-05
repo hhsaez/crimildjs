@@ -1,13 +1,59 @@
 define(["./crimild.core"], function(core) {
 	"use strict";
 
+	var light = function(spec) {
+		var that = {};
+
+		var _ambientColor = vec3.create([0.2, 0.2, 0.2]);
+		var _directionalColor = vec3.create([0.8, 0.8, 0.8]);
+		var _direction = vec3.create([0, 0, -1]);
+
+		Object.defineProperties(that, {
+			ambientColor: {
+				get: function() {
+					return _ambientColor;
+				},
+				set: function(value) {
+					_ambientColor = value;
+				}
+			},
+			directionalColor: {
+				get: function() {
+					return _directionalColor;
+				},
+				set: function(value) {
+					_directionalColor = value;
+				}
+			},
+			direction: {
+				get: function() {
+					return _direction;
+				},
+				set: function(value) {
+					_direction = value;
+				}
+			}
+		});
+
+		if (spec) {
+			if (spec.directionalColor) { that.directionalColor = spec.directionalColor; }
+			if (spec.direction) { that.direction = spec.direction; }
+		}
+
+		return that;
+	};
+
 	var renderComponent = function(spec) {
 		var that = core.nodeComponent(spec);
 		var effects = [];
+		var lights = [];
 
 		if (spec) {
 			if (spec.effects) {
 				effects = spec.effects;
+			}
+			if (spec.lights) {
+				lights = spec.lights;
 			}
 		}
 
@@ -19,12 +65,21 @@ define(["./crimild.core"], function(core) {
 			return effects[index];
 		};
 
+		that.getLightCount = function() {
+			return lights.length;
+		};
+
+		that.getLightAt = function(index) {
+			return lights[index];
+		}
+
 		return that;
 	};
 
 	var geometryRenderComponent = function(spec) {
 		var that = core.nodeComponent(spec);
 		var effects = [];
+		var lights = [];
 
 		that.getEffectCount = function() {
 			return effects.length;
@@ -34,10 +89,21 @@ define(["./crimild.core"], function(core) {
 			return effects[index];
 		};
 
+		that.getLightCount = function() {
+			return lights.length;
+		};
+
+		that.getLightAt = function(index) {
+			return lights[index];
+		}
+
 		that.reset = function(opts) {
 			if (opts) {
 				if (opts.effects) {
 					effects = opts.effects;
+				}
+				if (opts.lights) {
+					lights = opts.lights;
 				}
 			}
 		};
@@ -132,6 +198,7 @@ define(["./crimild.core"], function(core) {
 	var renderStateUpdate = function(spec) {
 		var that = core.nodeVisitor(spec);
 		var effects = [];
+		var lights = [];
 
 		that.visitGroupNode = function(group) {
 			var i;
@@ -142,6 +209,9 @@ define(["./crimild.core"], function(core) {
 				for (i = 0; i < grc.getEffectCount(); i++) {
 					effects.push(grc.getEffectAt(i));
 				}
+				for (i = 0; i < grc.getLightCount(); i++) {
+					lights.push(grc.getLightAt(i));
+				}
 			}
 
 			for (i = 0; i < group.getNodeCount(); i++) {
@@ -149,11 +219,8 @@ define(["./crimild.core"], function(core) {
 				node.accept(this);
 			}
 
-			if (grc) {
-				for (i = 0; i < grc.getEffectCount(); i++) {
-					//effects.pop();
-				}
-			}
+			// TODO: pop effects
+			// TODO: pop lights
 		};
 
 		that.visitGeometryNode = function(geometry) {
@@ -161,9 +228,26 @@ define(["./crimild.core"], function(core) {
 				geometry.geometryRenderComponent = geometryRenderComponent({});
 			}
 
-			geometry.geometryRenderComponent.reset({
-				effects: effects
+			var grc = geometry.geometryRenderComponent;
+
+			if (grc) {
+				var temp = []
+				var i;
+				for (i = 0; i < grc.getEffectCount(); i++) {
+					effects.push(grc.getEffectAt(i));
+				}
+				for (i = 0; i < grc.getLightCount(); i++) {
+					lights.push(grc.getLightAt(i));
+				}
+			}
+
+			grc.reset({
+				effects: effects,
+				lights: lights
 			});
+
+			// TODO: pop effects
+			// TODO: pop lights
 		};
 
 		return that;
@@ -335,6 +419,21 @@ define(["./crimild.core"], function(core) {
         		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
         	},
 
+        	enableLight: function(lightIndex, light, program) {
+        		gl.uniform3f(program.renderCache.ambientColorUniform, light.ambientColor[0], light.ambientColor[1], light.ambientColor[2]);
+
+        		var adjustedLD = vec3.create();
+        		vec3.normalize(light.direction, adjustedLD);
+        		vec3.scale(adjustedLD, -1);
+        		gl.uniform3f(program.renderCache.lightingDirectionUniform, adjustedLD[0], adjustedLD[1], adjustedLD[2]);
+
+        		gl.uniform3f(program.renderCache.directionalColorUniform, light.directionalColor[0], light.directionalColor[1], light.directionalColor[2]);
+        	},
+
+        	disableLight: function() {
+
+        	},
+
         	compileShader: function(shader, shaderType) {
         		shader.renderCache = gl.createShader(shaderType);
         		gl.shaderSource(shader.renderCache, shader.getContent());
@@ -373,6 +472,10 @@ define(["./crimild.core"], function(core) {
         		program.renderCache.pMatrixUniform = gl.getUniformLocation(program.renderCache, "uPMatrix");
         		program.renderCache.mvMatrixUniform = gl.getUniformLocation(program.renderCache, "uMVMatrix");
         		program.renderCache.nMatrixUniform = gl.getUniformLocation(program.renderCache, "uNMatrix");
+        		program.renderCache.useLightingUniform = gl.getUniformLocation(program.renderCache, "uUseLighting");
+                program.renderCache.ambientColorUniform = gl.getUniformLocation(program.renderCache, "uAmbientColor");
+                program.renderCache.lightingDirectionUniform = gl.getUniformLocation(program.renderCache, "uLightingDirection");
+                program.renderCache.directionalColorUniform = gl.getUniformLocation(program.renderCache, "uDirectionalColor");
 
         		program.renderCache.renderer = this;
         	},
@@ -417,6 +520,16 @@ define(["./crimild.core"], function(core) {
 						this.enableVertexBuffer(vbo, program);
 						this.enableIndexBuffer(ibo, program);
 
+						if (grc.getLightCount() > 0) {
+							gl.uniform1i(program.renderCache.useLightingUniform, 1);
+							for (var l = 0; l < grc.getLightCount(); l++) {
+								this.enableLight(l, grc.getLightAt(l), program);
+							}
+						}
+						else {
+							gl.uniform1i(program.renderCache.useLightingUniform, 0);
+						}
+
 		        		var type = primitive.getType() == core.primitive.types.TRIANGLES ? gl.TRIANGLES : gl.LINES;
 		        		gl.drawElements(type, ibo.getIndexCount(), gl.UNSIGNED_SHORT, 0);
 
@@ -431,6 +544,7 @@ define(["./crimild.core"], function(core) {
 	};
 
 	return {
+		light: light,
 		shader: shader,
 		shaderProgram: shaderProgram,
 		effect: effect,
