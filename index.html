@@ -4,9 +4,11 @@
         <script data-main="src/crimild" src="lib/require.js"></script>
         <script id="shader-fs" type="x-shader/x-fragment">
         	precision mediump float;
+
+            varying vec4 vColor;
         	
         	void main(void) {
-        		gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+        		gl_FragColor = vColor;
         	}
         </script>
         <script id="shader-vs" type="x-shader/x-vertex">
@@ -14,9 +16,12 @@
         	
         	uniform mat4 uMVMatrix;
         	uniform mat4 uPMatrix;
+
+            varying vec4 vColor;
         	
         	void main(void) {
         		gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+                vColor = vec4(aVertexPosition, 1.0);
         	}
         </script>
 		<script type="text/javascript">
@@ -29,7 +34,7 @@
                                 name: "a cone",
                                 primitives: [
                                     crimild.primitives.conePrimitive({
-                                        type: crimild.core.primitive.types.LINES,
+                                        type: crimild.core.primitive.types.TRIANGLES,
                                         vertexFormat: crimild.core.vertexFormat()
                                     })
                                 ],

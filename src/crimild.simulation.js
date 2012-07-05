@@ -1,4 +1,4 @@
-define(["./crimild.core", "./crimild.rendering", "lib/webgl-utils.js"], function(core, rendering, webgl) {
+define(["./crimild.core", "./crimild.rendering", "../lib/webgl-utils.js"], function(core, rendering, webgl) {
 	var simulator = {};
 
 	var task = function(spec) {
@@ -84,7 +84,10 @@ define(["./crimild.core", "./crimild.rendering", "lib/webgl-utils.js"], function
 		var that = task(spec);
 
 		that.onUpdate = function() {
-
+			var scene = simulator.getScene();
+			if (scene && scene.updateComponent) {
+				scene.updateComponent.update();
+			}
 		};
 
 		return that;

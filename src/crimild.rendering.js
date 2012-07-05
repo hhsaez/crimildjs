@@ -235,7 +235,7 @@ define(["./crimild.core"], function(core) {
 				width = canvasWidth;
 				height = canvasHeight;
 
-				gl.clearColor(0.0, 0.0, 0.0, 1.0);
+				gl.clearColor(0.5, 0.5, 0.5, 1.0);
 				gl.enable(gl.DEPTH_TEST);
 
 				this.onCameraViewportChange();
@@ -262,6 +262,13 @@ define(["./crimild.core"], function(core) {
         	setMatrixUniforms: function(program) {
         		gl.uniformMatrix4fv(program.renderCache.pMatrixUniform, false, pMatrix);
         		gl.uniformMatrix4fv(program.renderCache.mvMatrixUniform, false, mvMatrix);
+
+        		if (program.renderCache.nMatrixUniform) {
+	                var normalMatrix = mat3.create();
+	                mat4.toInverseMat3(mvMatrix, normalMatrix);
+	                mat3.transpose(normalMatrix);
+	                gl.uniformMatrix3fv(program.renderCache.nMatrixUniform, false, normalMatrix);
+        		}
         	},
 
         	loadVertexBuffer: function(vbo) {
@@ -281,13 +288,24 @@ define(["./crimild.core"], function(core) {
         		}
         		gl.bindBuffer(gl.ARRAY_BUFFER, vbo.renderCache);
 
-        		if (vbo.getVertexFormat().positions > 0) {
+        		var vf = vbo.getVertexFormat();
+
+        		if (vf.positions > 0) {
 	        		gl.vertexAttribPointer(program.renderCache.vertexPositionAttribute, 
-	        			vbo.getVertexFormat().positions, 
+	        			vf.positions, 
 	        			gl.FLOAT, 
 	        			false, 
-	        			vbo.getVertexFormat().getVertexSizeInBytes(), 
-	        			0);
+	        			vf.getVertexSizeInBytes(), 
+	        			4 * vf.getPositionsOffset());
+        		}
+
+        		if (vf.normals > 0 && program.renderCache.vertexNormalAttribute >= 0) {
+        			gl.vertexAttribPointer(program.renderCache.vertexNormalAttribute,
+        				vf.normals,
+        				gl.FLOAT,
+        				false,
+        				vf.getVertexSizeInBytes(),
+        				4 * vf.getNormalsOffset());
         		}
         	},
 
@@ -346,9 +364,15 @@ define(["./crimild.core"], function(core) {
         		
         		program.renderCache.vertexPositionAttribute = gl.getAttribLocation(program.renderCache, "aVertexPosition");
         		gl.enableVertexAttribArray(program.renderCache.vertexPositionAttribute);
+
+        		program.renderCache.vertexNormalAttribute = gl.getAttribLocation(program.renderCache, "aVertexNormal");
+        		if (program.renderCache.vertexNormalAttribute >= 0) {
+        			gl.enableVertexAttribArray(program.renderCache.vertexNormalAttribute);
+        		}
         		
         		program.renderCache.pMatrixUniform = gl.getUniformLocation(program.renderCache, "uPMatrix");
         		program.renderCache.mvMatrixUniform = gl.getUniformLocation(program.renderCache, "uMVMatrix");
+        		program.renderCache.nMatrixUniform = gl.getUniformLocation(program.renderCache, "uNMatrix");
 
         		program.renderCache.renderer = this;
         	},

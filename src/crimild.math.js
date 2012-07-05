@@ -1,4 +1,4 @@
-define(["lib/glMatrix-1.3.7.min.js"], function(glMatrix) {
+define(["../lib/glMatrix-1.3.7.min.js"], function(glMatrix) {
 	"use strict";
 
 	mat3.multiplyScalar = function(mat, s, dest) {
@@ -182,25 +182,15 @@ define(["lib/glMatrix-1.3.7.min.js"], function(glMatrix) {
 				return mat4.identity(dest);
 			}
 
-			dest[0] = _rotate[0] * _scale;
-			dest[1] = _rotate[3] * _scale;
-			dest[2] = _rotate[6] * _scale;
-			dest[3] = 0;
-			
-			dest[4] = _rotate[1] * _scale;
-			dest[5] = _rotate[4] * _scale;
-			dest[6] = _rotate[7] * _scale;
-			dest[7] = 0;
-			
-			dest[8] = _rotate[2] * _scale;
-			dest[9] = _rotate[5] * _scale;
-			dest[10] = _rotate[8] * _scale;
-			dest[11] = 0;
+			mat4.set([
+					_rotate[0] * _scale, _rotate[1] * _scale, _rotate[2] * _scale, 0,
+					_rotate[3] * _scale, _rotate[4] * _scale, _rotate[5] * _scale, 0,
+					_rotate[6] * _scale, _rotate[7] * _scale, _rotate[8] * _scale, 0,
+					_translate[0], _translate[1], _translate[2], 1
+				], dest);
 
-			dest[12] = _translate[0];
-			dest[13] = _translate[1];
-			dest[14] = _translate[2];
-			dest[15] = 1;
+            //mat4.identity(dest); mat4.translate(dest, _translate); mat4.rotate(dest, 16.0, [0, 1, 0]);
+
 			return dest;
 		}
 

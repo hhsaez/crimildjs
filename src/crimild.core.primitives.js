@@ -37,12 +37,21 @@ define(["crimild.core"], function(core) {
 			return null;
 		}
 
+		that.invertNormal = function() {
+			return false;
+		};
+
 		that.computeDomain = function(x, y) {
 			return vec2.createFrom(x * upperBound[0] / slices[0], y * upperBound[1] / slices[1]);
 		};
 
 		that.generateVertexBuffer = function() {
 			var vertices = [];
+			var s, t;
+			var p = vec3.create();
+			var u = vec3.create();
+			var v = vec3.create();
+			var normal = vec3.create();
 			for (var i = 0; i < divisions[1]; i++) {
 				for (var j = 0; j < divisions[0]; j++) {
 					var domain = that.computeDomain(j, i);
@@ -51,6 +60,28 @@ define(["crimild.core"], function(core) {
 					vertices.push(range[0]);
 					vertices.push(range[1]);
 					vertices.push(range[2]);
+
+					if (vertexFormat.normals > 0) {
+						s = j; 
+						t = i;
+
+						if (j === 0) s += 0.01;
+						if (j === divisions[0] - 1) s -= 0.01;
+						if (i === 0) t += 0.01;
+						if (i === divisions[1] - 1) t -= 0.01;
+
+						p = that.evaluate(that.computeDomain(s, t));
+						vec3.subtract(that.evaluate(that.computeDomain(s + 0.01, t)), p, u);
+						vec3.subtract(that.evaluate(that.computeDomain(s, t + 0.01)), p, v);
+						vec3.cross(u, v, normal);
+						vec3.normalize(normal);
+						if (that.invertNormal()) {
+							vec3.negate(normal, normal);
+						}
+						vertices.push(normal[0]);
+						vertices.push(normal[1]);
+						vertices.push(normal[2]);
+					}
 				}
 			}
 
