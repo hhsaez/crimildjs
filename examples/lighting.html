@@ -1,27 +1,51 @@
 <html>
 	<head>
 		<title>CrimildJS</title>
-        <script data-main="src/crimild" src="lib/require.js"></script>
+        <script data-main="../src/crimild" src="../lib/require.js"></script>
         <script id="shader-fs" type="x-shader/x-fragment">
         	precision mediump float;
 
-            varying vec4 vColor;
+            varying vec4 vDestinationColor;
         	
         	void main(void) {
-        		gl_FragColor = vColor;
+                gl_FragColor = vDestinationColor;
         	}
         </script>
         <script id="shader-vs" type="x-shader/x-vertex">
         	attribute vec3 aVertexPosition;
-        	
+            attribute vec3 aVertexNormal;
+
         	uniform mat4 uMVMatrix;
         	uniform mat4 uPMatrix;
+            uniform mat3 uNMatrix;
 
-            varying vec4 vColor;
-        	
+            uniform bool uUseLighting;
+            uniform vec4 uLightPosition;
+            uniform vec3 uLightAmbient;
+            uniform vec3 uLightDiffuse;
+            uniform vec3 uLightSpecular;
+            uniform float uLightShininess;
+
+            varying vec4 vDestinationColor;
+
         	void main(void) {
-        		gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-                vColor = vec4(aVertexPosition, 1.0);
+                if (!uUseLighting) {
+                    vDestinationColor = vec4(1.0, 1.0, 1.0, 1.0);
+                }
+                else {
+                    vec3 N = uNMatrix * aVertexNormal;
+                    vec3 L = normalize(uLightPosition.xyz);
+                    vec3 E = vec3(0, 0, 1);
+                    vec3 H = normalize(L + E);
+                    float df = max(0.0, dot(N, L));
+                    float sf = max(0.0, dot(N, H));
+                    sf = pow(sf, uLightShininess);
+
+                    vec3 color = uLightAmbient + df * uLightDiffuse + sf * uLightSpecular;
+                    vDestinationColor = vec4(color, 1);
+                }
+
+                gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
         	}
         </script>
 		<script type="text/javascript">
@@ -31,42 +55,18 @@
                         name: "scene",
                         nodes: [
                             crimild.core.geometryNode({
-                                name: "a klein bottle",
-                                primitives: [
-                                    crimild.primitives.kleinBottlePrimitive({
-                                        type: crimild.core.primitive.types.LINES,
-                                        vertexFormat: crimild.core.vertexFormat(),
-                                        scale: -0.15
-                                    })
-                                ],
-                                local: crimild.math.transformation({
-                                    translate: [2.0, 0, 0]
-                                })
-                            }),
-                            crimild.core.geometryNode({
                                 name: "a cone",
                                 primitives: [
-                                    crimild.primitives.conePrimitive({
+                                    crimild.primitives.kleinBottlePrimitive({
                                         type: crimild.core.primitive.types.TRIANGLES,
-                                        vertexFormat: crimild.core.vertexFormat()
+                                        vertexFormat: crimild.core.vertexFormat({normals: 3}),
+                                        scale: 0.15
                                     })
                                 ]
-                            }),
-                            crimild.core.geometryNode({
-                                name: "a sphere",
-                                primitives: [
-                                    crimild.primitives.spherePrimitive({
-                                        type: crimild.core.primitive.types.LINES,
-                                        vertexFormat: crimild.core.vertexFormat()
-                                    })
-                                ],
-                                local: crimild.math.transformation({
-                                    translate: [-2.0, 0, 0]
-                                })
                             })
                         ],
                         local: crimild.math.transformation({
-                            translate: [0, 0, -7]
+                            translate: [0, 0, -5],
                         })
                     });
 
@@ -95,6 +95,12 @@
                                     })
                                 })
                             })
+                        ],
+                        lights: [
+                            crimild.rendering.light({
+                                diffuse: [0.75, 0.0, 0.0],
+                                position: [5, 0.25, 3.0, 1.0]
+                            })
                         ]
                     });
 
@@ -106,18 +112,10 @@
 	</head>
 	<body onload="initCrimild('webGLCanvas');">
     	<div align="center">
-            <h1>Crimild JS Demo</h1>
+            <h1>Crimild JS Demo: Vertex Lighting</h1>
             <canvas id="webGLCanvas" style="border: none;" width="800" height="600">
     	       Your browser does not support WebGL
             </canvas>
-        </div>
-        <div>
-            <h2>Examples</h2>
-            <ul>
-                <li><a href="examples/lighting.html">Vertex Lighting</a></li>
-                <li><a href="examples/per_pixel_lighting.html">Per Pixel Lighting</a></li>
-                <li><a href="examples/toon_shading.html">Toon Shading</a></li>
-            </ul>
         </div>
 	</body>
 </html>
