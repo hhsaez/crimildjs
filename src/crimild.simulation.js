@@ -1,4 +1,4 @@
-define(["./crimild.core", "./crimild.rendering", "../lib/webgl-utils.js"], function(core, rendering, webgl) {
+define(["./crimild.core", "./crimild.rendering", "../lib/webgl-utils"], function(core, rendering, webgl) {
 	var simulator = {};
 
 	var task = function(spec) {

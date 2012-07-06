@@ -1,4 +1,4 @@
-define(["../lib/glMatrix-1.3.7.min.js"], function(glMatrix) {
+define(["../lib/glMatrix-1.3.7.min"], function(glMatrix) {
 	"use strict";
 
 	// used for calculations
