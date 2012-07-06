@@ -4,40 +4,61 @@ define(["./crimild.core"], function(core) {
 	var light = function(spec) {
 		var that = {};
 
-		var _ambientColor = vec3.create([0.2, 0.2, 0.2]);
-		var _directionalColor = vec3.create([0.8, 0.8, 0.8]);
-		var _direction = vec3.create([0, 0, -1]);
+		var _ambient = vec3.create([0.02, 0.02, 0.02]);
+		var _diffuse = vec3.create([0.8, 0.8, 0.8]);
+		var _specular = vec3.create([0.5, 0.5, 0.5]);
+		var _position = vec4.create([0, 0, 0, 1]);
+		var _shininess = 50.0;
 
 		Object.defineProperties(that, {
-			ambientColor: {
+			ambient: {
 				get: function() {
-					return _ambientColor;
+					return _ambient;
 				},
 				set: function(value) {
 					_ambientColor = value;
 				}
 			},
-			directionalColor: {
+			diffuse: {
 				get: function() {
-					return _directionalColor;
+					return _diffuse;
 				},
 				set: function(value) {
-					_directionalColor = value;
+					_diffuse = value;
 				}
 			},
-			direction: {
+			specular: {
 				get: function() {
-					return _direction;
+					return _specular;
 				},
 				set: function(value) {
-					_direction = value;
+					_specular = value;
+				}
+			},
+			shininess: {
+				get: function() {
+					return _shininess;
+				},
+				set: function(value) {
+					_shininess = value;
+				}
+			},
+			position: {
+				get: function() {
+					return _position;
+				},
+				set: function(value) {
+					_position = value;
 				}
 			}
 		});
 
 		if (spec) {
-			if (spec.directionalColor) { that.directionalColor = spec.directionalColor; }
-			if (spec.direction) { that.direction = spec.direction; }
+			if (spec.ambient) that.ambient = spec.ambient;
+			if (spec.diffuse) that.diffuse = spec.diffuse;
+			if (spec.specular) that.specular = spec.specular;
+			if (spec.shininess) that.shininess = spec.shininess;
+			if (spec.position) that.position = spec.position;
 		}
 
 		return that;
@@ -420,14 +441,11 @@ define(["./crimild.core"], function(core) {
         	},
 
         	enableLight: function(lightIndex, light, program) {
-        		gl.uniform3f(program.renderCache.ambientColorUniform, light.ambientColor[0], light.ambientColor[1], light.ambientColor[2]);
-
-        		var adjustedLD = vec3.create();
-        		vec3.normalize(light.direction, adjustedLD);
-        		vec3.scale(adjustedLD, -1);
-        		gl.uniform3f(program.renderCache.lightingDirectionUniform, adjustedLD[0], adjustedLD[1], adjustedLD[2]);
-
-        		gl.uniform3f(program.renderCache.directionalColorUniform, light.directionalColor[0], light.directionalColor[1], light.directionalColor[2]);
+        		gl.uniform3f(program.renderCache.lightAmbienUniform, light.ambient[0], light.ambient[1], light.ambient[2]);
+        		gl.uniform3f(program.renderCache.lightDiffuseUniform, light.diffuse[0], light.diffuse[1], light.diffuse[2]);
+        		gl.uniform3f(program.renderCache.lightSpecularUniform, light.specular[0], light.specular[1], light.specular[2]);
+        		gl.uniform1f(program.renderCache.lightShininessUniform, light.shininess);
+        		gl.uniform4f(program.renderCache.lightPositionUniform, light.position[0], light.position[1], light.position[2], light.position[3]);
         	},
 
         	disableLight: function() {
@@ -472,10 +490,13 @@ define(["./crimild.core"], function(core) {
         		program.renderCache.pMatrixUniform = gl.getUniformLocation(program.renderCache, "uPMatrix");
         		program.renderCache.mvMatrixUniform = gl.getUniformLocation(program.renderCache, "uMVMatrix");
         		program.renderCache.nMatrixUniform = gl.getUniformLocation(program.renderCache, "uNMatrix");
+
         		program.renderCache.useLightingUniform = gl.getUniformLocation(program.renderCache, "uUseLighting");
-                program.renderCache.ambientColorUniform = gl.getUniformLocation(program.renderCache, "uAmbientColor");
-                program.renderCache.lightingDirectionUniform = gl.getUniformLocation(program.renderCache, "uLightingDirection");
-                program.renderCache.directionalColorUniform = gl.getUniformLocation(program.renderCache, "uDirectionalColor");
+                program.renderCache.lightAmbienUniform = gl.getUniformLocation(program.renderCache, "uLightAmbient");
+                program.renderCache.lightDiffuseUniform = gl.getUniformLocation(program.renderCache, "uLightDiffuse");
+                program.renderCache.lightSpecularUniform = gl.getUniformLocation(program.renderCache, "uLightSpecular");
+                program.renderCache.lightShininessUniform = gl.getUniformLocation(program.renderCache, "uLightShininess");
+                program.renderCache.lightPositionUniform = gl.getUniformLocation(program.renderCache, "uLightPosition");
 
         		program.renderCache.renderer = this;
         	},

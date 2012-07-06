@@ -194,6 +194,56 @@ define(["crimild.core"], function(core) {
 		return that;
 	};
 
+	var treefoilKnotPrimitive = function(spec) {
+		var that = parametricPrimitive(spec);
+
+		var scale = 1.0;
+		var divisions = vec2.createFrom(60, 15);
+
+		if (spec) {
+			if (spec.scale) { scale = spec.scale; }
+			if (spec.divisions) { divisions = spec.divisions; }
+		}
+
+		that.evaluate = function(domain) {
+			var a = 0.5;
+		    var b = 0.3;
+		    var c = 0.5;
+		    var d = 0.1;
+		    var u = (Math.PI * 2.0 - domain[0]) * 2.0;
+		    var v = domain[1];
+		    
+		    var r = a + b * Math.cos(1.5 * u);
+		    var x = r * Math.cos(u);
+		    var y = r * Math.sin(u);
+		    var z = c * Math.sin(1.5 * u);
+		    
+		    var dv = vec3.create();
+		    dv[ 0 ] = -1.5 * b * Math.sin(1.5 * u) * Math.cos(u) - (a + b * Math.cos(1.5 * u)) * Math.sin(u);
+		    dv[ 1 ] = -1.5 * b * Math.sin(1.5 * u) * Math.sin(u) + (a + b * Math.cos(1.5 * u)) * Math.cos(u);
+		    dv[ 2 ] = 1.5 * c * Math.cos(1.5 * u);
+		    
+		    var q = vec3.createFrom(dv[0], dv[1], dv[2]);
+		    vec3.normalize(q);
+		    var qvn = vec3.createFrom(q[1], -q[0], 0.0)
+		    vec3.normalize(qvn);
+		    var ww = vec3.create();
+		    vec3.cross(q, qvn, ww);
+		    
+		    var range = vec3.create();
+		    range[0] = x + d * (qvn[0] * Math.cos(v) + ww[0] * Math.sin(v));
+		    range[1] = y + d * (qvn[1] * Math.cos(v) + ww[1] * Math.sin(v));
+		    range[2] = z + d * ww[2] * Math.sin(v);
+
+			return range;
+		};
+
+		that.setInterval({divisions: divisions, upperBound: vec2.createFrom(2.0 * Math.PI, 2.0 * Math.PI)});
+		that.generate();
+
+		return that;
+	};
+
 	var spherePrimitive = function(spec) {
 		var that = core.primitive(spec);
         var latitudeBands = 30;
@@ -253,6 +303,7 @@ define(["crimild.core"], function(core) {
 		parametricPrimitive: parametricPrimitive,
 		conePrimitive: conePrimitive,
 		kleinBottlePrimitive: kleinBottlePrimitive,
+		treefoilKnotPrimitive: treefoilKnotPrimitive,
 		spherePrimitive: spherePrimitive,
 	};
 
