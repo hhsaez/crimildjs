@@ -79,18 +79,6 @@
                         translate: [0, 0, -7]
                     }),
                     components: [
-                        function() {
-                            var that = crimild.core.nodeComponent({name: "update"});
-                            var angle = 0.0;
-
-                            that.update = function() {
-                                scene.local.rotate = quat4.fromAngleAxis(angle, [0, 1, 0])
-                                scene.perform(crimild.core.worldStateUpdate());
-                                angle += 0.01;
-                            };
-
-                            return that;
-                        }(),
                         crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
                         crimild.rendering.renderComponent({
                             effects: [
