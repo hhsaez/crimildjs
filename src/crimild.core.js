@@ -66,6 +66,7 @@ define(["./crimild.math"], function(math) {
 
 		that.attachComponent = function(component) {
 			_components[component.getName()] = component;
+			component.node = that;
 		};
 
 		that.getComponent = function(componentName) {
@@ -280,6 +281,19 @@ define(["./crimild.math"], function(math) {
 
 	var nodeComponent = function(spec) {
 		var that = object(spec);
+
+		var _node = null;
+
+		Object.defineProperties(that, {
+			node: {
+				get: function() {
+					return _node;
+				},
+				set: function(value) {
+					_node = value;
+				}
+			}
+		});
 
 		that.update = function() {
 
