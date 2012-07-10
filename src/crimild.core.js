@@ -28,6 +28,7 @@ define(["./crimild.math"], function(math) {
 
 		var _local = math.transformation();
 		var _world = math.transformation();
+		var _components = {};
 
 		Object.defineProperties(that, {
 			local: {
@@ -48,11 +49,6 @@ define(["./crimild.math"], function(math) {
 			}
 		});
 
-		if (spec) {
-			if (spec.parent) { parent = spec.parent }; 
-			if (spec.local) { that.local = spec.local; }
-		}
-
 		that.getParent = function() {
 			return parent;
 		};
@@ -67,6 +63,25 @@ define(["./crimild.math"], function(math) {
 		that.accept = function(visitor) {
 			visitor.visitNode(this);
 		};
+
+		that.attachComponent = function(component) {
+			_components[component.getName()] = component;
+			component.node = that;
+		};
+
+		that.getComponent = function(componentName) {
+			return _components[componentName];
+		};
+
+		if (spec) {
+			if (spec.parent) { parent = spec.parent }; 
+			if (spec.local) { that.local = spec.local; }
+			if (spec.components) {
+				for (var i in spec.components) {
+					that.attachComponent(spec.components[i]);
+				}
+			}
+		}
 
 		return that;
 	};
@@ -265,7 +280,24 @@ define(["./crimild.math"], function(math) {
 	};
 
 	var nodeComponent = function(spec) {
-		var that = {};
+		var that = object(spec);
+
+		var _node = null;
+
+		Object.defineProperties(that, {
+			node: {
+				get: function() {
+					return _node;
+				},
+				set: function(value) {
+					_node = value;
+				}
+			}
+		});
+
+		that.update = function() {
+
+		};
 
 		return that;
 	};

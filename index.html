@@ -6,7 +6,6 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <link rel="stylesheet" href="stylesheets/stylesheet.css" media="screen"/>
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css"/>
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
     <script type="text/javascript" src="javascripts/script.js"></script>
     <title>Crimildjs</title>
@@ -78,33 +77,34 @@
                     ],
                     local: crimild.math.transformation({
                         translate: [0, 0, -7]
-                    })
-                });
+                    }),
+                    components: [
+                        function() {
+                            var that = crimild.core.nodeComponent({name: "update"});
+                            var angle = 0.0;
 
-                scene.updateComponent = function(spec) {
-                    var that = crimild.core.nodeComponent(spec);
-                    var angle = 0.0;
+                            that.update = function() {
+                                scene.local.rotate = quat4.fromAngleAxis(angle, [0, 1, 0])
+                                scene.perform(crimild.core.worldStateUpdate());
+                                angle += 0.01;
+                            };
 
-                    that.update = function() {
-                        scene.local.rotate = quat4.fromAngleAxis(angle, [0, 1, 0])
-                        scene.perform(crimild.core.worldStateUpdate());
-                        angle += 0.01;
-                    };
-
-                    return that;
-                }();
-
-                scene.renderComponent = crimild.rendering.renderComponent({
-                    effects: [
-                        crimild.rendering.effect({
-                            shaderProgram: crimild.rendering.shaderProgram({
-                                vertexShader: crimild.rendering.shader({
-                                    scriptId: "shader-vs"
-                                }),
-                                fragmentShader: crimild.rendering.shader({
-                                    scriptId: "shader-fs"
+                            return that;
+                        }(),
+                        crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
+                        crimild.rendering.renderComponent({
+                            effects: [
+                                crimild.rendering.effect({
+                                    shaderProgram: crimild.rendering.shaderProgram({
+                                        vertexShader: crimild.rendering.shader({
+                                            scriptId: "shader-vs"
+                                        }),
+                                        fragmentShader: crimild.rendering.shader({
+                                            scriptId: "shader-fs"
+                                        })
+                                    })
                                 })
-                            })
+                            ]
                         })
                     ]
                 });
