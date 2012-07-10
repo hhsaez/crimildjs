@@ -65,7 +65,7 @@ define(["./crimild.core"], function(core) {
 	};
 
 	var renderComponent = function(spec) {
-		var that = core.nodeComponent(spec);
+		var that = core.nodeComponent({name: "render"});
 		var effects = [];
 		var lights = [];
 
@@ -98,7 +98,7 @@ define(["./crimild.core"], function(core) {
 	};
 
 	var geometryRenderComponent = function(spec) {
-		var that = core.nodeComponent(spec);
+		var that = core.nodeComponent({name: "geometryRender"});
 		var effects = [];
 		var lights = [];
 
@@ -223,7 +223,7 @@ define(["./crimild.core"], function(core) {
 
 		that.visitGroupNode = function(group) {
 			var i;
-			var grc = group.renderComponent;
+			var grc = group.getComponent("render");
 
 			if (grc) {
 				var temp = []
@@ -245,20 +245,22 @@ define(["./crimild.core"], function(core) {
 		};
 
 		that.visitGeometryNode = function(geometry) {
-			if (!geometry.geometryRenderComponent) {
-				geometry.geometryRenderComponent = geometryRenderComponent({});
+			var grc = geometry.getComponent("geometryRender");
+			if (!grc) {
+				grc = geometryRenderComponent({});
+				geometry.attachComponent(grc);
 			}
 
-			var grc = geometry.geometryRenderComponent;
+			var rc = geometry.getComponent("render");
 
-			if (grc) {
+			if (rc) {
 				var temp = []
 				var i;
-				for (i = 0; i < grc.getEffectCount(); i++) {
-					effects.push(grc.getEffectAt(i));
+				for (i = 0; i < rc.getEffectCount(); i++) {
+					effects.push(rc.getEffectAt(i));
 				}
-				for (i = 0; i < grc.getLightCount(); i++) {
-					lights.push(grc.getLightAt(i));
+				for (i = 0; i < rc.getLightCount(); i++) {
+					lights.push(rc.getLightAt(i));
 				}
 			}
 
@@ -522,7 +524,7 @@ define(["./crimild.core"], function(core) {
 			renderGeometryNode: function(geometry) {
         		geometry.world.toMat4(mvMatrix);
 
-        		var grc = geometry.geometryRenderComponent;
+        		var grc = geometry.getComponent("geometryRender");
 
 				for (var p = 0; p < geometry.getPrimitiveCount(); p++) {
 					var primitive = geometry.getPrimitiveAt(p);

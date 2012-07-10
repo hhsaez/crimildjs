@@ -67,33 +67,33 @@
                         ],
                         local: crimild.math.transformation({
                             translate: [0, 0, -7]
-                        })
-                    });
+                        }),
+                        components: [
+                            function() {
+                                var that = crimild.core.nodeComponent({name: "update"});
+                                var angle = 0.0;
 
-                    scene.updateComponent = function(spec) {
-                        var that = crimild.core.nodeComponent(spec);
-                        var angle = 0.0;
+                                that.update = function() {
+                                    scene.local.rotate = quat4.fromAngleAxis(angle, [0, 1, 0])
+                                    scene.perform(crimild.core.worldStateUpdate());
+                                    angle += 0.01;
+                                };
 
-                        that.update = function() {
-                            scene.local.rotate = quat4.fromAngleAxis(angle, [0, 1, 0])
-                            scene.perform(crimild.core.worldStateUpdate());
-                            angle += 0.01;
-                        };
-
-                        return that;
-                    }();
-
-                    scene.renderComponent = crimild.rendering.renderComponent({
-                        effects: [
-                            crimild.rendering.effect({
-                                shaderProgram: crimild.rendering.shaderProgram({
-                                    vertexShader: crimild.rendering.shader({
-                                        scriptId: "shader-vs"
-                                    }),
-                                    fragmentShader: crimild.rendering.shader({
-                                        scriptId: "shader-fs"
+                                return that;
+                            }(),
+                            crimild.rendering.renderComponent({
+                                effects: [
+                                    crimild.rendering.effect({
+                                        shaderProgram: crimild.rendering.shaderProgram({
+                                            vertexShader: crimild.rendering.shader({
+                                                scriptId: "shader-vs"
+                                            }),
+                                            fragmentShader: crimild.rendering.shader({
+                                                scriptId: "shader-fs"
+                                            })
+                                        })
                                     })
-                                })
+                                ]
                             })
                         ]
                     });
