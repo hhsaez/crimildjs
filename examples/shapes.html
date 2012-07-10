@@ -1,0 +1,124 @@
+<html>
+	<head>
+		<title>CrimildJS</title>
+        <script data-main="../src/crimild" src="../lib/require.js"></script>
+        <script id="shader-fs" type="x-shader/x-fragment">
+        	precision mediump float;
+
+            varying vec4 vColor;
+        	
+        	void main(void) {
+        		gl_FragColor = vColor;
+        	}
+        </script>
+        <script id="shader-vs" type="x-shader/x-vertex">
+        	attribute vec3 aVertexPosition;
+        	
+        	uniform mat4 uMVMatrix;
+        	uniform mat4 uPMatrix;
+
+            varying vec4 vColor;
+        	
+        	void main(void) {
+        		gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+                vColor = vec4(aVertexPosition, 1.0);
+        	}
+        </script>
+		<script type="text/javascript">
+			function initCrimild(canvasId) {
+                require(["crimild"], function(crimild) {
+                    var scene = crimild.core.groupNode({
+                        name: "scene",
+                        nodes: [
+                            crimild.core.geometryNode({
+                                name: "a klein bottle",
+                                primitives: [
+                                    crimild.primitives.kleinBottlePrimitive({
+                                        type: crimild.core.primitive.types.LINES,
+                                        vertexFormat: crimild.core.vertexFormat(),
+                                        scale: -0.15
+                                    })
+                                ],
+                                local: crimild.math.transformation({
+                                    translate: [2.0, 0, 0]
+                                })
+                            }),
+                            crimild.core.geometryNode({
+                                name: "a cone",
+                                primitives: [
+                                    crimild.primitives.conePrimitive({
+                                        type: crimild.core.primitive.types.TRIANGLES,
+                                        vertexFormat: crimild.core.vertexFormat()
+                                    })
+                                ]
+                            }),
+                            crimild.core.geometryNode({
+                                name: "a sphere",
+                                primitives: [
+                                    crimild.primitives.spherePrimitive({
+                                        type: crimild.core.primitive.types.LINES,
+                                        vertexFormat: crimild.core.vertexFormat()
+                                    })
+                                ],
+                                local: crimild.math.transformation({
+                                    translate: [-2.0, 0, 0]
+                                })
+                            })
+                        ],
+                        local: crimild.math.transformation({
+                            translate: [0, 0, -7]
+                        })
+                    });
+
+                    scene.updateComponent = function(spec) {
+                        var that = crimild.core.nodeComponent(spec);
+                        var angle = 0.0;
+
+                        that.update = function() {
+                            scene.local.rotate = quat4.fromAngleAxis(angle, [0, 1, 0])
+                            scene.perform(crimild.core.worldStateUpdate());
+                            angle += 0.01;
+                        };
+
+                        return that;
+                    }();
+
+                    scene.renderComponent = crimild.rendering.renderComponent({
+                        effects: [
+                            crimild.rendering.effect({
+                                shaderProgram: crimild.rendering.shaderProgram({
+                                    vertexShader: crimild.rendering.shader({
+                                        scriptId: "shader-vs"
+                                    }),
+                                    fragmentShader: crimild.rendering.shader({
+                                        scriptId: "shader-fs"
+                                    })
+                                })
+                            })
+                        ]
+                    });
+
+                    var canvas = document.getElementById(canvasId);
+                    crimild.simulation.run({canvas: canvas, scene: scene});
+                });
+			}
+		</script>
+	</head>
+	<body onload="initCrimild('webGLCanvas');">
+    	<div align="center">
+            <h1>Crimild JS Demo</h1>
+            <canvas id="webGLCanvas" style="border: none;" width="800" height="600">
+    	       Your browser does not support WebGL
+            </canvas>
+        </div>
+        <div>
+            <h2>Examples</h2>
+            <ul>
+                <li><a href="examples/lighting.html">Vertex Lighting</a></li>
+                <li><a href="examples/per_pixel_lighting.html">Per Pixel Lighting</a></li>
+                <li><a href="examples/toon_shading.html">Toon Shading</a></li>
+            </ul>
+        </div>
+	</body>
+</html>
+
