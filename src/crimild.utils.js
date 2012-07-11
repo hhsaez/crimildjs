@@ -1,8 +1,8 @@
-crimild.utils = (function () {
+define(["crimild.core"], function(core) {
 	"use strict";
-	
+
 	var printScene = function(spec) {
-		var that = crimild.core.nodeVisitor(spec);
+		var that = core.nodeVisitor(spec);
 		var identCout = 0;
 
 		that.visitNode = function(node) {
@@ -33,10 +33,6 @@ crimild.utils = (function () {
 		return that;
 	};
 
-	return {
-		printScene: printScene
-	}
-
 	var assetManager = function(spec) {
 		var that = {};
 		var assets = [];
@@ -52,5 +48,23 @@ crimild.utils = (function () {
 		return that;
 	};
 
-}());
+	var getTextFromElement = function(elementId) {
+		var script = document.getElementById(elementId);
+        var str = "";
+        var k = script.firstChild;
+        while (k) {
+            if (k.nodeType == 3) {
+                str += k.textContent;
+            }
+            k = k.nextSibling;
+        }
+        return str;
+	}
+
+	return {
+		getTextFromElement: getTextFromElement,
+		printScene: printScene
+	}
+
+});
 

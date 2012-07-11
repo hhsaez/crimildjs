@@ -1,122 +1,194 @@
+<!doctype html>
+<!-- The Time Machine GitHub pages theme was designed and developed by Jon Rohan, on Feb 7, 2012. -->
+<!-- Follow him for fun. http://twitter.com/jonrohan. Tail his code on http://github.com/jonrohan -->
 <html>
-	<head>
-		<title>CrimildJS</title>
-        <script data-main="../src/crimild" src="../lib/require.js"></script>
-        <script id="shader-fs" type="x-shader/x-fragment">
-        	precision mediump float;
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <link rel="stylesheet" href="../stylesheets/stylesheet.css" media="screen"/>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript" src="../javascripts/script.js"></script>
+    <title>Crimild JS Example</title>
+    <meta name="description" content="WebGL based 3D game framework">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <script data-main="../src/crimild" src="../lib/require.js"></script>
+    <script id="shader-fs" type="x-shader/x-fragment">
+    	precision mediump float;
 
-            uniform bool uUseLighting;
-            uniform vec4 uLightPosition;
-            uniform vec3 uLightAmbient;
-            uniform vec3 uLightDiffuse;
-            uniform vec3 uLightSpecular;
-            uniform float uLightShininess;
+        uniform bool uUseLighting;
+        uniform vec4 uLightPosition;
+        uniform vec3 uLightAmbient;
+        uniform vec3 uLightDiffuse;
+        uniform vec3 uLightSpecular;
+        uniform float uLightShininess;
 
-            varying vec3 vEyespaceNormal;
-        	
-        	void main(void) {
-                if (!uUseLighting) {
-                    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-                }
-                else {
-                    vec3 N = normalize(vEyespaceNormal);
-                    vec3 L = normalize(uLightPosition.xyz);
-                    vec3 E = vec3(0, 0, 1);
-                    vec3 H = normalize(L + E);
+        varying vec3 vEyespaceNormal;
+    	
+    	void main(void) {
+            if (!uUseLighting) {
+                gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+            }
+            else {
+                vec3 N = normalize(vEyespaceNormal);
+                vec3 L = normalize(uLightPosition.xyz);
+                vec3 E = vec3(0, 0, 1);
+                vec3 H = normalize(L + E);
 
-                    float df = max(0.0, dot(N, L));
-                    float sf = max(0.0, dot(N, H));
-                    sf = pow(sf, uLightShininess);
+                float df = max(0.0, dot(N, L));
+                float sf = max(0.0, dot(N, H));
+                sf = pow(sf, uLightShininess);
 
-                    if (df < 0.1) df = 0.0;
-                    else if (df < 0.3) df = 0.3;
-                    else if (df < 0.6) df = 0.6;
-                    else df = 1.0;
+                if (df < 0.1) df = 0.0;
+                else if (df < 0.3) df = 0.3;
+                else if (df < 0.6) df = 0.6;
+                else df = 1.0;
 
-                    sf = step(0.5, sf);
+                sf = step(0.5, sf);
 
-                    vec3 color = uLightAmbient + df * uLightDiffuse + sf * uLightSpecular;
-                    gl_FragColor = vec4(color, 1);
-                }
-        	}
-        </script>
-        <script id="shader-vs" type="x-shader/x-vertex">
-        	attribute vec3 aVertexPosition;
-            attribute vec3 aVertexNormal;
+                vec3 color = uLightAmbient + df * uLightDiffuse + sf * uLightSpecular;
+                gl_FragColor = vec4(color, 1);
+            }
+    	}
+    </script>
+    <script id="shader-vs" type="x-shader/x-vertex">
+    	attribute vec3 aVertexPosition;
+        attribute vec3 aVertexNormal;
 
-        	uniform mat4 uMVMatrix;
-        	uniform mat4 uPMatrix;
-            uniform mat3 uNMatrix;
+    	uniform mat4 uMVMatrix;
+    	uniform mat4 uPMatrix;
+        uniform mat3 uNMatrix;
 
-            varying vec3 vEyespaceNormal;
+        varying vec3 vEyespaceNormal;
 
-        	void main(void) {
-                vEyespaceNormal = uNMatrix * aVertexNormal;
-                gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-        	}
-        </script>
-		<script type="text/javascript">
-			function initCrimild(canvasId) {
-                require(["crimild"], function(crimild) {
-                    var scene = crimild.core.groupNode({
-                        name: "scene",
-                        nodes: [
-                            crimild.core.geometryNode({
-                                name: "a cone",
-                                primitives: [
-                                    crimild.primitives.treefoilKnotPrimitive({
-                                        type: crimild.core.primitive.types.TRIANGLES,
-                                        vertexFormat: crimild.core.vertexFormat({normals: 3}),
-                                        scale: 0.15
-                                    })
-                                ]
-                            })
-                        ],
-                        local: crimild.math.transformation({
-                            translate: [0, 0, -3],
-                        }),
-                        components: [
-                            function() {
-                                var that = crimild.core.nodeComponent({name: "update"});
-                                var angle = 0.0;
+    	void main(void) {
+            vEyespaceNormal = uNMatrix * aVertexNormal;
+            gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+    	}
+    </script>
+	<script type="text/javascript">
+		function initCrimild(canvasId) {
+            require(["crimild"], function(crimild) {
+                var scene = crimild.core.groupNode({
+                    name: "scene",
+                    nodes: [
+                        crimild.core.geometryNode({
+                            name: "a cone",
+                            primitives: [
+                                crimild.primitives.treefoilKnotPrimitive({
+                                    type: crimild.core.primitive.types.TRIANGLES,
+                                    vertexFormat: crimild.core.vertexFormat({normals: 3}),
+                                    scale: 0.15
+                                })
+                            ]
+                        })
+                    ],
+                    local: crimild.math.transformation({
+                        translate: [0, 0, -3],
+                    }),
+                    components: [
+                        function() {
+                            var that = crimild.core.nodeComponent({name: "update"});
+                            var angle = 0.0;
 
-                                that.update = function() {
-                                    scene.local.rotate = quat4.fromAngleAxis(angle, [0, 1, 0])
-                                    scene.perform(crimild.core.worldStateUpdate());
-                                    angle += 0.01;
-                                };
+                            that.update = function() {
+                                scene.local.rotate = quat4.fromAngleAxis(angle, [0, 1, 0])
+                                scene.perform(crimild.core.worldStateUpdate());
+                                angle += 0.01;
+                            };
 
-                                return that;
-                            }(),
-                            crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
-                            crimild.rendering.renderComponent({
-                                effects: [
-                                    crimild.rendering.effect({
-                                        shaderProgram: crimild.rendering.shaderProgram({
-                                            vertexShader: crimild.rendering.shader({
-                                                scriptId: "shader-vs"
-                                            }),
-                                            fragmentShader: crimild.rendering.shader({
-                                                scriptId: "shader-fs"
-                                            })
+                            return that;
+                        }(),
+                        crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
+                        crimild.rendering.renderComponent({
+                            effects: [
+                                crimild.rendering.effect({
+                                    shaderProgram: crimild.rendering.shaderProgram({
+                                        vertexShader: crimild.rendering.shader({
+                                            scriptId: "shader-vs"
+                                        }),
+                                        fragmentShader: crimild.rendering.shader({
+                                            scriptId: "shader-fs"
                                         })
                                     })
-                                ],
-                                lights: [
-                                    crimild.rendering.light({
-                                        diffuse: [0.5, 0.5, 1.0],
-                                        position: [5, 0.25, 3.0, 1.0]
-                                    })
-                                ]
-                            })
-                        ]
-                    });
-
-                    var canvas = document.getElementById(canvasId);
-                    crimild.simulation.run({canvas: canvas, scene: scene});
+                                })
+                            ],
+                            lights: [
+                                crimild.rendering.light({
+                                    diffuse: [0.5, 0.5, 1.0],
+                                    position: [5, 0.25, 3.0, 1.0]
+                                })
+                            ]
+                        })
+                    ]
                 });
-			}
-		</script>
+
+                var canvas = document.getElementById(canvasId);
+                crimild.simulation.run({canvas: canvas, scene: scene});
+            });
+		}
+	</script>
+</head>
+
+<body onload="initCrimild('webGLCanvas');">
+  <div class="wrapper">
+    <header>
+      <h1 class="title">Crimild JS</h1>
+    </header>
+    <div id="container">
+      <p class="tagline">WebGL based 3D framework</p>
+      <div id="main" role="main">
+        <div class="download-bar">
+        <div class="inner">
+          <a href="https://github.com/hhsaez/crimildjs/tarball/master" class="download-button tar"><span>Download</span></a>
+          <a href="https://github.com/hhsaez/crimildjs/zipball/master" class="download-button zip"><span>Download</span></a>
+          <a href="https://github.com/hhsaez/crimildjs" class="code">View Crimildjs on GitHub</a>
+        </div>
+        <span class="blc"></span><span class="trc"></span>
+        </div>
+        <article class="markdown-body">
+            <div>
+                <div style="float: right;"><a href="../index.html">Next&nbsp;&gt;</a></div>
+                <div style="clear: all;"><a href="per_pixel_lighting.html">&lt;&nbsp;Previous</a></div>
+            </div>
+            <h3>Crimild JS Example: Toon Shading</h3>
+
+            <p>By doing a small modification to the per-pixel lighting shader, we can achieve non-photorealistics effects like Toon Shading</p>
+
+            <canvas id="webGLCanvas" style="border: solid 1px; margin-left: -5px;" width="640" height="480">
+                Your browser does not support WebGL
+            </canvas>
+
+        </article>
+      </div>
+    </div>
+    <footer>
+      <div class="owner">
+      <p><a href="https://github.com/hhsaez" class="avatar"><img src="https://secure.gravatar.com/avatar/2e9781f946d0b1182d623cb50a534c23?s=30&amp;d=https://a248.e.akamai.net/assets.github.com%2Fimages%2Fgravatars%2Fgravatar-140.png" width="48" height="48"/></a> <a href="https://github.com/hhsaez">hhsaez</a> maintains <a href="https://github.com/hhsaez/crimildjs">Crimildjs</a></p>
+
+
+      </div>
+      <div class="creds">
+        <small>This page generated using <a href="https://pages.github.com/">GitHub Pages</a><br/>theme by <a href="http://twitter.com/jonrohan/">Jon Rohan</a></small>
+      </div>
+    </footer>
+  </div>
+  <div class="current-section">
+    <a href="#top">Scroll to top</a>
+    <a href="https://github.com/hhsaez/crimildjs/tarball/master" class="tar">tar</a><a href="https://github.com/hhsaez/crimildjs/zipball/master" class="zip">zip</a><a href="" class="code">source code</a>
+    <p class="name"></p>
+  </div>
+
+  
+</body>
+</html>
+
+
+
+
+<html>
+    <head>
+        <title>CrimildJS</title>
+        <script data-main="../src/crimild" src="../lib/require.js"></script>
 	</head>
 	<body onload="initCrimild('webGLCanvas');">
     	<div align="center">

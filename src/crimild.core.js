@@ -350,7 +350,31 @@ define(["./crimild.math"], function(math) {
 		};
 
 		return that;
-	}
+	};
+
+	var updateScene = function(spec) {
+		var that = nodeVisitor(spec);
+
+		that.visitNode = function(aNode) {
+			var updateComponent = aNode.getComponent("update");
+			if (updateComponent) {
+				updateComponent.update();
+			}
+		};
+
+		that.visitGroupNode = function(aGroup) {
+			that.visitNode(aGroup);
+			for (var i = 0; i < aGroup.getNodeCount(); i++) {
+				aGroup.getNodeAt(i).accept(this);
+			}
+		};
+
+		that.visitGeometryNode = function(aGeometry) {
+			that.visitNode(aGeometry);
+		};
+
+		return that;
+	};
 
 	return {
 		getVersion: function() {
@@ -370,6 +394,7 @@ define(["./crimild.math"], function(math) {
 		geometryNode: geometryNode,
 		nodeComponent: nodeComponent,
 		nodeVisitor: nodeVisitor,
+		updateScene: updateScene,
 		worldStateUpdate: worldStateUpdate,
 	}
 });

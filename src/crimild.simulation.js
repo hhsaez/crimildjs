@@ -86,10 +86,7 @@ define(["./crimild.core", "./crimild.rendering", "../lib/webgl-utils"], function
 		that.onUpdate = function() {
 			var scene = simulator.getScene();
 			if (scene) {
-				var updateComponent = scene.getComponent("update");
-				if (updateComponent) {
-					updateComponent.update();
-				}	
+				scene.perform(core.updateScene());
 			}
 		};
 

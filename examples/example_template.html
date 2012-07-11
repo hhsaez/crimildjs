@@ -5,13 +5,13 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <link rel="stylesheet" href="stylesheets/stylesheet.css" media="screen"/>
+    <link rel="stylesheet" href="../stylesheets/stylesheet.css" media="screen"/>
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script type="text/javascript" src="javascripts/script.js"></script>
-    <title>Crimildjs</title>
+    <script type="text/javascript" src="../javascripts/script.js"></script>
+    <title>Crimild JS Example</title>
     <meta name="description" content="WebGL based 3D game framework">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <script data-main="src/crimild" src="lib/require.js"></script>
+    <script data-main="../src/crimild" src="../lib/require.js"></script>
     <script id="shader-fs" type="x-shader/x-fragment">
         precision mediump float;
 
@@ -50,33 +50,12 @@
                                 })
                             ],
                             local: crimild.math.transformation({
-                                translate: [2.0, 0, 0]
+                                translate: [0, 0, 0]
                             })
                         }),
-                        crimild.core.geometryNode({
-                            name: "a cone",
-                            primitives: [
-                                crimild.primitives.conePrimitive({
-                                    type: crimild.core.primitive.types.TRIANGLES,
-                                    vertexFormat: crimild.core.vertexFormat()
-                                })
-                            ]
-                        }),
-                        crimild.core.geometryNode({
-                            name: "a sphere",
-                            primitives: [
-                                crimild.primitives.spherePrimitive({
-                                    type: crimild.core.primitive.types.LINES,
-                                    vertexFormat: crimild.core.vertexFormat()
-                                })
-                            ],
-                            local: crimild.math.transformation({
-                                translate: [-2.0, 0, 0]
-                            })
-                        })
                     ],
                     local: crimild.math.transformation({
-                        translate: [0, 0, -7]
+                        translate: [0, 0, -5]
                     }),
                     components: [
                         crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
@@ -121,47 +100,15 @@
         <span class="blc"></span><span class="trc"></span>
         </div>
         <article class="markdown-body">
-            <h3>Welcome to CrimildJS</h3>
-
-            <p>Born as a small experiment, CrimildJS is a compact framework for 3D applications running on the web browser,
-                providing a shader-based rendering pipeline on top of WebGL.</p>
-
-            <h3>Live demo</h3>
-
-            <p>You need a browser with WebGL support in order to see the live demo below</p>
+            <div>
+                <div style="float: right;"><a href="../index.html">Next&nbsp;&gt;</a></div>
+                <div style="clear: all;"><a href="../index.html">&lt;&nbsp;Previous</a></div>
+            </div>
+            <h3>Crimild JS Example: Basic</h3>
 
             <canvas id="webGLCanvas" style="border: solid 1px; margin-left: -5px;" width="640" height="480">
                 Your browser does not support WebGL
             </canvas>
-
-            <h3>Documentation</h3>
-
-            <p>Keep scrolling. Nothing to do here ;)</p>
-
-            <h3>More demos</h3>
-
-            <p>
-                <ul>
-                    <li><a href="examples/shapes.html">Shapes and Colors</a></li>
-                    <li><a href="examples/lighting.html">Per-Vertex lighting</a></li>
-                    <li><a href="examples/per_pixel_lighting.html">Per-Fragment lighting</a></li>
-                    <li><a href="examples/toon_shading.html">Toon shading</a></li>
-                    <li>Advanced lighting (coming soon)</li>
-                    <li>Textures (coming soon)</li>
-                </ul>
-            </p>
-
-            <h3>References</h3>
-
-            <p>
-                <ul>    
-                    <li>WebGL</li>
-                    <li>Learning WebGL</li>
-                    <li>glMatrix</li>
-                    <li>requirejs</li>
-                    <li>Crimild Engine</li>
-                </ul>
-            </p>
 
         </article>
       </div>
