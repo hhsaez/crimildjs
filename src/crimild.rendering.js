@@ -1,4 +1,7 @@
-define(["./crimild.core"], function(core) {
+define(["./crimild.core",
+	"text!../shaders/simple.vert", "text!../shaders/simple.frag"], 
+	function(core, simple_vs, simple_fs) {
+	
 	"use strict";
 
 	var light = function(spec) {
@@ -225,6 +228,9 @@ define(["./crimild.core"], function(core) {
 			var i;
 			var grc = group.getComponent("render");
 
+			var tempEffects = effects.slice();
+			var tempLights = lights.slice();
+
 			if (grc) {
 				var temp = []
 				for (i = 0; i < grc.getEffectCount(); i++) {
@@ -240,8 +246,8 @@ define(["./crimild.core"], function(core) {
 				node.accept(this);
 			}
 
-			// TODO: pop effects
-			// TODO: pop lights
+			effects = tempEffects;
+			lights = tempLights;
 		};
 
 		that.visitGeometryNode = function(geometry) {
@@ -252,6 +258,9 @@ define(["./crimild.core"], function(core) {
 			}
 
 			var rc = geometry.getComponent("render");
+
+			var tempEffects = effects.slice();
+			var tempLights = lights.slice();
 
 			if (rc) {
 				var temp = []
@@ -269,8 +278,8 @@ define(["./crimild.core"], function(core) {
 				lights: lights
 			});
 
-			// TODO: pop effects
-			// TODO: pop lights
+			effects = tempEffects;
+			lights = tempLights;
 		};
 
 		return that;
@@ -335,6 +344,17 @@ define(["./crimild.core"], function(core) {
 		var height = 0;
     	var mvMatrix = mat4.create();
     	var pMatrix = mat4.create();
+		var defaultEffect = effect({
+	        shaderProgram: shaderProgram({
+	            vertexShader: shader({
+	                content: simple_vs
+	            }),
+	            fragmentShader: shader({
+	                content: simple_fs
+	            })
+	        })
+	    });
+
 
 		return {
 			configure: function(glContext, canvasWidth, canvasHeight) {
@@ -532,37 +552,53 @@ define(["./crimild.core"], function(core) {
 					var vbo = primitive.getVertexBuffer();
 					var ibo = primitive.getIndexBuffer();
 
-					for (var e = 0; e < grc.getEffectCount(); e++) {
-						var currentEffect = grc.getEffectAt(e);
-						var program = currentEffect.getProgram();
-
-						this.enableProgram(program)
-
-		        		this.setMatrixUniforms(program);
-
-						this.enableVertexBuffer(vbo, program);
-						this.enableIndexBuffer(ibo, program);
-
-						if (grc.getLightCount() > 0) {
-							gl.uniform1i(program.renderCache.useLightingUniform, 1);
-							for (var l = 0; l < grc.getLightCount(); l++) {
-								this.enableLight(l, grc.getLightAt(l), program);
-							}
+					if (grc.getEffectCount() > 0) {
+						for (var e = 0; e < grc.getEffectCount(); e++) {
+		        			this.applyEffect(grc, primitive, vbo, ibo, grc.getEffectAt(e));
 						}
-						else {
-							gl.uniform1i(program.renderCache.useLightingUniform, 0);
-						}
-
-		        		var type = primitive.getType() == core.primitive.types.TRIANGLES ? gl.TRIANGLES : gl.LINES;
-		        		gl.drawElements(type, ibo.getIndexCount(), gl.UNSIGNED_SHORT, 0);
-
-		        		this.disableIndexBuffer(ibo);
-		        		this.disableVertexBuffer(vbo);
-
-		        		this.disableProgram(program);
+					}
+					else {
+						this.applyDefaultEffect(grc, primitive, vbo, ibo);
 					}
 				}
 			},
+
+			applyEffect: function(grc, primitive, vbo, ibo, currentEffect) {
+				var program = currentEffect.getProgram();
+
+				this.enableProgram(program)
+
+        		this.setMatrixUniforms(program);
+
+				this.enableVertexBuffer(vbo, program);
+				this.enableIndexBuffer(ibo, program);
+
+				if (grc.getLightCount() > 0) {
+					gl.uniform1i(program.renderCache.useLightingUniform, 1);
+					for (var l = 0; l < grc.getLightCount(); l++) {
+						this.enableLight(l, grc.getLightAt(l), program);
+					}
+				}
+				else {
+					gl.uniform1i(program.renderCache.useLightingUniform, 0);
+				}
+
+				gl.polygonOffset(4, 8);
+				gl.enable(gl.POLYGON_OFFSET_FILL);
+
+        		var type = primitive.getType() == core.primitive.types.TRIANGLES ? gl.TRIANGLES : gl.LINES;
+        		gl.drawElements(type, ibo.getIndexCount(), gl.UNSIGNED_SHORT, 0);
+
+        		this.disableIndexBuffer(ibo);
+        		this.disableVertexBuffer(vbo);
+
+        		this.disableProgram(program);
+			},
+
+			applyDefaultEffect: function(grc, primitive, vbo, ibo) {
+				this.applyEffect(grc, primitive, vbo, ibo, defaultEffect);
+			}
+
 		};
 	};
 

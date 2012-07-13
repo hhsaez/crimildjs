@@ -231,9 +231,9 @@ define(["crimild.core"], function(core) {
 		    vec3.cross(q, qvn, ww);
 		    
 		    var range = vec3.create();
-		    range[0] = x + d * (qvn[0] * Math.cos(v) + ww[0] * Math.sin(v));
-		    range[1] = y + d * (qvn[1] * Math.cos(v) + ww[1] * Math.sin(v));
-		    range[2] = z + d * ww[2] * Math.sin(v);
+		    range[0] = scale * (x + d * (qvn[0] * Math.cos(v) + ww[0] * Math.sin(v)));
+		    range[1] = scale * (y + d * (qvn[1] * Math.cos(v) + ww[1] * Math.sin(v)));
+		    range[2] = scale * (z + d * ww[2] * Math.sin(v));
 
 			return range;
 		};
