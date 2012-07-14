@@ -14,24 +14,27 @@
     <script data-main="../src/crimild" src="../lib/require.js"></script>
     <script id="shader-fs" type="x-shader/x-fragment">
         precision mediump float;
+            
+        varying vec2 vTextureCoord;
 
-        varying vec4 vColor;
+        uniform sampler2D uSampler;
         
         void main(void) {
-            gl_FragColor = vColor;
+            gl_FragColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
         }
     </script>
     <script id="shader-vs" type="x-shader/x-vertex">
         attribute vec3 aVertexPosition;
+        attribute vec2 aTextureCoord;
         
         uniform mat4 uMVMatrix;
         uniform mat4 uPMatrix;
-
-        varying vec4 vColor;
+        
+        varying vec2 vTextureCoord;
         
         void main(void) {
             gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-            vColor = vec4(aVertexPosition, 1.0);
+            vTextureCoord = aTextureCoord;
         }
     </script>
     <script type="text/javascript">
@@ -41,71 +44,20 @@
                     name: "scene",
                     nodes: [
                         crimild.core.geometryNode({
-                            name: "a klein bottle",
+                            name: "a cube",
                             primitives: [
-                                crimild.primitives.kleinBottlePrimitive({
-                                    type: crimild.core.primitive.types.LINES,
-                                    vertexFormat: crimild.core.vertexFormat(),
-                                    scale: -0.15
-                                })
+                                crimild.primitives.cubePrimitive()
                             ],
                             local: crimild.math.transformation({
-                                translate: [1.0, 0, 0]
+                                translate: [0, 0, 0]
                             }),
-                            components: [
-                                crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
-                            ]
                         }),
-                        crimild.core.geometryNode({
-                            name: "a cone",
-                            primitives: [
-                                crimild.primitives.conePrimitive({
-                                    type: crimild.core.primitive.types.TRIANGLES,
-                                    vertexFormat: crimild.core.vertexFormat()
-                                })
-                            ],
-                            local: crimild.math.transformation({
-                                translate: [-1, 0, 0]
-                            }),
-                            components: [
-                                crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
-                            ]
-                        }),
-                        crimild.core.geometryNode({
-                            name: "a sphere",
-                            primitives: [
-                                crimild.primitives.spherePrimitive({
-                                    type: crimild.core.primitive.types.LINES,
-                                    vertexFormat: crimild.core.vertexFormat()
-                                })
-                            ],
-                            local: crimild.math.transformation({
-                                translate: [-3.5, 0, 0]
-                            }),
-                            components: [
-                                crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
-                            ]
-                        }),
-                        crimild.core.geometryNode({
-                            name: "a treefoil knot",
-                            primitives: [
-                                crimild.primitives.treefoilKnotPrimitive({
-                                    type: crimild.core.primitive.types.TRIANGLES,
-                                    vertexFormat: crimild.core.vertexFormat()
-                                })
-                            ],
-                            local: crimild.math.transformation({
-                                translate: [3.5, 0, 0]
-                            }),
-                            components: [
-                                crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
-                            ]
-                        })
                     ],
                     local: crimild.math.transformation({
-                        translate: [0, 0, -9]
+                        translate: [0, 0, -5]
                     }),
                     components: [
+                        crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
                         crimild.rendering.renderComponent({
                             effects: [
                                 crimild.rendering.effect({
@@ -116,7 +68,14 @@
                                         fragmentShader: crimild.rendering.shader({
                                             scriptId: "shader-fs"
                                         })
-                                    })
+                                    }),
+                                    textures: [
+                                        crimild.rendering.texture({
+                                            image: crimild.rendering.image({
+                                                url: '../assets/crate.gif'
+                                            })
+                                        })
+                                    ]
                                 })
                             ]
                         })
@@ -148,12 +107,12 @@
         </div>
         <article class="markdown-body">
             <div>
-                <div style="float: right;"><a href="lighting.html">Next&nbsp;&gt;</a></div>
-                <div style="clear: all;"><a href="../index.html">&lt;&nbsp;Previous</a></div>
+                <div style="float: right;"><a href="../index.html">Next&nbsp;&gt;</a></div>
+                <div style="clear: all;"><a href="polygon_offset.html">&lt;&nbsp;Previous</a></div>
             </div>
-            <h3>Crimild JS Example: Shapes and colors</h3>
+            <h3>Crimild JS Example: Textures</h3>
 
-            <p>This example creates some parametric shapes, using a simple shader to given them color</p>
+            <p>This example shows how to load textures from remote files</p>
 
             <canvas id="webGLCanvas" style="border: solid 1px; margin-left: -5px;" width="640" height="480">
                 Your browser does not support WebGL
@@ -182,4 +141,3 @@
   
 </body>
 </html>
-

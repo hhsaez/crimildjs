@@ -135,6 +135,56 @@ define(["./crimild.core",
 		return that;
 	};
 
+	var image = function(spec) {
+		var that = {};
+		var contents = null;
+		var ready = false;
+
+		that.isReady = function() {
+			return ready;
+		};
+		
+		that.getContents = function() {
+			return contents;
+		};
+
+		if (spec && spec.url) {
+			contents = new Image();
+			contents.onload = function() {
+				console.log("" + spec.url + " loaded successfully");
+				ready = true;
+			};
+			contents.src = spec.url;
+		}
+
+		return that;
+	};
+
+	var texture = function(spec) {
+		var that = {};
+
+		var _image;
+
+		Object.defineProperties(that, {
+			image: {
+				get: function() {
+					return _image;
+				},
+				set: function(value) {
+					_image = value;
+				}
+			}
+		});
+
+		if (spec) {
+			if (spec.image) {
+				that.image = spec.image;
+			}
+		}
+
+		return that;
+	};
+
 	var shader = function(spec) {
 		var that = {};
 		var content;
@@ -201,10 +251,14 @@ define(["./crimild.core",
 	var effect = function(spec) {
 		var that = {};
 		var program = null;
+		var textures = [];
 
 		if (spec) {
 			if (spec.shaderProgram) {
 				program = spec.shaderProgram;
+			}
+			if (spec.textures) {
+				textures = spec.textures;
 			}
 		}
 
@@ -214,6 +268,18 @@ define(["./crimild.core",
 
 		that.getProgram = function() {
 			return program;
+		};
+
+		that.attachTexture = function(aTexture) {
+			textures.push(aTexture);
+		};
+
+		that.getTextureCount = function() {
+			return textures.length;
+		};
+
+		that.getTextureAt = function(index) {
+			return textures[index];
 		};
 
 		return that;
@@ -434,6 +500,15 @@ define(["./crimild.core",
         				vf.getVertexSizeInBytes(),
         				4 * vf.getNormalsOffset());
         		}
+
+        		if (vf.textureCoords > 0 && program.renderCache.vertexTextureCoordAttribute >= 0) {
+        			gl.vertexAttribPointer(program.renderCache.vertexTextureCoordAttribute,
+        				vf.textureCoords,
+        				gl.FLOAT,
+        				false,
+        				vf.getVertexSizeInBytes(),
+        				4 * vf.getTextureCoordsOffset());
+        		}
         	},
 
         	disableVertexBuffer: function() {
@@ -474,6 +549,36 @@ define(["./crimild.core",
 
         	},
 
+        	loadTexture: function(aTexture) {
+        		aTexture.renderCache = gl.createTexture();
+				gl.bindTexture(gl.TEXTURE_2D, aTexture.renderCache);
+                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, aTexture.image.getContents());
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+                gl.bindTexture(gl.TEXTURE_2D, null);
+        	},
+
+        	unloadTexture: function(aTexture) {
+
+        	},
+
+        	enableTexture: function(aTexture, program) {
+        		if (aTexture.image.isReady()) {
+	        		if (!aTexture.renderCache) {
+	        			this.loadTexture(aTexture);
+	        		}
+
+					gl.activeTexture(gl.TEXTURE0);
+	                gl.bindTexture(gl.TEXTURE_2D, aTexture.renderCache);
+	                gl.uniform1i(program.renderCache.samplerUniform, 0)
+        		}
+        	},
+
+        	disableTexture: function(aTexture) {
+        		gl.bindTexture(gl.TEXTURE_2D, null);
+        	},
+
         	compileShader: function(shader, shaderType) {
         		shader.renderCache = gl.createShader(shaderType);
         		gl.shaderSource(shader.renderCache, shader.getContent());
@@ -508,6 +613,11 @@ define(["./crimild.core",
         		if (program.renderCache.vertexNormalAttribute >= 0) {
         			gl.enableVertexAttribArray(program.renderCache.vertexNormalAttribute);
         		}
+
+        		program.renderCache.vertexTextureCoordAttribute = gl.getAttribLocation(program.renderCache, "aTextureCoord");
+        		if (program.renderCache.vertexTextureCoordAttribute >= 0) {
+                	gl.enableVertexAttribArray(program.renderCache.vertexTextureCoordAttribute);
+                }
         		
         		program.renderCache.pMatrixUniform = gl.getUniformLocation(program.renderCache, "uPMatrix");
         		program.renderCache.mvMatrixUniform = gl.getUniformLocation(program.renderCache, "uMVMatrix");
@@ -583,6 +693,10 @@ define(["./crimild.core",
 					gl.uniform1i(program.renderCache.useLightingUniform, 0);
 				}
 
+				for (var t = 0; t < currentEffect.getTextureCount(); t++) {
+					this.enableTexture(currentEffect.getTextureAt(t), program);
+				}
+
 				gl.polygonOffset(4, 8);
 				gl.enable(gl.POLYGON_OFFSET_FILL);
 
@@ -604,6 +718,8 @@ define(["./crimild.core",
 
 	return {
 		light: light,
+		image: image,
+		texture: texture,
 		shader: shader,
 		shaderProgram: shaderProgram,
 		effect: effect,
