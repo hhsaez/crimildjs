@@ -244,6 +244,29 @@ define(["crimild.core"], function(core) {
 		return that;
 	};
 
+	var cylinderPrimitive = function(spec) {
+		spec = spec || {}
+		var that = parametricPrimitive(spec);
+		var height = spec.height || 2.0;
+		var radius = spec.radius || 1.0;
+		var divisions = vec2.createFrom(20.0, 20.0);
+
+		that.evaluate = function(domain) {
+			var u = domain[0];
+			var v = domain[1];
+			var x = radius * Math.cos(u);
+			var y = height * (v - 0.5);
+			var z = radius * -Math.sin(u);
+
+			return vec3.createFrom(x, y, z);
+		};
+
+		that.setInterval({divisions: divisions, upperBound: vec2.createFrom(2.0 * Math.PI, 1.0), textureCount: vec2.createFrom(30, 20)});
+		that.generate();
+
+		return that;
+	}
+
 	var spherePrimitive = function(spec) {
 		var that = core.primitive(spec);
         var latitudeBands = 30;
@@ -371,6 +394,7 @@ define(["crimild.core"], function(core) {
 		conePrimitive: conePrimitive,
 		kleinBottlePrimitive: kleinBottlePrimitive,
 		treefoilKnotPrimitive: treefoilKnotPrimitive,
+		cylinderPrimitive: cylinderPrimitive,
 		spherePrimitive: spherePrimitive,
 		cubePrimitive: cubePrimitive
 	};

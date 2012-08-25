@@ -410,6 +410,7 @@ define(["./crimild.core",
 		var height = 0;
     	var mvMatrix = mat4.create();
     	var pMatrix = mat4.create();
+    	var clearColor = [0.5, 0.5, 0.5, 1.0]
 		var defaultEffect = effect({
 	        shaderProgram: shaderProgram({
 	            vertexShader: shader({
@@ -428,7 +429,7 @@ define(["./crimild.core",
 				width = canvasWidth;
 				height = canvasHeight;
 
-				gl.clearColor(0.5, 0.5, 0.5, 1.0);
+				this.setClearColor(clearColor);
 				gl.enable(gl.DEPTH_TEST);
 
 				this.onCameraViewportChange();
@@ -436,12 +437,23 @@ define(["./crimild.core",
 				this.onCameraFrameChange();
 			},
 
+			getClearColor: function() {
+				return clearColor;
+			},
+
+			setClearColor: function(color) {
+				this.clearColor = color;
+				if (gl) {
+ 					gl.clearColor(this.clearColor[0], this.clearColor[1], this.clearColor[2], this.clearColor[3]);
+ 				}
+			},
+
 			onCameraViewportChange: function() {
 				gl.viewport(0, 0, width, height);
 			},
 
 			onCameraFrustumChange: function() {
-				mat4.perspective(45, width / height, 0.1, 100.0, pMatrix);
+				mat4.perspective(45, width / height, 0.1, 1000.0, pMatrix);
 			},
 
 			onCameraFrameChange: function() {
