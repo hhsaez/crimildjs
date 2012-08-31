@@ -45,6 +45,13 @@
                                             })
                                         ]
                                     })
+                                ],
+                                lights: [
+                                    crimild.rendering.light({
+                                        diffuse: [0.75, 0.75, 0.75],
+                                        ambient: [0.25, 0.25, 0.25],
+                                        position: [5, 0.25, 3.0, 1.0]
+                                    })
                                 ]
                             })
                         ]
@@ -76,12 +83,12 @@
         </div>
         <article class="markdown-body">
             <div>
-                <div style="float: right;"><a href="texture_lighting.html">Next&nbsp;&gt;</a></div>
-                <div style="clear: all;"><a href="polygon_offset.html">&lt;&nbsp;Previous</a></div>
+                <div style="float: right;"><a href="../index.html">Next&nbsp;&gt;</a></div>
+                <div style="clear: all;"><a href="textures.html">&lt;&nbsp;Previous</a></div>
             </div>
-            <h3>Crimild JS Example: Textures</h3>
+            <h3>Crimild JS Example: Textures &amp; Lighting</h3>
 
-            <p>This example shows how to load textures from remote files</p>
+            <p>This example shows how to combine textures and lighting</p>
 
             <canvas id="webGLCanvas" style="border: solid 1px; margin-left: -5px;" width="640" height="480">
                 Your browser does not support WebGL

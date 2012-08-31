@@ -1,6 +1,7 @@
 define(["./crimild.core",
-	"text!../shaders/simple.vert", "text!../shaders/simple.frag"], 
-	function(core, simple_vs, simple_fs) {
+	"text!../shaders/simple.vert", "text!../shaders/simple.frag",
+	"text!../shaders/ubbershader.vert", "text!../shaders/ubbershader.frag"], 
+	function(core, simple_vs, simple_fs, ubbershader_vs, ubbershader_fs) {
 	
 	"use strict";
 
@@ -19,7 +20,7 @@ define(["./crimild.core",
 					return _ambient;
 				},
 				set: function(value) {
-					_ambientColor = value;
+					_ambient = value;
 				}
 			},
 			diffuse: {
@@ -451,7 +452,14 @@ define(["./crimild.core",
 	            })
 	        })
 	    });
-
+		var ubbershaderProgram = shaderProgram({
+			vertexShader: shader({
+				content: ubbershader_vs
+			}),
+			fragmentShader: shader({
+				content: ubbershader_fs
+			})
+		});
 
 		return {
 			configure: function(glContext, canvasWidth, canvasHeight) {
@@ -525,31 +533,55 @@ define(["./crimild.core",
 
         		var vf = vbo.getVertexFormat();
 
-        		if (vf.positions > 0) {
-	        		gl.vertexAttribPointer(program.renderCache.vertexPositionAttribute, 
-	        			vf.positions, 
-	        			gl.FLOAT, 
-	        			false, 
-	        			vf.getVertexSizeInBytes(), 
-	        			4 * vf.getPositionsOffset());
+        		// allways enable positions array 
+        		gl.vertexAttribPointer(program.renderCache.vertexPositionAttribute, 
+        			vf.positions, 
+        			gl.FLOAT, 
+        			false, 
+        			vf.getVertexSizeInBytes(), 
+        			4 * vf.getPositionsOffset());
+
+        		if (program.renderCache.vertexNormalAttribute >= 0) {
+        			if (vf.normals > 0) {
+	        			gl.vertexAttribPointer(program.renderCache.vertexNormalAttribute,
+	        				vf.normals,
+	        				gl.FLOAT,
+	        				false,
+	        				vf.getVertexSizeInBytes(),
+	        				4 * vf.getNormalsOffset());
+	        		}
+	        		else {
+	        			// fallback: the shader requires normals but none is provided by
+	        			// the geometry. use positions instead
+		        		gl.vertexAttribPointer(program.renderCache.vertexNormalAttribute, 
+		        			vf.positions, 
+		        			gl.FLOAT, 
+		        			false, 
+		        			vf.getVertexSizeInBytes(), 
+		        			4 * vf.getPositionsOffset());
+	        		}
         		}
 
-        		if (vf.normals > 0 && program.renderCache.vertexNormalAttribute >= 0) {
-        			gl.vertexAttribPointer(program.renderCache.vertexNormalAttribute,
-        				vf.normals,
-        				gl.FLOAT,
-        				false,
-        				vf.getVertexSizeInBytes(),
-        				4 * vf.getNormalsOffset());
-        		}
-
-        		if (vf.textureCoords > 0 && program.renderCache.vertexTextureCoordAttribute >= 0) {
-        			gl.vertexAttribPointer(program.renderCache.vertexTextureCoordAttribute,
-        				vf.textureCoords,
-        				gl.FLOAT,
-        				false,
-        				vf.getVertexSizeInBytes(),
-        				4 * vf.getTextureCoordsOffset());
+        		if (program.renderCache.vertexTextureCoordAttribute >= 0) {
+        			if (vf.textureCoords > 0) {
+	        			gl.vertexAttribPointer(program.renderCache.vertexTextureCoordAttribute,
+	        				vf.textureCoords,
+	        				gl.FLOAT,
+	        				false,
+	        				vf.getVertexSizeInBytes(),
+	        				4 * vf.getTextureCoordsOffset());
+	        		}
+	        		else {
+	        			// fallback: the shader requires texture coordinates but none was 
+	        			// provided by the geometry. use positions instead, although this
+	        			// will end up in an undefined result 
+		        		gl.vertexAttribPointer(program.renderCache.vertexTextureCoordAttribute, 
+		        			vf.positions, 
+		        			gl.FLOAT, 
+		        			false, 
+		        			vf.getVertexSizeInBytes(), 
+		        			4 * vf.getPositionsOffset());
+	        		}
         		}
         	},
 
@@ -672,6 +704,8 @@ define(["./crimild.core",
                 program.renderCache.lightShininessUniform = gl.getUniformLocation(program.renderCache, "uLightShininess");
                 program.renderCache.lightPositionUniform = gl.getUniformLocation(program.renderCache, "uLightPosition");
 
+                program.renderCache.useTexturesUniform = gl.getUniformLocation(program.renderCache, "uUseTextures");
+
                 program.renderCache.tintUniform = gl.getUniformLocation(program.renderCache, "uTint");
 
         		program.renderCache.renderer = this;
@@ -720,6 +754,9 @@ define(["./crimild.core",
 
 			applyEffect: function(grc, primitive, vbo, ibo, currentEffect) {
 				var program = currentEffect.getProgram();
+				if (!program) {
+					program = ubbershaderProgram;
+				}
 
 				this.enableProgram(program)
 
@@ -736,17 +773,31 @@ define(["./crimild.core",
 				}
 
 				if (grc.getLightCount() > 0) {
-					gl.uniform1i(program.renderCache.useLightingUniform, 1);
+					if (program.renderCache.useLightingUniform) {
+						gl.uniform1i(program.renderCache.useLightingUniform, 1);
+					}
 					for (var l = 0; l < grc.getLightCount(); l++) {
 						this.enableLight(l, grc.getLightAt(l), program);
 					}
 				}
 				else {
-					gl.uniform1i(program.renderCache.useLightingUniform, 0);
+					if (program.renderCache.useLightingUniform) {
+						gl.uniform1i(program.renderCache.useLightingUniform, 0);
+					}
 				}
 
-				for (var t = 0; t < currentEffect.getTextureCount(); t++) {
-					this.enableTexture(currentEffect.getTextureAt(t), program);
+				if (currentEffect.getTextureCount() > 0) {
+					if (program.renderCache.useTexturesUniform) {
+						gl.uniform1i(program.renderCache.useTexturesUniform, 1);
+					}
+					for (var t = 0; t < currentEffect.getTextureCount(); t++) {
+						this.enableTexture(currentEffect.getTextureAt(t), program);
+					}
+				}
+				else {
+					if (program.renderCache.useTexturesUniform) {
+						gl.uniform1i(program.renderCache.useTexturesUniform, 0);
+					}
 				}
 
 				gl.polygonOffset(4, 8);
