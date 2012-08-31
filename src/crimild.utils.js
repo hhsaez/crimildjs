@@ -1,4 +1,4 @@
-define(["crimild.core"], function(core) {
+define(["crimild.core", "crimild.rendering"], function(core, rendering) {
 	"use strict";
 
 	var printScene = function(spec) {
@@ -34,15 +34,53 @@ define(["crimild.core"], function(core) {
 	};
 
 	var assetManager = function(spec) {
+		spec = spec || {};
 		var that = {};
-		var assets = [];
+		var imageSuccessCount = 0;
+		var imageErrorCount = 0;
+		var imageQueue = [];
+		var imageCache = {};
 
-		that.addAssetURL = function(assetURL) {
-
+		that.queueImage = function(imageUrl) {
+			imageQueue.push(imageUrl);
 		};
 
-		that.load = function(callback) {
-			callback();
+		that.loadAllImages = function(callback) {
+			for (var i = 0; i < imageQueue.length; i++) {
+				var url = imageQueue[i];
+				var image = new Image();
+				image.addEventListener("load", function() {
+					imageSuccessCount += 1;
+					if (that.isDone()) {
+						callback();
+					}
+				}, false);
+				image.addEventListener("error", function() {
+					imageErrorCount += 1;
+					if (that.isDone()) {
+						callback();
+					}
+				}, false);
+				image.src = url;
+				imageCache[url] = rendering.image({contents: image});
+			}
+		};
+
+		that.isDone = function() {
+			return (imageQueue.length === imageSuccessCount + imageErrorCount);
+		}
+
+		that.loadAll = function(callback) {
+			if (imageQueue.length === 0) {
+				callback();
+			}
+			else {
+				that.loadAllImages(callback);
+			}
+		};
+
+		that.getImage = function(url) {
+			return imageCache[url];
 		};
 
 		return that;
@@ -63,6 +101,7 @@ define(["crimild.core"], function(core) {
 
 	return {
 		getTextFromElement: getTextFromElement,
+		assetManager: assetManager,
 		printScene: printScene
 	}
 

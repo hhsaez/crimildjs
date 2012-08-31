@@ -41,6 +41,42 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 		return dest;
 	};
 
+	var findRealRoots = function(a, b, c) {
+		var discriminant = b * b - 4 * a * c;
+		if (discriminant < 0) {
+			return [];
+		}
+		else {
+			var s = -b / (2 * a);
+			if (discriminant == 0) {
+				return [s];
+			}
+			else {
+				var sqrtDiscriminant = Math.sqrt(discriminant) / a;
+				var t0 = s + sqrtDiscriminant;
+				var t1 = s - sqrtDiscriminant;
+				return [t0, t1];
+			}
+		}
+	};
+
+	var testIntersectionSphereRay = function(center, radius, origin, direction) {
+		var dx = origin[0] - center[0];
+		var dy = origin[1] - center[1];
+		var dz = origin[2] - center[2];
+		var a = direction[0] * direction[0] + direction[1] * direction[1] + direction[2] * direction[2];
+		var b = 2 * (dx * direction[0] + dy * direction[1] + dz * direction[2]);
+		var c = dx * dx + dy * dy + dz * dz - radius * radius;
+
+		var roots = findRealRoots(a, b, c);
+		if (roots.length > 0) {
+			var maxRoot = Math.max(roots[0], roots[1]);
+			return maxRoot > 0.0;
+		}
+
+		return false;
+	};
+
 	var transformation = function(spec) {
 		var that = {};
 
@@ -196,6 +232,8 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 	return {
 		transformation: transformation,
 		boundingVolume: boundingVolume,
+		findRealRoots: findRealRoots,
+		testIntersectionSphereRay: testIntersectionSphereRay
 	}
 
 });

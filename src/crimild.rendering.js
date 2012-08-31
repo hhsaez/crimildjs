@@ -136,6 +136,7 @@ define(["./crimild.core",
 	};
 
 	var image = function(spec) {
+		spec = spec || {}
 		var that = {};
 		var contents = null;
 		var ready = false;
@@ -148,19 +149,23 @@ define(["./crimild.core",
 			return contents;
 		};
 
-		if (spec && spec.url) {
+		if (spec.url) {
 			contents = new Image();
 			contents.onload = function() {
-				console.log("" + spec.url + " loaded successfully");
 				ready = true;
 			};
 			contents.src = spec.url;
+		}
+		else if (spec.contents) {
+			contents = spec.contents;
+			ready = true;
 		}
 
 		return that;
 	};
 
 	var texture = function(spec) {
+		spec = spec || {}
 		var that = {};
 
 		var _image;
@@ -176,10 +181,8 @@ define(["./crimild.core",
 			}
 		});
 
-		if (spec) {
-			if (spec.image) {
-				that.image = spec.image;
-			}
+		if (spec.image) {
+			that.image = spec.image;
 		}
 
 		return that;
@@ -290,6 +293,34 @@ define(["./crimild.core",
 		var effects = [];
 		var lights = [];
 
+		that.propagateFromRoot = function(aNode) {
+			if (aNode.getParent()) {
+				that.propagateFromRoot(aNode.getParent());
+			}
+
+			var grc = aNode.getComponent("render");
+			var i = 0;
+			if (grc) {
+				for (i = 0; i < grc.getEffectCount(); i++) {
+					effects.push(grc.getEffectAt(i));
+				}
+				for (i = 0; i < grc.getLightCount(); i++) {
+					lights.push(grc.getLightAt(i));
+				}
+			}
+		}
+
+		that.traverse = function(aNode) {
+			effects = [];
+			lights = [];
+
+			if (aNode.getParent()) {
+				that.propagateFromRoot(aNode.getParent());
+			}
+
+			aNode.accept(that);
+		};
+
 		that.visitGroupNode = function(group) {
 			var i;
 			var grc = group.getComponent("render");
@@ -298,7 +329,6 @@ define(["./crimild.core",
 			var tempLights = lights.slice();
 
 			if (grc) {
-				var temp = []
 				for (i = 0; i < grc.getEffectCount(); i++) {
 					effects.push(grc.getEffectAt(i));
 				}
@@ -642,6 +672,8 @@ define(["./crimild.core",
                 program.renderCache.lightShininessUniform = gl.getUniformLocation(program.renderCache, "uLightShininess");
                 program.renderCache.lightPositionUniform = gl.getUniformLocation(program.renderCache, "uLightPosition");
 
+                program.renderCache.tintUniform = gl.getUniformLocation(program.renderCache, "uTint");
+
         		program.renderCache.renderer = this;
         	},
 
@@ -667,22 +699,23 @@ define(["./crimild.core",
         		geometry.world.toMat4(mvMatrix);
 
         		var grc = geometry.getComponent("geometryRender");
+        		if (grc) {
+					for (var p = 0; p < geometry.getPrimitiveCount(); p++) {
+						var primitive = geometry.getPrimitiveAt(p);
 
-				for (var p = 0; p < geometry.getPrimitiveCount(); p++) {
-					var primitive = geometry.getPrimitiveAt(p);
+						var vbo = primitive.getVertexBuffer();
+						var ibo = primitive.getIndexBuffer();
 
-					var vbo = primitive.getVertexBuffer();
-					var ibo = primitive.getIndexBuffer();
-
-					if (grc.getEffectCount() > 0) {
-						for (var e = 0; e < grc.getEffectCount(); e++) {
-		        			this.applyEffect(grc, primitive, vbo, ibo, grc.getEffectAt(e));
+						if (grc.getEffectCount() > 0) {
+							for (var e = 0; e < grc.getEffectCount(); e++) {
+			        			this.applyEffect(grc, primitive, vbo, ibo, grc.getEffectAt(e));
+							}
+						}
+						else {
+							this.applyDefaultEffect(grc, primitive, vbo, ibo);
 						}
 					}
-					else {
-						this.applyDefaultEffect(grc, primitive, vbo, ibo);
-					}
-				}
+        		}
 			},
 
 			applyEffect: function(grc, primitive, vbo, ibo, currentEffect) {
@@ -694,6 +727,13 @@ define(["./crimild.core",
 
 				this.enableVertexBuffer(vbo, program);
 				this.enableIndexBuffer(ibo, program);
+
+				if (grc.tint) {
+					gl.uniform1f(program.renderCache.tintUniform, grc.tint);
+				}
+				else {
+					gl.uniform1f(program.renderCache.tintUniform, 0.0);
+				}
 
 				if (grc.getLightCount() > 0) {
 					gl.uniform1i(program.renderCache.useLightingUniform, 1);

@@ -136,8 +136,6 @@ define(["./crimild.core", "./crimild.rendering", "../lib/webgl-utils"], function
 			simulator.getTasks().updateAll();
 		};
 
-		console.log("Starting " + core.getFullVersion());
-
 		simulator.getTasks().startTask(videoTask({priority: 0}));
 		simulator.getTasks().startTask(updateSceneTask({priority: 100}));
 		simulator.getTasks().startTask(renderSceneTask({priority: 200}));

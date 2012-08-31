@@ -40,50 +40,53 @@
     <script type="text/javascript">
         function initCrimild(canvasId) {
             require(["crimild"], function(crimild) {
-                var scene = crimild.core.groupNode({
-                    name: "scene",
-                    nodes: [
-                        crimild.core.geometryNode({
-                            name: "a cube",
-                            primitives: [
-                                crimild.primitives.cubePrimitive()
-                            ],
-                            local: crimild.math.transformation({
-                                translate: [0, 0, 0]
+                var assetManager = crimild.utils.assetManager();
+                assetManager.queueImage("../assets/crate.gif");
+                assetManager.loadAll(function() {
+                    var scene = crimild.core.groupNode({
+                        name: "scene",
+                        nodes: [
+                            crimild.core.geometryNode({
+                                name: "a cube",
+                                primitives: [
+                                    crimild.primitives.cubePrimitive()
+                                ],
+                                local: crimild.math.transformation({
+                                    translate: [0, 0, 0]
+                                }),
                             }),
+                        ],
+                        local: crimild.math.transformation({
+                            translate: [0, 0, -5]
                         }),
-                    ],
-                    local: crimild.math.transformation({
-                        translate: [0, 0, -5]
-                    }),
-                    components: [
-                        crimild.components.rotationComponent({angle: 0.01, axis: [0.5, 0, 1]}),
-                        crimild.rendering.renderComponent({
-                            effects: [
-                                crimild.rendering.effect({
-                                    shaderProgram: crimild.rendering.shaderProgram({
-                                        vertexShader: crimild.rendering.shader({
-                                            scriptId: "shader-vs"
-                                        }),
-                                        fragmentShader: crimild.rendering.shader({
-                                            scriptId: "shader-fs"
-                                        })
-                                    }),
-                                    textures: [
-                                        crimild.rendering.texture({
-                                            image: crimild.rendering.image({
-                                                url: '../assets/crate.gif'
+                        components: [
+                            crimild.components.rotationComponent({angle: 0.01, axis: [0.5, 0, 1]}),
+                            crimild.rendering.renderComponent({
+                                effects: [
+                                    crimild.rendering.effect({
+                                        shaderProgram: crimild.rendering.shaderProgram({
+                                            vertexShader: crimild.rendering.shader({
+                                                scriptId: "shader-vs"
+                                            }),
+                                            fragmentShader: crimild.rendering.shader({
+                                                scriptId: "shader-fs"
                                             })
-                                        })
-                                    ]
-                                })
-                            ]
-                        })
-                    ]
-                });
+                                        }),
+                                        textures: [
+                                            crimild.rendering.texture({
+                                                image: assetManager.getImage("../assets/crate.gif")
+                                            })
+                                        ]
+                                    })
+                                ]
+                            })
+                        ]
 
-                var canvas = document.getElementById(canvasId);
-                crimild.simulation.run({canvas: canvas, scene: scene});
+                    });
+
+                    var canvas = document.getElementById(canvasId);
+                    crimild.simulation.run({canvas: canvas, scene: scene});
+                })
             });
         }
     </script>
