@@ -78,6 +78,7 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 	};
 
 	var transformation = function(spec) {
+		spec = spec || {}
 		var that = {};
 
 		var _translate = vec3.create([0, 0, 0]);
@@ -130,11 +131,9 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 			}
 		});
 
-		if (spec) {
-			if (spec.translate) { that.translate = spec.translate; }
-			if (spec.rotate) { that.rotate = spec.rotate; }
-			if (spec.scale) { that.scale = spec.scale; }
-		}
+		if (spec.translate) { that.translate = spec.translate; }
+		if (spec.rotate) { that.rotate = spec.rotate; }
+		if (spec.scale) { that.scale = spec.scale; }
 
 		that.isIdentity = function() {
 			return _identity;
@@ -191,6 +190,7 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 				quat4.multiplyVec3(a.rotate, b.translate, tempVec3);
 				vec3.add(tempVec3, a.translate, _translate);
 
+				quat4.identity(_rotate);
 				quat4.multiply(a.rotate, b.rotate, _rotate);
 
 				_scale = a.scale * b.scale;

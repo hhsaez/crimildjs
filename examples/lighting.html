@@ -75,7 +75,7 @@
                                 })
                             ],
                             local: crimild.math.transformation({
-                                translate: [5, 0.25, 3.0]
+                                translate: [5, 0.25, 5.0]
                             })
                         }),
                         crimild.core.geometryNode({
@@ -86,6 +86,9 @@
                                     vertexFormat: crimild.core.vertexFormat({normals: 3}),
                                     scale: 0.15
                                 })
+                            ],
+                            components: [
+                                crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
                             ]
                         })
                     ],
@@ -93,7 +96,6 @@
                         translate: [0, 0, -5],
                     }),
                     components: [
-                        crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
                         crimild.rendering.renderComponent({
                             effects: [
                                 crimild.rendering.effect({

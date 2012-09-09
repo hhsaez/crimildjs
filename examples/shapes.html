@@ -12,28 +12,6 @@
     <meta name="description" content="WebGL based 3D game framework">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <script data-main="../src/crimild" src="../lib/require.js"></script>
-    <script id="shader-fs" type="x-shader/x-fragment">
-        precision mediump float;
-
-        varying vec4 vColor;
-        
-        void main(void) {
-            gl_FragColor = vColor;
-        }
-    </script>
-    <script id="shader-vs" type="x-shader/x-vertex">
-        attribute vec3 aVertexPosition;
-        
-        uniform mat4 uMVMatrix;
-        uniform mat4 uPMatrix;
-
-        varying vec4 vColor;
-        
-        void main(void) {
-            gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-            vColor = vec4(aVertexPosition, 1.0);
-        }
-    </script>
     <script type="text/javascript">
         function initCrimild(canvasId) {
             require(["crimild"], function(crimild) {
@@ -104,23 +82,7 @@
                     ],
                     local: crimild.math.transformation({
                         translate: [0, 0, -9]
-                    }),
-                    components: [
-                        crimild.rendering.renderComponent({
-                            effects: [
-                                crimild.rendering.effect({
-                                    shaderProgram: crimild.rendering.shaderProgram({
-                                        vertexShader: crimild.rendering.shader({
-                                            scriptId: "shader-vs"
-                                        }),
-                                        fragmentShader: crimild.rendering.shader({
-                                            scriptId: "shader-fs"
-                                        })
-                                    })
-                                })
-                            ]
-                        })
-                    ]
+                    })
                 });
 
                 var canvas = document.getElementById(canvasId);
