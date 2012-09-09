@@ -499,6 +499,15 @@ define(["./crimild.core",
     	var mvMatrix = mat4.create();
     	var pMatrix = mat4.create();
     	var clearColor = [0.5, 0.5, 0.5, 1.0]
+		var ubbershaderProgram = shaderProgram({
+			vertexShader: shader({
+				content: ubbershader_vs
+			}),
+			fragmentShader: shader({
+				content: ubbershader_fs
+			})
+		});
+
 		var defaultEffect = effect({
 	        shaderProgram: shaderProgram({
 	            vertexShader: shader({
@@ -509,15 +518,7 @@ define(["./crimild.core",
 	            })
 	        })
 	    });
-		var ubbershaderProgram = shaderProgram({
-			vertexShader: shader({
-				content: ubbershader_vs
-			}),
-			fragmentShader: shader({
-				content: ubbershader_fs
-			})
-		});
-
+	    
 		return {
 			configure: function(glContext, canvasWidth, canvasHeight) {
 				gl = glContext;

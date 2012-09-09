@@ -12,52 +12,6 @@
     <meta name="description" content="WebGL based 3D game framework">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <script data-main="../src/crimild" src="../lib/require.js"></script>
-    <script id="shader-fs" type="x-shader/x-fragment">
-        precision mediump float;
-
-        uniform bool uUseLighting;
-        uniform vec4 uLightPosition;
-        uniform vec3 uLightAmbient;
-        uniform vec3 uLightDiffuse;
-        uniform vec3 uLightSpecular;
-        uniform float uLightShininess;
-
-        varying vec3 vEyespaceNormal;
-        
-        void main(void) {
-            if (!uUseLighting) {
-                gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-            }
-            else {
-                vec3 N = normalize(vEyespaceNormal);
-                vec3 L = normalize(uLightPosition.xyz);
-                vec3 E = vec3(0, 0, 1);
-                vec3 H = normalize(L + E);
-
-                float df = max(0.0, dot(N, L));
-                float sf = max(0.0, dot(N, H));
-                sf = pow(sf, uLightShininess);
-
-                vec3 color = uLightAmbient + df * uLightDiffuse + sf * uLightSpecular;
-                gl_FragColor = vec4(color, 1);
-            }
-        }
-    </script>
-    <script id="shader-vs" type="x-shader/x-vertex">
-        attribute vec3 aVertexPosition;
-        attribute vec3 aVertexNormal;
-
-        uniform mat4 uMVMatrix;
-        uniform mat4 uPMatrix;
-        uniform mat3 uNMatrix;
-
-        varying vec3 vEyespaceNormal;
-
-        void main(void) {
-            vEyespaceNormal = uNMatrix * aVertexNormal;
-            gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-        }
-    </script>
     <script id="shader-polygon-fs" type="x-shader/x-fragment">
         precision mediump float;
 
@@ -81,40 +35,33 @@
                 var scene = crimild.core.groupNode({
                     name: "scene",
                     nodes: [
+                        crimild.core.node({
+                            name: "a light",
+                            components: [
+                                crimild.rendering.lightingComponent({
+                                    lights: [
+                                        crimild.rendering.light({
+                                            diffuse: [0.75, 0.5, 0.25],
+                                        })
+                                    ]
+                                })
+                            ],
+                            local: crimild.math.transformation({
+                                translate: [5, 0.25, 3.0]
+                            })
+                        }),
                         crimild.core.geometryNode({
-                            name: "a cone",
+                            name: "solid treefoil",
                             primitives: [
                                 crimild.primitives.treefoilKnotPrimitive({
                                     type: crimild.core.primitive.types.TRIANGLES,
                                     vertexFormat: crimild.core.vertexFormat({normals: 3}),
                                     scale: 2.0
                                 })
-                            ],
-                            components: [
-                                crimild.rendering.renderComponent({
-                                    effects: [
-                                        crimild.rendering.effect({
-                                            shaderProgram: crimild.rendering.shaderProgram({
-                                                vertexShader: crimild.rendering.shader({
-                                                    scriptId: "shader-vs"
-                                                }),
-                                                fragmentShader: crimild.rendering.shader({
-                                                    scriptId: "shader-fs"
-                                                })
-                                            })
-                                        })
-                                    ],
-                                    lights: [
-                                        crimild.rendering.light({
-                                            diffuse: [0.75, 0.5, 0.25],
-                                            position: [5, 0.25, 3.0, 1.0]
-                                        })
-                                    ]
-                                })
                             ]
                         }),
                         crimild.core.geometryNode({
-                            name: "a cone",
+                            name: "wireframe treefoil",
                             primitives: [
                                 crimild.primitives.treefoilKnotPrimitive({
                                     type: crimild.core.primitive.types.LINES,
