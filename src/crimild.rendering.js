@@ -362,17 +362,12 @@ define(["./crimild.core",
 			else {
 				// no parent. this is the root node
 				aNode.perform(fetchLights({lights: lights}));
-				console.log(lights);
 			}
 
 			var grc = aNode.getComponent("render");
-			var i = 0;
 			if (grc) {
-				for (i = 0; i < grc.getEffectCount(); i++) {
+				for (var i = 0; i < grc.getEffectCount(); i++) {
 					effects.push(grc.getEffectAt(i));
-				}
-				for (i = 0; i < grc.getLightCount(); i++) {
-					lights.push(grc.getLightAt(i));
 				}
 			}
 		}
@@ -518,7 +513,7 @@ define(["./crimild.core",
 	            })
 	        })
 	    });
-	    
+
 		return {
 			configure: function(glContext, canvasWidth, canvasHeight) {
 				gl = glContext;
