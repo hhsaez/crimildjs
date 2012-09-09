@@ -68,19 +68,33 @@ define(["./crimild.core",
 		return that;
 	};
 
-	var renderComponent = function(spec) {
-		var that = core.nodeComponent({name: "render"});
-		var effects = [];
-		var lights = [];
+	var lightingComponent = function(spec) {
+		spec = spec || {}
+		var that = core.nodeComponent({name: "lighting"});
+		var lights = spec.lights || [];
 
-		if (spec) {
-			if (spec.effects) {
-				effects = spec.effects;
+		that.getLightCount = function() {
+			return lights.length;
+		};
+
+		that.getLightAt = function(index) {
+			return lights[index];
+		};
+
+		that.update = function() {
+			for (var i in lights) {
+				lights[i].position = that.node.world.translate;
 			}
-			if (spec.lights) {
-				lights = spec.lights;
-			}
-		}
+		};
+
+		return that;
+	};
+
+	// TODO: Rename this to MaterialComponent
+	var renderComponent = function(spec) {
+		spec = spec || {}
+		var that = core.nodeComponent({name: "render"});
+		var effects = spec.effects || [];
 
 		that.getEffectCount = function() {
 			return effects.length;
@@ -90,17 +104,10 @@ define(["./crimild.core",
 			return effects[index];
 		};
 
-		that.getLightCount = function() {
-			return lights.length;
-		};
-
-		that.getLightAt = function(index) {
-			return lights[index];
-		}
-
 		return that;
 	};
 
+	// TODO: Rename this to renderComponent
 	var geometryRenderComponent = function(spec) {
 		var that = core.nodeComponent({name: "geometryRender"});
 		var effects = [];
@@ -252,6 +259,7 @@ define(["./crimild.core",
 		return that;
 	};
 
+	// todo: rename this to Material
 	var effect = function(spec) {
 		var that = {};
 		var program = null;
@@ -289,6 +297,59 @@ define(["./crimild.core",
 		return that;
 	}
 
+	/*
+		This visitor traverses a scene fetching all lights attached
+		to nodes. 
+
+		This is a very expensive operation and should be seldom used.
+		Usualy, this visitor is only invoked during a render state update
+	*/
+	var fetchLights = function(spec) {
+		spec = spec || {}
+		var that = core.nodeVisitor(spec);
+		var lights = spec.lights || [];
+
+		that.traverse = function(node) {
+			node.accept(that);
+		};
+
+		that.visitNode = function(node) {
+			var lc = node.getComponent("lighting");
+			if (lc) {
+				for (var i = 0; i < lc.getLightCount(); i++) {
+					lights.push(lc.getLightAt(i));
+				}
+			}
+		};
+
+		that.visitGroupNode = function(group) {
+			that.visitNode(group);
+			for (var i = 0; i < group.getNodeCount(); i++) {
+				group.getNodeAt(i).accept(this);
+			}
+		};
+
+		that.visitGeometryNode = function(geometry) {
+			that.visitNode(geometry);
+		};
+
+		that.getLightCount = function() {
+			return lights.length;
+		}
+
+		that.getLightAt = function(index) {
+			return lights[index];
+		};
+
+		return that;
+	};
+
+	/*
+		Updates a render state of a scene or branch
+
+		This is a very expensive operation since it involves
+		traversing a scene more than once. Use it only when needed
+	*/
 	var renderStateUpdate = function(spec) {
 		var that = core.nodeVisitor(spec);
 		var effects = [];
@@ -297,6 +358,11 @@ define(["./crimild.core",
 		that.propagateFromRoot = function(aNode) {
 			if (aNode.getParent()) {
 				that.propagateFromRoot(aNode.getParent());
+			}
+			else {
+				// no parent. this is the root node
+				aNode.perform(fetchLights({lights: lights}));
+				console.log(lights);
 			}
 
 			var grc = aNode.getComponent("render");
@@ -318,23 +384,22 @@ define(["./crimild.core",
 			if (aNode.getParent()) {
 				that.propagateFromRoot(aNode.getParent());
 			}
+			else {
+				// no parent. this is the root node
+				aNode.perform(fetchLights({lights: lights}));
+			}
 
 			aNode.accept(that);
 		};
 
 		that.visitGroupNode = function(group) {
 			var i;
-			var grc = group.getComponent("render");
-
 			var tempEffects = effects.slice();
-			var tempLights = lights.slice();
+			var grc = group.getComponent("render");
 
 			if (grc) {
 				for (i = 0; i < grc.getEffectCount(); i++) {
 					effects.push(grc.getEffectAt(i));
-				}
-				for (i = 0; i < grc.getLightCount(); i++) {
-					lights.push(grc.getLightAt(i));
 				}
 			}
 
@@ -344,7 +409,6 @@ define(["./crimild.core",
 			}
 
 			effects = tempEffects;
-			lights = tempLights;
 		};
 
 		that.visitGeometryNode = function(geometry) {
@@ -357,16 +421,10 @@ define(["./crimild.core",
 			var rc = geometry.getComponent("render");
 
 			var tempEffects = effects.slice();
-			var tempLights = lights.slice();
 
 			if (rc) {
-				var temp = []
-				var i;
-				for (i = 0; i < rc.getEffectCount(); i++) {
+				for (var i = 0; i < rc.getEffectCount(); i++) {
 					effects.push(rc.getEffectAt(i));
-				}
-				for (i = 0; i < rc.getLightCount(); i++) {
-					lights.push(rc.getLightAt(i));
 				}
 			}
 
@@ -376,7 +434,6 @@ define(["./crimild.core",
 			});
 
 			effects = tempEffects;
-			lights = tempLights;
 		};
 
 		return that;
@@ -821,6 +878,7 @@ define(["./crimild.core",
 
 	return {
 		light: light,
+		lightingComponent: lightingComponent,
 		image: image,
 		texture: texture,
 		shader: shader,

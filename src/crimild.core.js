@@ -23,10 +23,11 @@ define(["./crimild.math"], function(math) {
 	};
 
 	var node = function(spec) {
+		spec = spec || {}
 		var that = object(spec);
-		var parent = null;
+		var parent = spec.parent || null;
 
-		var _local = math.transformation();
+		var _local = spec.local || math.transformation();
 		var _world = math.transformation();
 		var _components = {};
 
@@ -73,13 +74,15 @@ define(["./crimild.math"], function(math) {
 			return _components[componentName];
 		};
 
-		if (spec) {
-			if (spec.parent) { parent = spec.parent }; 
-			if (spec.local) { that.local = spec.local; }
-			if (spec.components) {
-				for (var i in spec.components) {
-					that.attachComponent(spec.components[i]);
-				}
+		that.updateAllComponents = function() {
+			for (var c in _components) {
+				_components[c].update();
+			}
+		}
+
+		if (spec.components) {
+			for (var i in spec.components) {
+				that.attachComponent(spec.components[i]);
 			}
 		}
 
@@ -356,10 +359,7 @@ define(["./crimild.math"], function(math) {
 		var that = nodeVisitor(spec);
 
 		that.visitNode = function(aNode) {
-			var updateComponent = aNode.getComponent("update");
-			if (updateComponent) {
-				updateComponent.update();
-			}
+			aNode.updateAllComponents();
 		};
 
 		that.visitGroupNode = function(aGroup) {

@@ -64,6 +64,20 @@
                 var scene = crimild.core.groupNode({
                     name: "scene",
                     nodes: [
+                        crimild.core.node({
+                            components: [
+                                crimild.rendering.lightingComponent({
+                                    lights: [
+                                        crimild.rendering.light({
+                                            diffuse: [0.75, 0.0, 0.0],
+                                        })
+                                    ]
+                                })
+                            ],
+                            local: crimild.math.transformation({
+                                translate: [5, 0.25, -3.0]
+                            })
+                        }),
                         crimild.core.geometryNode({
                             name: "a cone",
                             primitives: [
@@ -79,18 +93,6 @@
                         translate: [0, 0, -5],
                     }),
                     components: [
-                        function() {
-                            var that = crimild.core.nodeComponent({name: "update"});
-                            var angle = 0.0;
-
-                            that.update = function() {
-                                scene.local.rotate = quat4.fromAngleAxis(angle, [0, 1, 0])
-                                scene.perform(crimild.core.worldStateUpdate());
-                                angle += 0.01;
-                            };
-
-                            return that;
-                        }(),
                         crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
                         crimild.rendering.renderComponent({
                             effects: [
@@ -103,12 +105,6 @@
                                             scriptId: "shader-fs"
                                         })
                                     })
-                                })
-                            ],
-                            lights: [
-                                crimild.rendering.light({
-                                    diffuse: [0.75, 0.0, 0.0],
-                                    position: [5, 0.25, 3.0, 1.0]
                                 })
                             ]
                         })
