@@ -1,7 +1,7 @@
-define(["./crimild.core",
+define(["./crimild.core", "./crimild.math",
 	"text!../shaders/simple.vert", "text!../shaders/simple.frag",
 	"text!../shaders/ubbershader.vert", "text!../shaders/ubbershader.frag"], 
-	function(core, simple_vs, simple_fs, ubbershader_vs, ubbershader_fs) {
+	function(core, math, simple_vs, simple_fs, ubbershader_vs, ubbershader_fs) {
 	
 	"use strict";
 
@@ -434,9 +434,113 @@ define(["./crimild.core",
 		return that;
 	};
 
+	var camera = function(spec) {
+		spec = spec || {};
+		var that = {};
+
+		var _transformation = spec.transformation || math.transformation();
+		var _viewport = spec.viewport || [0, 0, 1, 1];
+		var _pMatrix = spec.projection || mat4.create();
+		var _vMatrix = mat4.create();
+		var _renderer = null;
+
+		if (!spec.projection) {
+			mat4.perspective(45, 4.0 / 3.0, 0.1, 1000.0, _pMatrix);
+		}
+
+		mat4.identity(_vMatrix);
+
+		Object.defineProperties(that, {
+			renderer: {
+				get: function() {
+					return _renderer;
+				},
+				set: function(value) {
+					_renderer = value;
+				}
+			},
+			viewport: {
+				get: function() {
+					return _viewport;
+				},
+				set: function(value) {
+					_viewport = value;
+				}
+			},
+			transformation: {
+				get: function() {
+					return _transformation;
+				},
+				set: function(value) {
+					_transformation.set(value);
+				}
+			},
+			viewMatrix: {
+				get: function() {
+					_transformation.toMat4(_vMatrix);
+					return _vMatrix;
+				}
+			},
+			projectionMatrix: {
+				get: function() {
+					return _pMatrix;
+				},
+				set: function(value) {
+					_pMatrix = value;
+				},
+			}
+		});
+
+		return that;
+	};
+
+	var cameraComponent = function(spec) {
+		spec = spec || {};
+		spec.name = "camera";
+
+		var that = core.nodeComponent(spec);
+
+		var _camera = spec.camera || camera();
+
+		Object.defineProperties(that, {
+			camera: {
+				get: function() {
+					return _camera;
+				}
+			},
+		});
+
+		that.update = function() {
+			that.camera.transformation.set(that.node.world);
+		};
+
+		return that;
+	};
+
+	var cameraNode = function(spec) {
+		spec = spec || {};
+		var that = core.node(spec);
+
+		that.attachComponent(cameraComponent());
+
+		return that;
+	};
+
 	var visibilitySet = function(spec) {
 		var that = {};
 		var geometries = [];
+		var _camera = null;
+
+		Object.defineProperties(that, {
+			camera: {
+				get: function() {
+					return _camera;
+				},
+				set: function(value) {
+					_camera = value;
+				}
+			},
+		});
 
 		that.getGeometryCount = function() {
 			return geometries.length;
@@ -452,20 +556,20 @@ define(["./crimild.core",
 
 		that.reset = function() {
 			geometries = [];
+			that.camera = null;
 		};
 
 		return that;
 	};
 
 	var computeVisibilitySet = function(spec) {
+		spec = spec || {}
 		var that = core.nodeVisitor(spec);
 		var result = visibilitySet();
 
-		if (spec) {
-			result = spec.result ? spec.result : result;
-		}
-
+		result = spec.result ? spec.result : result;
 		result.reset();
+		result.camera = spec.camera || null;
 
 		that.getResult = function() {
 			return result;
@@ -491,9 +595,11 @@ define(["./crimild.core",
 		var gl = null;
 		var width = 0;
 		var height = 0;
+		var vMatrix = mat4.create();
     	var mvMatrix = mat4.create();
     	var pMatrix = mat4.create();
-    	var clearColor = [0.5, 0.5, 0.5, 1.0]
+    	var clearColor = [0.5, 0.5, 0.5, 1.0];
+    	var currentCamera = null;
 		var ubbershaderProgram = shaderProgram({
 			vertexShader: shader({
 				content: ubbershader_vs
@@ -539,16 +645,44 @@ define(["./crimild.core",
  				}
 			},
 
+			setCurrentCamera: function(value) {
+				this.currentCamera = value;
+
+				this.onCameraViewportChange();
+				this.onCameraFrustumChange();
+				this.onCameraFrameChange();
+			},
+
+			getCurrentCamera: function() {
+				return this.currentCamera;
+			},
+
 			onCameraViewportChange: function() {
-				gl.viewport(0, 0, width, height);
+				if (this.currentCamera) {
+					var vp = this.currentCamera.viewport;
+					gl.viewport(vp[0] * width, vp[1] * height, vp[2] * width, vp[3] * height);
+				}
+				else {
+					gl.viewport(0, 0, width, height);
+				}
 			},
 
 			onCameraFrustumChange: function() {
-				mat4.perspective(45, width / height, 0.1, 1000.0, pMatrix);
+				if (this.currentCamera) {
+					pMatrix = this.currentCamera.projectionMatrix;
+				}
+				else {
+					mat4.perspective(45, width / height, 0.1, 1000.0, pMatrix);
+				}
 			},
 
 			onCameraFrameChange: function() {
-				mat4.identity(mvMatrix);
+				if (this.currentCamera) {
+					vMatrix = this.currentCamera.viewMatrix;
+				}
+				else {
+					mat4.identity(vMatrix);
+				}
 			},
 
 			clearBuffers: function() {
@@ -777,13 +911,21 @@ define(["./crimild.core",
         	},
 
 			renderVisibilitySet: function(aVisibilitySet) {
+				if (aVisibilitySet.camera) {
+					this.setCurrentCamera(aVisibilitySet.camera);
+				}
+
 				for (var i = 0; i < aVisibilitySet.getGeometryCount(); i++) {
 					this.renderGeometryNode(aVisibilitySet.getGeometryAt(i));
 				}
 			},
 
 			renderGeometryNode: function(geometry) {
-        		geometry.world.toMat4(mvMatrix);
+				var nodeWorld = mat4.create();
+        		geometry.world.toMat4(nodeWorld);
+        		//mat4.identity(mvMatrix);
+				mat4.multiply(nodeWorld,vMatrix, mvMatrix);
+				//mat4.set(vMatrix, mvMatrix);
 
         		var grc = geometry.getComponent("geometryRender");
         		if (grc) {
@@ -882,6 +1024,9 @@ define(["./crimild.core",
 		effect: effect,
 		renderComponent: renderComponent,
 		geometryRenderComponent: geometryRenderComponent,
+		camera: camera,
+		cameraComponent: cameraComponent,
+		cameraNode: cameraNode,
 		visibilitySet: visibilitySet,
 		computeVisibilitySet: computeVisibilitySet,
 		renderStateUpdate: renderStateUpdate,

@@ -36,13 +36,19 @@ define(["crimild.core", "crimild.rendering"], function(core, rendering) {
 	var assetManager = function(spec) {
 		spec = spec || {};
 		var that = {};
-		var imageSuccessCount = 0;
-		var imageErrorCount = 0;
+		var successCount = 0;
+		var errorCount = 0;
 		var imageQueue = [];
 		var imageCache = {};
+		var fileQueue = [];
+		var fileCache = {};
 
 		that.queueImage = function(imageUrl) {
 			imageQueue.push(imageUrl);
+		};
+
+		that.queueFile = function(fileUrl) {
+			fileQueue.push(fileUrl);
 		};
 
 		that.loadAllImages = function(callback) {
@@ -50,13 +56,13 @@ define(["crimild.core", "crimild.rendering"], function(core, rendering) {
 				var url = imageQueue[i];
 				var image = new Image();
 				image.addEventListener("load", function() {
-					imageSuccessCount += 1;
+					successCount += 1;
 					if (that.isDone()) {
 						callback();
 					}
 				}, false);
 				image.addEventListener("error", function() {
-					imageErrorCount += 1;
+					errorCount += 1;
 					if (that.isDone()) {
 						callback();
 					}
@@ -66,21 +72,54 @@ define(["crimild.core", "crimild.rendering"], function(core, rendering) {
 			}
 		};
 
+		that.loadAllFiles = function(callback) {
+			for (var i = 0; i < fileQueue.length; i++) {
+				var url = fileQueue[i];
+				var request = new XMLHttpRequest();
+				request.open("GET", url);
+				request.onload = function() {
+					if (request.status === 200) {
+						successCount += 1;
+						fileCache[url] = request.responseText;
+					}
+					else {
+						errorCount += 1;
+					}
+
+					if (that.isDone()) {
+						callback();
+					}
+				};
+				request.onerror = function() {
+					errorCount += 1;
+					if (that.isDone()) {
+						callback();
+					}
+				};
+				request.send();
+			}
+		};
+
 		that.isDone = function() {
-			return (imageQueue.length === imageSuccessCount + imageErrorCount);
+			return (imageQueue.length + fileQueue.length === successCount + errorCount);
 		}
 
 		that.loadAll = function(callback) {
-			if (imageQueue.length === 0) {
+			if (imageQueue.length === 0 && fileQueue === 0) {
 				callback();
 			}
 			else {
 				that.loadAllImages(callback);
+				that.loadAllFiles(callback);
 			}
 		};
 
 		that.getImage = function(url) {
 			return imageCache[url];
+		};
+
+		that.getFile = function(url) {
+			return fileCache[url];
 		};
 
 		return that;

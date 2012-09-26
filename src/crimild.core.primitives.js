@@ -268,10 +268,11 @@ define(["crimild.core"], function(core) {
 	}
 
 	var spherePrimitive = function(spec) {
+		spec = spec || {}
 		var that = core.primitive(spec);
         var latitudeBands = 30;
         var longitudeBands = 30;
-        var radius = 1;
+        var radius = spec.radius || 1;
         var vertexFormat = spec.vertexFormat;
 
 		that.generate = function() {

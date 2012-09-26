@@ -92,7 +92,7 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 					return _translate;
 				},
 				set: function(value) {
-					_translate = value;
+					vec3.set(value, _translate);
 					_identity = false;
 				}
 			},
@@ -101,7 +101,7 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 					return _rotate;
 				},
 				set: function(value) {
-					_rotate = value;
+					quat4.set(value, _rotate);
 					_identity = false;
 				}	
 			},
@@ -199,8 +199,8 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 		};
 
 		that.set = function(tx) {
-			_translate = tx.translate;
-			_rotate = tx.rotate;
+			vec3.set(tx.translate, _translate);
+			quat4.set(tx.rotate, _rotate);
 			_scale = tx.scale;
 			_identity = tx.isIdentity();
 		}
