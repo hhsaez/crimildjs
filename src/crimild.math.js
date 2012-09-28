@@ -114,21 +114,6 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 					_identity = false;
 				}
 			},
-			direction: {
-				get: function() {
-					return vec3.create([0, 0, -1]);
-				}
-			},
-			up: {
-				get: function() {
-					return vec3.create([0, 1, 0]);
-				}
-			},
-			right: {
-				get: function() {
-					return that.create([1, 0, 0]);
-				}
-			}
 		});
 
 		if (spec.translate) { that.translate = spec.translate; }
@@ -179,6 +164,22 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 
 		};
 
+		that.computeDirection = function(dest) {
+			if (!dest) {
+				dest = vec3.create();
+			}
+
+			quat4.multiplyVec3(that.rotate, [0, 0, -1], dest);
+			return dest;
+		};
+
+		that.computeUp = function(dest) {
+
+		};
+
+		that.computeRight = function(dest) {			
+		};
+
 		that.computeFrom = function(a, b) {
 			if (a.isIdentity()) {
 				that.set(b);
@@ -210,7 +211,9 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 		};
 
 		that.toMat4 = function(dest) {
-			if (!dest) { dest = mat4.create(); }
+			if (!dest) { 
+				dest = mat4.create(); 
+			}
 
 			mat4.identity(dest);
 			if (!_identity) {

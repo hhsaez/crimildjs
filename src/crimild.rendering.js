@@ -669,7 +669,7 @@ define(["./crimild.core", "./crimild.math",
 
 			onCameraFrustumChange: function() {
 				if (this.currentCamera) {
-					pMatrix = this.currentCamera.projectionMatrix;
+					mat4.set(this.currentCamera.projectionMatrix, pMatrix);
 				}
 				else {
 					mat4.perspective(45, width / height, 0.1, 1000.0, pMatrix);
@@ -678,7 +678,7 @@ define(["./crimild.core", "./crimild.math",
 
 			onCameraFrameChange: function() {
 				if (this.currentCamera) {
-					vMatrix = this.currentCamera.viewMatrix;
+					mat4.set(this.currentCamera.viewMatrix, vMatrix);
 				}
 				else {
 					mat4.identity(vMatrix);
@@ -923,9 +923,9 @@ define(["./crimild.core", "./crimild.math",
 			renderGeometryNode: function(geometry) {
 				var nodeWorld = mat4.create();
         		geometry.world.toMat4(nodeWorld);
-        		//mat4.identity(mvMatrix);
-				mat4.multiply(nodeWorld,vMatrix, mvMatrix);
-				//mat4.set(vMatrix, mvMatrix);
+        		mat4.identity(mvMatrix);
+				mat4.inverse(vMatrix);
+				mat4.multiply(nodeWorld, vMatrix, mvMatrix);
 
         		var grc = geometry.getComponent("geometryRender");
         		if (grc) {
