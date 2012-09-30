@@ -441,14 +441,11 @@ define(["./crimild.core", "./crimild.math",
 		var _transformation = spec.transformation || math.transformation();
 		var _viewport = spec.viewport || [0, 0, 1, 1];
 		var _pMatrix = spec.projection || mat4.create();
-		var _vMatrix = mat4.create();
 		var _renderer = null;
 
 		if (!spec.projection) {
 			mat4.perspective(45, 4.0 / 3.0, 0.1, 1000.0, _pMatrix);
 		}
-
-		mat4.identity(_vMatrix);
 
 		Object.defineProperties(that, {
 			renderer: {
@@ -474,22 +471,27 @@ define(["./crimild.core", "./crimild.math",
 				set: function(value) {
 					_transformation.set(value);
 				}
-			},
-			viewMatrix: {
-				get: function() {
-					_transformation.toMat4(_vMatrix);
-					return _vMatrix;
-				}
-			},
-			projectionMatrix: {
-				get: function() {
-					return _pMatrix;
-				},
-				set: function(value) {
-					_pMatrix = value;
-				},
 			}
 		});
+
+		that.computeViewMatrix = function(dest) {
+			if (!dest) {
+				dest = mat4.create();
+			}
+
+			_transformation.toMat4(dest);
+			mat4.inverse(dest);
+			return dest;
+		};
+
+		that.computeProjectMatrix = function(dest) {
+			if (!dest) {
+				dest = mat4.create();
+			}
+
+			mat4.set(_pMatrix, dest);
+			return dest;
+		}
 
 		return that;
 	};
@@ -609,6 +611,9 @@ define(["./crimild.core", "./crimild.math",
 			})
 		});
 
+		// utility variables
+		var mMatrix = mat4.create();
+
 		var defaultEffect = effect({
 	        shaderProgram: shaderProgram({
 	            vertexShader: shader({
@@ -669,7 +674,7 @@ define(["./crimild.core", "./crimild.math",
 
 			onCameraFrustumChange: function() {
 				if (this.currentCamera) {
-					mat4.set(this.currentCamera.projectionMatrix, pMatrix);
+					this.currentCamera.computeProjectMatrix(pMatrix);
 				}
 				else {
 					mat4.perspective(45, width / height, 0.1, 1000.0, pMatrix);
@@ -678,7 +683,7 @@ define(["./crimild.core", "./crimild.math",
 
 			onCameraFrameChange: function() {
 				if (this.currentCamera) {
-					mat4.set(this.currentCamera.viewMatrix, vMatrix);
+					this.currentCamera.computeViewMatrix(vMatrix);
 				}
 				else {
 					mat4.identity(vMatrix);
@@ -921,11 +926,8 @@ define(["./crimild.core", "./crimild.math",
 			},
 
 			renderGeometryNode: function(geometry) {
-				var nodeWorld = mat4.create();
-        		geometry.world.toMat4(nodeWorld);
-        		mat4.identity(mvMatrix);
-				mat4.inverse(vMatrix);
-				mat4.multiply(nodeWorld, vMatrix, mvMatrix);
+        		geometry.world.toMat4(mMatrix);
+				mat4.multiply(mMatrix, vMatrix, mvMatrix);
 
         		var grc = geometry.getComponent("geometryRender");
         		if (grc) {
