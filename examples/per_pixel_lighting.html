@@ -12,25 +12,109 @@
     <meta name="description" content="WebGL based 3D game framework">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <script data-main="../src/crimild" src="../lib/require.js"></script>
+    <script id="shader-fs" type="x-shader/x-fragment">
+        precision highp float;
+
+        struct LightSource {
+            vec3 Position;
+            vec3 Attenuation;
+            vec3 Direction;
+            vec3 Color;
+            float OuterCutoff;
+            float InnerCutoff;
+            float Exponent;
+        };
+
+        struct Material {
+            vec3 Ambient;
+            vec3 Diffuse;
+            vec3 Specular;
+            float Shininess;
+        };
+
+        uniform bool uUseLighting;
+        uniform int uLightCount;
+        uniform LightSource uLights[4];
+        uniform Material uMaterial;
+
+        varying vec3 vEyespaceNormal;
+        
+        void main(void) {
+            vec4 destinationColor = vec4(1.0, 1.0, 1.0, 1.0);
+            if (uUseLighting) {
+                vec3 N = normalize(vEyespaceNormal);
+                vec3 result = uMaterial.Ambient.xyz;
+
+                vec3 E = vec3(0, 0, 1);
+
+                for (int i = 0; i < 4; i++) {
+                    if (i >= uLightCount) {
+                        break;
+                    }
+
+                    vec3 L = normalize(uLights[i].Position);
+                    vec3 H = normalize(L + E);
+
+                    float df = max(0.0, dot(N, L));
+                    float sf = max(0.0, dot(N, H));
+                    sf = pow(sf, uMaterial.Shininess);
+
+                    result += (df * uMaterial.Diffuse + sf * uMaterial.Specular) * uLights[i].Color;
+
+                }
+
+                destinationColor = vec4(result, 1.0);
+            }
+
+            gl_FragColor = destinationColor;
+        }
+    </script>
+    <script id="shader-vs" type="x-shader/x-vertex">
+        attribute vec3 aVertexPosition;
+        attribute vec3 aVertexNormal;
+
+        uniform mat4 uMVMatrix;
+        uniform mat4 uPMatrix;
+        uniform mat3 uNMatrix;
+
+        varying vec3 vEyespaceNormal;
+
+        void main(void) {
+            gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+            vEyespaceNormal = uNMatrix * aVertexNormal;
+        }
+    </script>
 	<script type="text/javascript">
 		function initCrimild(canvasId) {
             require(["crimild"], function(crimild) {
                 var scene = crimild.core.groupNode({
                     name: "scene",
                     nodes: [
-                        crimild.core.node({
-                            components: [
-                                crimild.rendering.lightingComponent({
-                                    lights: [
-                                        crimild.rendering.light({
-                                            diffuse: [0.75, 0.0, 0.0],
-                                        })
-                                    ]
+                        crimild.rendering.lightNode({
+                            lights: [
+                                crimild.rendering.light({
+                                    color: [1, 0, 0],
                                 })
+                            ],
+                            components: [
+                                crimild.components.orbitingComponent({a: 10, b: 5}),
                             ],
                             local: crimild.math.transformation({
                                 translate: [5, 0.25, 5.0]
-                            })
+                            }),
+                        }),
+                        crimild.rendering.lightNode({
+                            lights: [
+                                crimild.rendering.light({
+                                    color: [0, 1, 0],
+                                })
+                            ],
+                            components: [
+                                crimild.components.orbitingComponent({a: 10, b: 5, speed: -0.005}),
+                            ],
+                            local: crimild.math.transformation({
+                                translate: [5, 0.25, 5.0]
+                            }),
                         }),
                         crimild.core.geometryNode({
                             name: "a cone",
@@ -41,14 +125,28 @@
                                     scale: 0.15
                                 })
                             ],
-                            components: [
-                                crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
-                            ]
                         })
                     ],
                     local: crimild.math.transformation({
                         translate: [0, 0, -5],
-                    })
+                    }),
+                    components: [
+                        crimild.rendering.renderComponent({
+                            effects: [
+                                crimild.rendering.effect({
+                                    shaderProgram: crimild.rendering.shaderProgram({
+                                        vertexShader: crimild.rendering.shader({
+                                            scriptId: "shader-vs"
+                                        }),
+                                        fragmentShader: crimild.rendering.shader({
+                                            scriptId: "shader-fs"
+                                        })
+                                    }),
+                                    diffuse: [1.0, 1.0, 1],
+                                })
+                            ]
+                        })                        
+                    ]
                 });
 
                 var canvas = document.getElementById(canvasId);

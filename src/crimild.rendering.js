@@ -6,64 +6,83 @@ define(["./crimild.core", "./crimild.math",
 	"use strict";
 
 	var light = function(spec) {
+		spec = spec || {};
 		var that = {};
 
-		var _ambient = vec3.create([0.02, 0.02, 0.02]);
-		var _diffuse = vec3.create([0.8, 0.8, 0.8]);
-		var _specular = vec3.create([0.5, 0.5, 0.5]);
-		var _position = vec4.create([0, 0, 0, 1]);
-		var _shininess = 50.0;
+		var _position = vec3.create([0, 0, 0]);
+		var _attenuation = vec3.create([1.0, 0, 0.01]);
+		var _direction = vec3.create([0, 0, 0]);
+		var _color = vec3.create([1, 1, 1]);
+		var _outerCutoff = 0;
+		var _innerCutoff = 0;
+		var _exponent = 0;
 
 		Object.defineProperties(that, {
-			ambient: {
-				get: function() {
-					return _ambient;
-				},
-				set: function(value) {
-					_ambient = value;
-				}
-			},
-			diffuse: {
-				get: function() {
-					return _diffuse;
-				},
-				set: function(value) {
-					_diffuse = value;
-				}
-			},
-			specular: {
-				get: function() {
-					return _specular;
-				},
-				set: function(value) {
-					_specular = value;
-				}
-			},
-			shininess: {
-				get: function() {
-					return _shininess;
-				},
-				set: function(value) {
-					_shininess = value;
-				}
-			},
 			position: {
 				get: function() {
 					return _position;
 				},
 				set: function(value) {
-					_position = value;
+					vec3.set(value, _position);
+				}
+			},
+			attenuation: {
+				get: function() {
+					return _attenuation;
+				},
+				set: function(value) {
+					vec3.set(value, _attenuation);
+				}
+			},
+			direction: {
+				get: function() {
+					return _direction;
+				},
+				set: function(value) {
+					vec3.set(value, _direction);
+				}
+			},
+			color: {
+				get: function() {
+					return _color;
+				},
+				set: function(value) {
+					vec3.set(value, _color);
+				}
+			},
+			outerCutoff: {
+				get: function() {
+					return _outerCutoff;
+				},
+				set: function(value) {
+					_outerCutoff = value;
+				}
+			},
+			innerCutoff: {
+				get: function() {
+					return _innerCutoff;
+				},
+				set: function(value) {
+					_innerCutoff = value;
+				},
+			},
+			exponent: {
+				get: function() {
+					return _exponent;
+				},
+				set: function(value) {
+					_exponent = value;
 				}
 			}
 		});
 
-		if (spec) {
-			if (spec.ambient) that.ambient = spec.ambient;
-			if (spec.diffuse) that.diffuse = spec.diffuse;
-			if (spec.specular) that.specular = spec.specular;
-			if (spec.shininess) that.shininess = spec.shininess;
-			if (spec.position) that.position = spec.position;
-		}
+		if (spec.position) { that.position = spec.position; }
+		if (spec.attenuation) { that.attenuation = spec.attenuation; }
+		if (spec.direction) { that.direction = spec.direction; }
+		if (spec.color) { that.color = spec.color; }
+		if (spec.outerCutoff) { that.outerCutoff = spec.outerCutoff; }
+		if (spec.innerCutoff) { that.innerCutoff = spec.innerCutoff; }
+		if (spec.exponent) { that.exponent = spec.exponent; }
 
 		return that;
 	};
@@ -72,6 +91,9 @@ define(["./crimild.core", "./crimild.math",
 		spec = spec || {}
 		var that = core.nodeComponent({name: "lighting"});
 		var lights = spec.lights || [];
+
+		// utility variables
+		var tempDirection = vec3.create();
 
 		that.getLightCount = function() {
 			return lights.length;
@@ -82,10 +104,21 @@ define(["./crimild.core", "./crimild.math",
 		};
 
 		that.update = function() {
+			that.node.world.computeDirection(tempDirection);
 			for (var i in lights) {
 				lights[i].position = that.node.world.translate;
+				lights[i].direction = tempDirection;
 			}
 		};
+
+		return that;
+	};
+
+	var lightNode = function(spec) {
+		spec = spec || {};
+		var that = core.node(spec);
+
+		that.attachComponent(lightingComponent(spec));
 
 		return that;
 	};
@@ -261,18 +294,57 @@ define(["./crimild.core", "./crimild.math",
 
 	// todo: rename this to Material
 	var effect = function(spec) {
+		spec = spec || {};
 		var that = {};
 		var program = null;
 		var textures = [];
 
-		if (spec) {
-			if (spec.shaderProgram) {
-				program = spec.shaderProgram;
+		var _ambient = [0.2, 0.2, 0.2];
+		var _diffuse = [0.8, 0.8, 0.8];
+		var _specular = [0.8, 0.8, 0.8];
+		var _shininess = 50;
+
+		Object.defineProperties(that, {
+			ambient: {
+				get: function() {
+					return _ambient;
+				},
+				set: function(value) {
+					vec3.set(value, _ambient);
+				}
+			},
+			diffuse: {
+				get: function() {
+					return _diffuse;
+				},
+				set: function (value) {
+					vec3.set(value, _diffuse);
+				}
+			},
+			specular: {
+				get: function() {
+					return _specular;
+				},
+				set: function(value) {
+					vec3.set(value, _specular);
+				}
+			},
+			shininess: {
+				get: function() {
+					return _shininess;
+				},
+				set: function(value) {
+					_shininess = value;
+				}
 			}
-			if (spec.textures) {
-				textures = spec.textures;
-			}
-		}
+		});
+
+		if (spec.shaderProgram) { program = spec.shaderProgram; }
+		if (spec.textures) { textures = spec.textures; }
+		if (spec.ambient) { that.ambient = spec.ambient; }
+		if (spec.diffuse) { that.diffuse = spec.diffuse; }
+		if (spec.specular) { that.specular = spec.specular; }
+		if (spec.shininess) { that.shininess = spec.shininess; }
 
 		that.setProgram = function(aProgram) {
 			program = aProgram;
@@ -803,12 +875,17 @@ define(["./crimild.core", "./crimild.math",
         		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
         	},
 
-        	enableLight: function(lightIndex, light, program) {
-        		gl.uniform3f(program.renderCache.lightAmbienUniform, light.ambient[0], light.ambient[1], light.ambient[2]);
-        		gl.uniform3f(program.renderCache.lightDiffuseUniform, light.diffuse[0], light.diffuse[1], light.diffuse[2]);
-        		gl.uniform3f(program.renderCache.lightSpecularUniform, light.specular[0], light.specular[1], light.specular[2]);
-        		gl.uniform1f(program.renderCache.lightShininessUniform, light.shininess);
-        		gl.uniform4f(program.renderCache.lightPositionUniform, light.position[0], light.position[1], light.position[2], light.position[3]);
+        	enableLight: function(index, aLight, program) {
+        		var lightUniform = program.renderCache.lightsUniform[index];
+        		if (lightUniform) {
+	        		gl.uniform3f(lightUniform.Position, aLight.position[0], aLight.position[1], aLight.position[2]);
+	        		gl.uniform3f(lightUniform.Attenuation, aLight.attenuation[0], aLight.attenuation[1], aLight.attenuation[2]);
+	        		gl.uniform3f(lightUniform.Direction, aLight.direction[0], aLight.direction[1], aLight.direction[2]);
+	        		gl.uniform3f(lightUniform.Color, aLight.color[0], aLight.color[1], aLight.color[2]);
+	        		gl.uniform3f(lightUniform.OuterCutoff, aLight.outerCutoff[0], aLight.outerCutoff[1], aLight.outerCutoff[2]);
+	        		gl.uniform3f(lightUniform.InnerCutoff, aLight.innerCutoff[0], aLight.innerCutoff[1], aLight.innerCutoff[2]);
+	        		gl.uniform3f(lightUniform.Exponent, aLight.exponent[0], aLight.exponent[1], aLight.exponent[2]);
+	        	}
         	},
 
         	disableLight: function() {
@@ -857,6 +934,48 @@ define(["./crimild.core", "./crimild.math",
         		shader.renderCache.renderer = this;
         	},
 
+        	getUniformByName: function(program, name) {
+        		return gl.getUniformLocation(program.renderCache, name);
+        	},
+
+        	getAttribByName: function(program, name) {
+        		return gl.getAttribLocation(program.renderCache, name);
+        	},
+
+        	setUniformInt: function(uniform, x, y, z, w) {
+        		if (uniform) {
+        			if (w != null) {
+        				gl.uniform4i(uniform, x, y, z, w);
+        			}
+        			else if (z != null) {
+        				gl.uniform3i(uniform, x, y, z);
+        			}
+        			else if (y != null) {
+        				gl.uniform2i(uniform, x, y);
+        			}
+        			else if (x != null) {
+        				gl.uniform1i(uniform, x);
+        			}
+        		}
+        	},
+
+        	setUniformFloat: function(uniform, x, y, z, w) {
+        		if (uniform) {
+        			if (w != null) {
+        				gl.uniform4f(uniform, x, y, z, w);
+        			}
+        			else if (z != null) {
+        				gl.uniform3f(uniform, x, y, z);
+        			}
+        			else if (y != null) {
+        				gl.uniform2f(uniform, x, y);
+        			}
+        			else if (x != null) {
+        				gl.uniform1f(uniform, x);
+        			}
+        		}
+        	},
+
         	loadProgram: function(program) {
         		this.compileShader(program.getVertexShader(), gl.VERTEX_SHADER);
         		this.compileShader(program.getFragmentShader(), gl.FRAGMENT_SHADER);
@@ -890,11 +1009,32 @@ define(["./crimild.core", "./crimild.math",
         		program.renderCache.nMatrixUniform = gl.getUniformLocation(program.renderCache, "uNMatrix");
 
         		program.renderCache.useLightingUniform = gl.getUniformLocation(program.renderCache, "uUseLighting");
-                program.renderCache.lightAmbienUniform = gl.getUniformLocation(program.renderCache, "uLightAmbient");
-                program.renderCache.lightDiffuseUniform = gl.getUniformLocation(program.renderCache, "uLightDiffuse");
-                program.renderCache.lightSpecularUniform = gl.getUniformLocation(program.renderCache, "uLightSpecular");
-                program.renderCache.lightShininessUniform = gl.getUniformLocation(program.renderCache, "uLightShininess");
-                program.renderCache.lightPositionUniform = gl.getUniformLocation(program.renderCache, "uLightPosition");
+        		program.renderCache.lightCountUniform = gl.getUniformLocation(program.renderCache, "uLightCount");
+        		program.renderCache.lightsUniform = [];
+        		var lightPosId = 0;
+        		var lightIdx = 0;
+        		do {
+        			lightPosId = gl.getUniformLocation(program.renderCache, "uLights[" + lightIdx + "].Position");
+        			if (lightPosId != null) {
+        				var aLightUniform = {};
+        				aLightUniform.Position = lightPosId;
+        				aLightUniform.Attenuation = gl.getUniformLocation(program.renderCache, "uLights[" + lightIdx + "].Attenuation");
+        				aLightUniform.Direction = gl.getUniformLocation(program.renderCache, "uLights[" + lightIdx + "].Direction");
+        				aLightUniform.Color = gl.getUniformLocation(program.renderCache, "uLights[" + lightIdx + "].Color");
+        				aLightUniform.OuterCutoff = gl.getUniformLocation(program.renderCache, "uLights[" + lightIdx + "].OuterCutoff");
+        				aLightUniform.InnerCutoff = gl.getUniformLocation(program.renderCache, "uLights[" + lightIdx + "].InnerCutoff");
+        				aLightUniform.Exponent = gl.getUniformLocation(program.renderCache, "uLights[" + lightIdx + "].Exponent");
+
+        				program.renderCache.lightsUniform.push(aLightUniform);
+        				lightIdx++;
+        			}
+        		} while (lightPosId != null);
+
+        		program.renderCache.materialUniform = {};
+                program.renderCache.materialUniform.ambient = gl.getUniformLocation(program.renderCache, "uMaterial.Ambient");
+                program.renderCache.materialUniform.diffuse = gl.getUniformLocation(program.renderCache, "uMaterial.Diffuse");
+                program.renderCache.materialUniform.specular = gl.getUniformLocation(program.renderCache, "uMaterial.Specular");
+                program.renderCache.materialUniform.shininess = gl.getUniformLocation(program.renderCache, "uMaterial.Shininess");
 
                 program.renderCache.useTexturesUniform = gl.getUniformLocation(program.renderCache, "uUseTextures");
 
@@ -962,41 +1102,29 @@ define(["./crimild.core", "./crimild.math",
 				this.enableVertexBuffer(vbo, program);
 				this.enableIndexBuffer(ibo, program);
 
-				if (grc.tint) {
-					gl.uniform1f(program.renderCache.tintUniform, grc.tint);
-				}
-				else {
-					gl.uniform1f(program.renderCache.tintUniform, 0.0);
+				// todo move this to a user-defined uniform
+				this.setUniformFloat(program.renderCache.tintUniform, grc.tint ? grc.tint : 0);
+
+				// setup lights
+				this.setUniformInt(program.renderCache.useLightingUniform, grc.getLightCount() > 0 ? 1 : 0);
+				this.setUniformInt(program.renderCache.lightCountUniform, grc.getLightCount());
+				for (var l = 0; l < grc.getLightCount(); l++) {
+					this.enableLight(l, grc.getLightAt(l), program);
 				}
 
-				if (grc.getLightCount() > 0) {
-					if (program.renderCache.useLightingUniform) {
-						gl.uniform1i(program.renderCache.useLightingUniform, 1);
-					}
-					for (var l = 0; l < grc.getLightCount(); l++) {
-						this.enableLight(l, grc.getLightAt(l), program);
-					}
-				}
-				else {
-					if (program.renderCache.useLightingUniform) {
-						gl.uniform1i(program.renderCache.useLightingUniform, 0);
-					}
+				// setup textures
+				this.setUniformInt(program.renderCache.useTexturesUniform, currentEffect.getTextureCount() > 0 ? 1 : 0);
+				for (var t = 0; t < currentEffect.getTextureCount(); t++) {
+					this.enableTexture(currentEffect.getTextureAt(t), program);
 				}
 
-				if (currentEffect.getTextureCount() > 0) {
-					if (program.renderCache.useTexturesUniform) {
-						gl.uniform1i(program.renderCache.useTexturesUniform, 1);
-					}
-					for (var t = 0; t < currentEffect.getTextureCount(); t++) {
-						this.enableTexture(currentEffect.getTextureAt(t), program);
-					}
-				}
-				else {
-					if (program.renderCache.useTexturesUniform) {
-						gl.uniform1i(program.renderCache.useTexturesUniform, 0);
-					}
-				}
+				// setup material 
+				this.setUniformFloat(program.renderCache.materialUniform.ambient, currentEffect.ambient[0], currentEffect.ambient[1], currentEffect.ambient[2]);
+				this.setUniformFloat(program.renderCache.materialUniform.diffuse, currentEffect.diffuse[0], currentEffect.diffuse[1], currentEffect.diffuse[2]);
+				this.setUniformFloat(program.renderCache.materialUniform.specular, currentEffect.specular[0], currentEffect.specular[1], currentEffect.specular[2]);
+				this.setUniformFloat(program.renderCache.materialUniform.shininess, currentEffect.shininess);
 
+				// TODO: move this to a user-defined render state/uniform
 				gl.polygonOffset(4, 8);
 				gl.enable(gl.POLYGON_OFFSET_FILL);
 
@@ -1019,6 +1147,7 @@ define(["./crimild.core", "./crimild.math",
 	return {
 		light: light,
 		lightingComponent: lightingComponent,
+		lightNode: lightNode,
 		image: image,
 		texture: texture,
 		shader: shader,

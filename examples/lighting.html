@@ -22,6 +22,23 @@
         }
     </script>
     <script id="shader-vs" type="x-shader/x-vertex">
+        struct LightSource {
+            vec3 Position;
+            vec3 Attenuation;
+            vec3 Direction;
+            vec3 Color;
+            float OuterCutoff;
+            float InnerCutoff;
+            float Exponent;
+        };
+
+        struct Material {
+            vec3 Ambient;
+            vec3 Diffuse;
+            vec3 Specular;
+            float Shininess;
+        };
+
         attribute vec3 aVertexPosition;
         attribute vec3 aVertexNormal;
 
@@ -30,32 +47,44 @@
         uniform mat3 uNMatrix;
 
         uniform bool uUseLighting;
-        uniform vec4 uLightPosition;
-        uniform vec3 uLightAmbient;
-        uniform vec3 uLightDiffuse;
-        uniform vec3 uLightSpecular;
-        uniform float uLightShininess;
+        uniform int uLightCount;
+        uniform LightSource uLights[4];
+        uniform Material uMaterial;
 
         varying vec4 vDestinationColor;
 
         void main(void) {
-            if (!uUseLighting) {
-                vDestinationColor = vec4(1.0, 1.0, 1.0, 1.0);
+            vec4 position = uMVMatrix * vec4(aVertexPosition, 1.0);
+            gl_Position = uPMatrix * position;
+
+            if (uUseLighting) {
+                vec3 eyespaceNormal = uNMatrix * aVertexNormal;
+                vec3 N = normalize(eyespaceNormal);
+                vec3 result = uMaterial.Ambient.xyz;
+
+                vec3 E = vec3(0, 0, 1);
+
+                for (int i = 0; i < 4; i++) {
+                    if (i >= uLightCount) {
+                        break;
+                    }
+
+                    vec3 L = normalize(uLights[i].Position);
+                    vec3 H = normalize(L + E);
+
+                    float df = max(0.0, dot(N, L));
+                    float sf = max(0.0, dot(N, H));
+                    sf = pow(sf, uMaterial.Shininess);
+
+                    result += (df * uMaterial.Diffuse + sf * uMaterial.Specular) * uLights[i].Color;
+
+                }
+
+                vDestinationColor = vec4(result, 1.0);
             }
             else {
-                vec3 N = uNMatrix * aVertexNormal;
-                vec3 L = normalize(uLightPosition.xyz);
-                vec3 E = vec3(0, 0, 1);
-                vec3 H = normalize(L + E);
-                float df = max(0.0, dot(N, L));
-                float sf = max(0.0, dot(N, H));
-                sf = pow(sf, uLightShininess);
-
-                vec3 color = uLightAmbient + df * uLightDiffuse + sf * uLightSpecular;
-                vDestinationColor = vec4(color, 1);
+                vDestinationColor = vec4(1.0, 1.0, 1.0, 1.0);
             }
-
-            gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
         }
     </script>
     <script type="text/javascript">
@@ -64,19 +93,31 @@
                 var scene = crimild.core.groupNode({
                     name: "scene",
                     nodes: [
-                        crimild.core.node({
-                            components: [
-                                crimild.rendering.lightingComponent({
-                                    lights: [
-                                        crimild.rendering.light({
-                                            diffuse: [0.75, 0.0, 0.0],
-                                        })
-                                    ]
+                        crimild.rendering.lightNode({
+                            lights: [
+                                crimild.rendering.light({
+                                    color: [1, 0, 0],
                                 })
+                            ],
+                            components: [
+                                crimild.components.orbitingComponent({a: 10, b: 5}),
                             ],
                             local: crimild.math.transformation({
                                 translate: [5, 0.25, 5.0]
-                            })
+                            }),
+                        }),
+                        crimild.rendering.lightNode({
+                            lights: [
+                                crimild.rendering.light({
+                                    color: [0, 1, 0],
+                                })
+                            ],
+                            components: [
+                                crimild.components.orbitingComponent({a: 10, b: 5, speed: -0.005}),
+                            ],
+                            local: crimild.math.transformation({
+                                translate: [5, 0.25, 5.0]
+                            }),
                         }),
                         crimild.core.geometryNode({
                             name: "a cone",
@@ -87,9 +128,6 @@
                                     scale: 0.15
                                 })
                             ],
-                            components: [
-                                crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
-                            ]
                         })
                     ],
                     local: crimild.math.transformation({
@@ -106,10 +144,11 @@
                                         fragmentShader: crimild.rendering.shader({
                                             scriptId: "shader-fs"
                                         })
-                                    })
+                                    }),
+                                    diffuse: [1.0, 1.0, 1],
                                 })
                             ]
-                        })
+                        })                        
                     ]
                 });
 
