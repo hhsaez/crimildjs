@@ -12,20 +12,16 @@ uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 uniform mat3 uNMatrix;
 
-uniform bool uUseTextures;
-uniform bool uUseLighting;
-
 varying vec2 vTextureCoord;
-varying vec3 vEyespaceNormal;
+varying vec4 vPosition;
+varying vec3 vNormal;
+varying vec3 vViewVector;
 
 void main(void) {
-    gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);;
+	vPosition = uMVMatrix * vec4(aVertexPosition, 1.0);
+    vViewVector = normalize(-vPosition.xyz);
+    vTextureCoord = aTextureCoord;
+    vNormal = uNMatrix * aVertexNormal;
 
-    if (uUseTextures) {
-        vTextureCoord = aTextureCoord;
-    }
-
-    if (uUseLighting) {
-        vEyespaceNormal = uNMatrix * aVertexNormal;
-    }
+    gl_Position = uPMatrix * vPosition;
 }

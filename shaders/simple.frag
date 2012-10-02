@@ -1,31 +1,70 @@
-precision mediump float;
+/**
+    Implements a fragment shaders
 
-varying vec3 vEyespaceNormal;
-varying vec4 vColor;
+    Disclaimer: This program is not intended to be used in productive environments
+*/
+
+precision highp float;
+
+struct LightSource {
+    vec3 Position;
+    vec3 Attenuation;
+    vec3 Direction;
+    vec3 Color;
+    float OuterCutoff;
+    float InnerCutoff;
+    float Exponent;
+};
+
+struct Material {
+    vec3 Ambient;
+    vec3 Diffuse;
+    vec3 Specular;
+    float Shininess;
+};
 
 uniform bool uUseLighting;
+uniform bool uUsePerPixelShading;
+uniform int uLightCount;
+uniform LightSource uLights[4];
+uniform Material uMaterial;
 
-uniform vec4 uLightPosition;
-uniform vec3 uLightAmbient;
-uniform vec3 uLightDiffuse;
-uniform vec3 uLightSpecular;
-uniform float uLightShininess;
+varying vec4 vDestinationColor;
+varying vec2 vTextureCoord;
+varying vec4 vPosition;
+varying vec3 vNormal;
+varying vec3 vViewVector;
 
 void main(void) {
-	if (uUseLighting) {
-        vec3 N = normalize(vEyespaceNormal);
-        vec3 L = normalize(uLightPosition.xyz);
-        vec3 E = vec3(0, 0, 1);
-        vec3 H = normalize(L + E);
+    vec4 result = vec4(1.0, 1.0, 1.0, 1.0);
 
-        float df = max(0.0, dot(N, L));
-        float sf = max(0.0, dot(N, H));
-        sf = pow(sf, uLightShininess);
+    if (uUseLighting) {
+        result = vec4(uMaterial.Ambient, 1.0);
 
-        vec3 color = uLightAmbient + df * uLightDiffuse + sf * uLightSpecular;
-        gl_FragColor = vec4(color, 1.0);
-	}
-	else {
-	    gl_FragColor = vColor;
-	}
+        for (int i = 0; i < 4; i++) {
+            if (i >= uLightCount) {
+                break;
+            }
+
+            // compute light to vertex vector
+            vec3 L = normalize(uLights[i].Position - vPosition.xyz);
+
+            // compute diffuse factor
+            float df = dot(vNormal, L);
+            if (df > 0.0) {
+                // compute specular factor
+                vec3 r = -normalize(reflect(L, vNormal));
+                float sf = pow(max(dot(r, vViewVector), 0.0), uMaterial.Shininess);
+
+                // add to color
+                result.xyz += (df * uMaterial.Diffuse + sf * uMaterial.Specular) * uLights[i].Color;
+            }
+        }
+    }
+    else {
+        result = vDestinationColor;
+    }
+
+    gl_FragColor = result;
 }
+
