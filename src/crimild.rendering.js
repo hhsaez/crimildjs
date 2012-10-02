@@ -336,7 +336,7 @@ define(["./crimild.core", "./crimild.math",
 				set: function(value) {
 					_shininess = value;
 				}
-			}
+			},
 		});
 
 		if (spec.shaderProgram) { program = spec.shaderProgram; }
@@ -1039,6 +1039,7 @@ define(["./crimild.core", "./crimild.math",
                 program.renderCache.useTexturesUniform = gl.getUniformLocation(program.renderCache, "uUseTextures");
 
                 program.renderCache.tintUniform = gl.getUniformLocation(program.renderCache, "uTint");
+                program.renderCache.perPixelShadingUniform = gl.getUniformLocation(program.renderCache, "uUsePerPixelShading");
 
         		program.renderCache.renderer = this;
         	},
@@ -1104,6 +1105,7 @@ define(["./crimild.core", "./crimild.math",
 
 				// todo move this to a user-defined uniform
 				this.setUniformFloat(program.renderCache.tintUniform, grc.tint ? grc.tint : 0);
+				this.setUniformInt(program.renderCache.perPixelShadingUniform, grc.usePerPixelShading ? 1 : 0);
 
 				// setup lights
 				this.setUniformInt(program.renderCache.useLightingUniform, grc.getLightCount() > 0 ? 1 : 0);

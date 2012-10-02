@@ -20,7 +20,7 @@ define(["crimild.core"], function(core) {
 
     var orbitingComponent = function(spec) {
         spec = spec || {};
-        var that = core.nodeComponent({name: "update"});
+        var that = core.nodeComponent({name: spec.name || "update"});
         var x0 = spec.x0 || 0;
         var y0 = spec.y0 || 0;
         var x = 0;

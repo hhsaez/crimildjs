@@ -12,13 +12,31 @@
     <meta name="description" content="WebGL based 3D game framework">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <script data-main="../src/crimild" src="../lib/require.js"></script>
-    <script id="shader-fs" type="x-shader/x-fragment">
+    <script id="simple-vs" type="x-shader/x-fragment">
+        attribute vec3 aVertexPosition;
+
+        uniform mat4 uMVMatrix;
+        uniform mat4 uPMatrix;
+        uniform mat3 uNMatrix;
+
+        void main(void) {
+            gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+        }
+    </script>
+    <script id="simple-fs" type="x-shader/x-fragment">
         precision mediump float;
 
-        varying vec4 vDestinationColor;
-        
+        struct Material {
+            vec3 Ambient;
+            vec3 Diffuse;
+            vec3 Specular;
+            float Shininess;
+        };
+
+        uniform Material uMaterial;
+
         void main(void) {
-            gl_FragColor = vDestinationColor;
+            gl_FragColor = vec4(uMaterial.Diffuse, 1.0);
         }
     </script>
     <script id="shader-vs" type="x-shader/x-vertex">
@@ -47,109 +65,219 @@
         uniform mat3 uNMatrix;
 
         uniform bool uUseLighting;
+        uniform bool uUsePerPixelShading;
         uniform int uLightCount;
         uniform LightSource uLights[4];
         uniform Material uMaterial;
 
         varying vec4 vDestinationColor;
+        varying vec4 vPosition;
+        varying vec3 vNormal;
+        varying vec3 vViewVector;
 
         void main(void) {
-            vec4 position = uMVMatrix * vec4(aVertexPosition, 1.0);
-            gl_Position = uPMatrix * position;
+            // compute position in view space
+            vPosition = uMVMatrix * vec4(aVertexPosition, 1.0);
+            gl_Position = uPMatrix * vPosition;
+
+            // approximate the view vector 
+            vViewVector = normalize(-vPosition.xyz);
+
+            // compute normal in world space
+            vNormal = normalize(uNMatrix * aVertexNormal);
 
             if (uUseLighting) {
-                vec3 eyespaceNormal = uNMatrix * aVertexNormal;
-                vec3 N = normalize(eyespaceNormal);
-                vec3 result = uMaterial.Ambient.xyz;
+                if (!uUsePerPixelShading) {
+                    vDestinationColor = vec4(uMaterial.Ambient, 1.0);
 
-                vec3 E = vec3(0, 0, 1);
+                    for (int i = 0; i < 4; i++) {
+                        if (i >= uLightCount) {
+                            break;
+                        }
+
+                        // compute light to vertex vector
+                        vec3 L = normalize(uLights[i].Position - vPosition.xyz);
+
+                        // compute diffuse factor
+                        float df = dot(vNormal, L);
+                        if (df > 0.0) {
+                            // compute specular factor
+                            vec3 r = -normalize(reflect(L, vNormal));
+                            float sf = pow(max(dot(r, vViewVector), 0.0), uMaterial.Shininess);
+
+                            // add to color
+                            vDestinationColor.xyz += (df * uMaterial.Diffuse + sf * uMaterial.Specular) * uLights[i].Color;
+                        }
+                    }
+                }
+            }
+            else {
+                vDestinationColor = vec4(uMaterial.Diffuse, 1.0);
+            }
+        }
+    </script>
+    <script id="shader-fs" type="x-shader/x-fragment">
+        precision highp float;
+
+        struct LightSource {
+            vec3 Position;
+            vec3 Attenuation;
+            vec3 Direction;
+            vec3 Color;
+            float OuterCutoff;
+            float InnerCutoff;
+            float Exponent;
+        };
+
+        struct Material {
+            vec3 Ambient;
+            vec3 Diffuse;
+            vec3 Specular;
+            float Shininess;
+        };
+
+        uniform bool uUseLighting;
+        uniform bool uUsePerPixelShading;
+        uniform int uLightCount;
+        uniform LightSource uLights[4];
+        uniform Material uMaterial;
+
+        varying vec4 vDestinationColor;
+        varying vec4 vPosition;
+        varying vec3 vNormal;
+        varying vec3 vViewVector;
+
+        void main(void) {
+            if (uUseLighting && uUsePerPixelShading) {
+                vec4 color = vec4(uMaterial.Ambient, 1.0);
 
                 for (int i = 0; i < 4; i++) {
                     if (i >= uLightCount) {
                         break;
                     }
 
-                    vec3 L = normalize(uLights[i].Position);
-                    vec3 H = normalize(L + E);
+                    // compute light to vertex vector
+                    vec3 L = normalize(uLights[i].Position - vPosition.xyz);
 
-                    float df = max(0.0, dot(N, L));
-                    float sf = max(0.0, dot(N, H));
-                    sf = pow(sf, uMaterial.Shininess);
+                    // compute diffuse factor
+                    float df = dot(vNormal, L);
+                    if (df > 0.0) {
+                        // compute specular factor
+                        vec3 r = -normalize(reflect(L, vNormal));
+                        float sf = pow(max(dot(r, vViewVector), 0.0), uMaterial.Shininess);
 
-                    result += (df * uMaterial.Diffuse + sf * uMaterial.Specular) * uLights[i].Color;
-
+                        // add to color
+                        color.xyz += (df * uMaterial.Diffuse + sf * uMaterial.Specular) * uLights[i].Color;
+                    }
                 }
 
-                vDestinationColor = vec4(result, 1.0);
+                gl_FragColor = color;
             }
             else {
-                vDestinationColor = vec4(1.0, 1.0, 1.0, 1.0);
+                gl_FragColor = vDestinationColor;
             }
         }
     </script>
     <script type="text/javascript">
         function initCrimild(canvasId) {
             require(["crimild"], function(crimild) {
+                var customLightNode = function(spec) {
+                    spec = spec || {};
+
+                    return crimild.core.groupNode({
+                        nodes: [
+                            crimild.rendering.lightNode({
+                                lights: [
+                                    crimild.rendering.light({
+                                        color: spec.color || [1, 1, 1],
+                                    })
+                                ],
+                            }),
+                            crimild.core.geometryNode({
+                                primitives: [
+                                    crimild.primitives.spherePrimitive({
+                                        type: crimild.core.primitive.types.TRIANGLES,
+                                        vertexFormat: crimild.core.vertexFormat(),
+                                        radius: 0.1
+                                    })
+                                ],
+                            })
+                        ],
+                        components: [
+                            crimild.components.orbitingComponent({name: "orbit", a: spec.a || 2, b: spec.b || 2, speed: spec.speed || 0.01}),
+                            crimild.rendering.renderComponent({
+                                effects: [
+                                    crimild.rendering.effect({
+                                        shaderProgram: crimild.rendering.shaderProgram({
+                                            vertexShader: crimild.rendering.shader({
+                                                scriptId: "simple-vs"
+                                            }),
+                                            fragmentShader: crimild.rendering.shader({
+                                                scriptId: "simple-fs"
+                                            })
+                                        }),
+                                        diffuse: spec.color || [1, 1, 1],
+                                    })
+                                ]
+                            })                        
+                        ],
+                        local: crimild.math.transformation({
+                            translate: spec.position || [1, 1, 1]
+                        }),
+                    });
+                };
+
                 var scene = crimild.core.groupNode({
                     name: "scene",
                     nodes: [
-                        crimild.rendering.lightNode({
-                            lights: [
-                                crimild.rendering.light({
-                                    color: [1, 0, 0],
-                                })
-                            ],
-                            components: [
-                                crimild.components.orbitingComponent({a: 10, b: 5}),
-                            ],
-                            local: crimild.math.transformation({
-                                translate: [5, 0.25, 5.0]
-                            }),
-                        }),
-                        crimild.rendering.lightNode({
-                            lights: [
-                                crimild.rendering.light({
-                                    color: [0, 1, 0],
-                                })
-                            ],
-                            components: [
-                                crimild.components.orbitingComponent({a: 10, b: 5, speed: -0.005}),
-                            ],
-                            local: crimild.math.transformation({
-                                translate: [5, 0.25, 5.0]
-                            }),
-                        }),
+                        customLightNode({ color: [1, 0, 0], a: 3, b: 4, speed: 0.005, }),
+                        customLightNode({ color: [0, 1, 0], a: -4, b: 3, speed: 0.005, }),
+                        customLightNode({ color: [0, 0, 1], a: 1.5, b: 1.5, speed: -0.01, }),
                         crimild.core.geometryNode({
-                            name: "a cone",
                             primitives: [
-                                crimild.primitives.kleinBottlePrimitive({
+                                crimild.primitives.treefoilKnotPrimitive({
                                     type: crimild.core.primitive.types.TRIANGLES,
                                     vertexFormat: crimild.core.vertexFormat({normals: 3}),
-                                    scale: 0.15
+                                    divisions: vec2.createFrom(90, 30),
+                                    scale: 3.0
                                 })
                             ],
+                            components: [
+                                crimild.components.rotationComponent({name: "orbit", angle: 0.001, axis: [0, 1, 0]}),
+                                crimild.rendering.renderComponent({
+                                    effects: [
+                                        crimild.rendering.effect({
+                                            shaderProgram: crimild.rendering.shaderProgram({
+                                                vertexShader: crimild.rendering.shader({
+                                                    scriptId: "shader-vs"
+                                                }),
+                                                fragmentShader: crimild.rendering.shader({
+                                                    scriptId: "shader-fs"
+                                                })
+                                            }),
+                                            diffuse: [1.0, 1.0, 1],
+                                        })
+                                    ]
+                                }),
+                                (function() {
+                                    var that = crimild.core.nodeComponent();
+
+                                    that.update = function() {
+                                        var grc = that.node.getComponent("geometryRender");
+                                        if (grc) {
+                                            // TODO: move this to a user-define uniform
+                                            grc.usePerPixelShading = document.getElementById("lighting").checked;
+                                        }
+                                    };
+
+                                    return that;
+                                })(),
+                            ]
                         })
                     ],
                     local: crimild.math.transformation({
-                        translate: [0, 0, -5],
+                        translate: [0, 0, -10],
                     }),
-                    components: [
-                        crimild.rendering.renderComponent({
-                            effects: [
-                                crimild.rendering.effect({
-                                    shaderProgram: crimild.rendering.shaderProgram({
-                                        vertexShader: crimild.rendering.shader({
-                                            scriptId: "shader-vs"
-                                        }),
-                                        fragmentShader: crimild.rendering.shader({
-                                            scriptId: "shader-fs"
-                                        })
-                                    }),
-                                    diffuse: [1.0, 1.0, 1],
-                                })
-                            ]
-                        })                        
-                    ]
                 });
 
                 var canvas = document.getElementById(canvasId);
@@ -177,16 +305,22 @@
         </div>
         <article class="markdown-body">
             <div>
-                <div style="float: right;"><a href="per_pixel_lighting.html">Next&nbsp;&gt;</a></div>
+                <div style="float: right;"><a href="toon_shading.html">Next&nbsp;&gt;</a></div>
                 <div style="clear: all;"><a href="shapes.html">&lt;&nbsp;Previous</a></div>
             </div>
-            <h3>Crimild JS Example: Per-Vertex Lighting</h3>
+            <h3>Crimild JS Example: Lighting</h3>
 
-            <p>This example shows how to use a simple shader to compute per-vertex lighting</p>
+            <p>This example shows how to use a simple shader to compute lighting. Both per-pixel and per-vertex shading are available, which you can select by checking the combo box below.</p>
 
-            <canvas id="webGLCanvas" style="border: solid 1px; margin-left: -5px;" width="640" height="480">
+            <p>The small circles represent the lights positions. </p>
+
+            <canvas id="webGLCanvas" style="border: solid 1px; margin-left: -5px; z-index: 0;" width="640" height="480">
                 Your browser does not support WebGL
             </canvas>
+
+            <div style="float: right;">
+                <input type="checkbox" id="lighting" /> Use Per Pixel Shading<br/>
+            </div>
 
         </article>
       </div>
