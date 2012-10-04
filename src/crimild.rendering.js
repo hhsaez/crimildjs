@@ -145,6 +145,7 @@ define(["./crimild.core", "./crimild.math",
 		var that = core.nodeComponent({name: "geometryRender"});
 		var effects = [];
 		var lights = [];
+		var uniforms = {};
 
 		that.getEffectCount = function() {
 			return effects.length;
@@ -162,13 +163,49 @@ define(["./crimild.core", "./crimild.math",
 			return lights[index];
 		}
 
+		that.eachEffect = function(expresion) {
+			for (var i in effects) {
+				expresion(effects[i]);
+			}
+		};
+
+		that.eachLight = function(expresion) {
+			for (var i in lights) {
+				expresion(lights[i]);
+			}
+		};
+
+		that.getUniform = function(name) {
+			return uniforms[name];
+		};
+
+		that.eachUniform = function(expresion) {
+			for (var i in uniforms) {
+				expresion(uniforms[i]);
+			}
+		};
+
 		that.reset = function(opts) {
-			if (opts) {
-				if (opts.effects) {
-					effects = opts.effects;
+			opts = opts || {};
+
+			effects = [];
+			if (opts.effects) {
+				for (var e in opts.effects) {
+					effects.push(opts.effects[e]);
 				}
-				if (opts.lights) {
-					lights = opts.lights;
+			}
+
+			lights = [];
+			if (opts.lights) {
+				for (var l in opts.lights) {
+					lights.push(opts.lights[l]);
+				}
+			}
+
+			uniforms = {};
+			if (opts.uniforms) {
+				for (var u in opts.uniforms) {
+					uniforms[u] = opts.uniforms[u];
 				}
 			}
 		};
@@ -292,6 +329,93 @@ define(["./crimild.core", "./crimild.math",
 		return that;
 	};
 
+	var shaderUniform = function(spec) {
+		spec = spec || {};
+		var that = {};
+
+		var _name = spec.name;
+		var _type = spec.type || shaderUniform.type.UNKNOWN;
+		var _data = spec.data;
+		var _count = spec.count || 1;
+
+		Object.defineProperties(that, {
+			name: {
+				get: function() {
+					return _name;
+				},
+				set: function(value) {
+					_name = value;
+				}
+			},
+			type: {
+				get: function() {
+					return _type;
+				},
+				set: function(value) {
+					_type = value;
+				}
+			},
+			data: {
+				get: function() {
+					return _data;
+				},
+				set: function(value) {
+					_data = value;
+				}
+			},
+			count: {
+				get: function() {
+					return _count;
+				},
+				set: function(value) {
+					_count = value;
+				}
+			}
+		});
+
+		return that;
+	};
+
+	shaderUniform.type = {
+		UNKNOWN: 0,
+		FLOAT: 1,
+		INT: 2,
+		MATRIX_3: 3,
+		MATRIX_4: 4,
+		BOOL: 5
+	};
+
+	var shaderUniformComponent = function(spec) {
+		spec = spec || {}
+		var that = core.nodeComponent({name: "uniforms"});
+
+		var _uniforms = {};
+
+		that.addUniform = function(uniform) {
+			if (uniform.name) {
+				_uniforms[uniform.name] = uniform;
+			}
+		};
+
+		that.getUniform = function(name) {
+			return _uniforms[name];
+		};
+
+		that.each = function(expression) {
+			for (var i in _uniforms) {
+				expression(_uniforms[i]);
+			}
+		};
+
+		if (spec.uniforms) {
+			for (var i in spec.uniforms) {
+				that.addUniform(spec.uniforms[i]);
+			}
+		}
+
+		return that;
+	};
+
 	// todo: rename this to Material
 	var effect = function(spec) {
 		spec = spec || {};
@@ -370,16 +494,37 @@ define(["./crimild.core", "./crimild.math",
 	}
 
 	/*
-		This visitor traverses a scene fetching all lights attached
-		to nodes. 
+		This visitor traverses a scene fetching all lights and shader 
+		uniforms attached to nodes. 
 
 		This is a very expensive operation and should be seldom used.
 		Usualy, this visitor is only invoked during a render state update
 	*/
-	var fetchLights = function(spec) {
+	var fetchLightsAndUniforms = function(spec) {
 		spec = spec || {}
 		var that = core.nodeVisitor(spec);
-		var lights = spec.lights || [];
+		var _lights = spec.lights || [];
+		var _uniforms = spec.uniforms || {};
+		var i = 0;
+
+		Object.defineProperties(that, {
+			lights: {
+				get: function() {
+					return _lights;
+				},
+				set: function(value) {
+					_lights = value;
+				}
+			},
+			uniforms: {
+				get: function() {
+					return _uniforms;
+				},
+				set: function(value) {
+					_uniforms = value;
+				}
+			}
+		})
 
 		that.traverse = function(node) {
 			node.accept(that);
@@ -388,9 +533,18 @@ define(["./crimild.core", "./crimild.math",
 		that.visitNode = function(node) {
 			var lc = node.getComponent("lighting");
 			if (lc) {
-				for (var i = 0; i < lc.getLightCount(); i++) {
-					lights.push(lc.getLightAt(i));
+				for (i = 0; i < lc.getLightCount(); i++) {
+					_lights.push(lc.getLightAt(i));
 				}
+			}
+
+			var uc = node.getComponent("uniforms");
+			if (uc) {
+				uc.each(function(uniform){
+					if (uniform.name) {
+						_uniforms[uniform.name] = uniform;
+					}
+				});
 			}
 		};
 
@@ -403,14 +557,6 @@ define(["./crimild.core", "./crimild.math",
 
 		that.visitGeometryNode = function(geometry) {
 			that.visitNode(geometry);
-		};
-
-		that.getLightCount = function() {
-			return lights.length;
-		}
-
-		that.getLightAt = function(index) {
-			return lights[index];
 		};
 
 		return that;
@@ -426,6 +572,7 @@ define(["./crimild.core", "./crimild.math",
 		var that = core.nodeVisitor(spec);
 		var effects = [];
 		var lights = [];
+		var uniforms = {};
 
 		that.propagateFromRoot = function(aNode) {
 			if (aNode.getParent()) {
@@ -433,7 +580,7 @@ define(["./crimild.core", "./crimild.math",
 			}
 			else {
 				// no parent. this is the root node
-				aNode.perform(fetchLights({lights: lights}));
+				aNode.perform(fetchLightsAndUniforms({lights: lights, uniforms: uniforms}));
 			}
 
 			var grc = aNode.getComponent("render");
@@ -453,7 +600,7 @@ define(["./crimild.core", "./crimild.math",
 			}
 			else {
 				// no parent. this is the root node
-				aNode.perform(fetchLights({lights: lights}));
+				aNode.perform(fetchLightsAndUniforms({lights: lights, uniforms: uniforms}));
 			}
 
 			aNode.accept(that);
@@ -468,6 +615,16 @@ define(["./crimild.core", "./crimild.math",
 				for (i = 0; i < grc.getEffectCount(); i++) {
 					effects.push(grc.getEffectAt(i));
 				}
+			}
+
+			// override uniforms
+			var uc = group.getComponent("uniforms");
+			if (uc) {
+				uc.each(function(uniform){
+					if (uniform.name) {
+						uniforms[uniform.name] = uniform;
+					}
+				});
 			}
 
 			for (i = 0; i < group.getNodeCount(); i++) {
@@ -495,9 +652,19 @@ define(["./crimild.core", "./crimild.math",
 				}
 			}
 
+			var uc = geometry.getComponent("uniforms");
+			if (uc) {
+				uc.each(function(uniform){
+					if (uniform.name) {
+						uniforms[uniform.name] = uniform;
+					}
+				});
+			}
+
 			grc.reset({
 				effects: effects,
-				lights: lights
+				lights: lights,
+				uniforms: uniforms
 			});
 
 			effects = tempEffects;
@@ -976,6 +1143,35 @@ define(["./crimild.core", "./crimild.math",
         		}
         	},
 
+        	setCustomUniform: function(uniform, program) {
+        		if (!uniform || !uniform.name) {
+        			return;
+        		}
+
+        		var uniformLocation = program.renderCache.customUniforms[uniform.name];
+        		
+        		if (!uniformLocation) {
+        			uniformLocation = gl.getUniformLocation(program.renderCache, uniform.name);
+        			if (uniformLocation) {
+	        			program.renderCache.customUniforms[uniform.name] = uniformLocation;
+        			}
+        		}
+
+        		if (uniformLocation) {
+        			if (uniform.type === shaderUniform.type.BOOL) {
+						if (uniform.count === 1) {
+							this.setUniformInt(uniformLocation, uniform.data ? 1 : 0);
+						}
+        			}
+        			else if (uniform.type === shaderUniform.type.FLOAT) {
+        				if (uniform.count === 1) {
+        					//console.log(uniform.data);
+        					this.setUniformFloat(uniformLocation, uniform.data);
+        				}
+        			}
+        		}
+        	},
+
         	loadProgram: function(program) {
         		this.compileShader(program.getVertexShader(), gl.VERTEX_SHADER);
         		this.compileShader(program.getFragmentShader(), gl.FRAGMENT_SHADER);
@@ -1038,8 +1234,8 @@ define(["./crimild.core", "./crimild.math",
 
                 program.renderCache.useTexturesUniform = gl.getUniformLocation(program.renderCache, "uUseTextures");
 
-                program.renderCache.tintUniform = gl.getUniformLocation(program.renderCache, "uTint");
-                program.renderCache.perPixelShadingUniform = gl.getUniformLocation(program.renderCache, "uUsePerPixelShading");
+                // used for storing custom uniforms locations
+                program.renderCache.customUniforms = {};
 
         		program.renderCache.renderer = this;
         	},
@@ -1092,20 +1288,23 @@ define(["./crimild.core", "./crimild.math",
 
 			applyEffect: function(grc, primitive, vbo, ibo, currentEffect) {
 				var program = currentEffect.getProgram();
+				var that = this;
+
 				if (!program) {
 					program = ubbershaderProgram;
 				}
 
-				this.enableProgram(program)
+				this.enableProgram(program, grc)
 
         		this.setMatrixUniforms(program);
 
 				this.enableVertexBuffer(vbo, program);
 				this.enableIndexBuffer(ibo, program);
 
-				// todo move this to a user-defined uniform
-				this.setUniformFloat(program.renderCache.tintUniform, grc.tint ? grc.tint : 0);
-				this.setUniformInt(program.renderCache.perPixelShadingUniform, grc.usePerPixelShading ? 1 : 0);
+				// enable custom uniforms
+				grc.eachUniform(function(uniform) {
+					that.setCustomUniform(uniform, program);
+				});
 
 				// setup lights
 				this.setUniformInt(program.renderCache.useLightingUniform, grc.getLightCount() > 0 ? 1 : 0);
@@ -1154,6 +1353,8 @@ define(["./crimild.core", "./crimild.math",
 		texture: texture,
 		shader: shader,
 		shaderProgram: shaderProgram,
+		shaderUniform: shaderUniform,
+		shaderUniformComponent: shaderUniformComponent,
 		effect: effect,
 		renderComponent: renderComponent,
 		geometryRenderComponent: geometryRenderComponent,

@@ -67,7 +67,7 @@
                         float sf = pow(max(dot(r, vViewVector), 0.0), uMaterial.Shininess);
 
                         // add to color
-                        result.xyz += (df * uMaterial.Diffuse + sf * uMaterial.Specular) * uLights[i].Color + uTint * vec3(1.0, 0.0, 0.0);
+                        result.xyz += (df * uMaterial.Diffuse + sf * uMaterial.Specular) * uLights[i].Color + vec3(uTint, 0.0, 0.0);
                     }
                 }
             }
@@ -104,8 +104,8 @@
     <script type="text/javascript">
         function initCrimild(canvasId) {
             require(["crimild"], function(crimild) {
-                var rotY = 2.0 * 0.1745329252
-                var scene
+                var rotY = 2.0 * 0.1745329252;
+                var scene;
 
                 var adnSectionHalf = function(spec) {
                     spec = spec || {}
@@ -131,6 +131,17 @@
                                         vertexFormat: crimild.core.vertexFormat({normals: 3}),
                                         height: 5,
                                         radius: 1
+                                    })
+                                ],
+                                components: [
+                                    crimild.rendering.shaderUniformComponent({
+                                        uniforms: [
+                                            crimild.rendering.shaderUniform({
+                                                name: "uTint",
+                                                data: 0,
+                                                type: crimild.rendering.shaderUniform.type.FLOAT,
+                                            })
+                                        ]
                                     })
                                 ],
                                 local: crimild.math.transformation({
@@ -262,16 +273,15 @@
                         };
 
                         that.visitGeometryNode = function(aGeometry) {
-                            var grc = aGeometry.getComponent("geometryRender");
-                            if (crimild.math.testIntersectionSphereRay(aGeometry.world.translate, 3.0, origin, direction)) {
-                                if (grc) {
-                                    grc.tint = 1.0;
+                            var uc = aGeometry.getComponent("uniforms");
+                            if (uc) {
+                                if (crimild.math.testIntersectionSphereRay(aGeometry.world.translate, 3.0, origin, direction)) {
+                                    uc.getUniform("uTint").data = 1.0;
+                                }
+                                else {
+                                    uc.getUniform("uTint").data = 0.0;
                                 }
                             }
-                            else if (grc) {
-                                grc.tint = 0.0;
-                            }
-
                         };
 
                         return that;

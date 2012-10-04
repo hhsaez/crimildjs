@@ -243,7 +243,7 @@
                                 })
                             ],
                             components: [
-                                crimild.components.rotationComponent({name: "orbit", angle: 0.001, axis: [0, 1, 0]}),
+                                crimild.components.rotationComponent({name: "rotation", angle: 0.001, axis: [0, 1, 0]}),
                                 crimild.rendering.renderComponent({
                                     effects: [
                                         crimild.rendering.effect({
@@ -260,14 +260,18 @@
                                     ]
                                 }),
                                 (function() {
-                                    var that = crimild.core.nodeComponent();
+                                    var that = crimild.rendering.shaderUniformComponent({
+                                        uniforms: [
+                                            crimild.rendering.shaderUniform({
+                                                name: "uUsePerPixelShading",
+                                                data: false,
+                                                type: crimild.rendering.shaderUniform.type.BOOL,
+                                            })
+                                        ]
+                                    })
 
                                     that.update = function() {
-                                        var grc = that.node.getComponent("geometryRender");
-                                        if (grc) {
-                                            // TODO: move this to a user-define uniform
-                                            grc.usePerPixelShading = document.getElementById("lighting").checked;
-                                        }
+                                        that.getUniform("uUsePerPixelShading").data = document.getElementById("lighting").checked;
                                     };
 
                                     return that;
