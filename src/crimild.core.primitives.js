@@ -273,7 +273,7 @@ define(["crimild.core"], function(core) {
         var latitudeBands = 30;
         var longitudeBands = 30;
         var radius = spec.radius || 1;
-        var vertexFormat = spec.vertexFormat;
+        var vertexFormat = spec.vertexFormat || core.vertexFormat({positions: 3});
 
 		that.generate = function() {
             var vertexPositionData = [];
@@ -296,6 +296,18 @@ define(["crimild.core"], function(core) {
                     vertexPositionData.push(radius * x);
                     vertexPositionData.push(radius * y);
                     vertexPositionData.push(radius * z);
+
+	                if (vertexFormat.normals > 0) {
+	                	vertexPositionData.push(x);
+	                	vertexPositionData.push(y);
+	                	vertexPositionData.push(z);
+	                }
+
+	                if (vertexFormat.textureCoords > 0) {
+	                	vertexPositionData.push(u);
+	                	vertexPositionData.push(v);
+	                }
+
                 }
             }
 
@@ -314,7 +326,7 @@ define(["crimild.core"], function(core) {
                 }
             }
 
-            that.setVertexBuffer(core.vertexBufferObject({vertexFormat: vertexFormat, count: vertexPositionData.length / 3, data: new Float32Array(vertexPositionData)}));
+            that.setVertexBuffer(core.vertexBufferObject({vertexFormat: vertexFormat, count: vertexPositionData.length / vertexFormat.getVertexSize(), data: new Float32Array(vertexPositionData)}));
             that.setIndexBuffer(core.indexBufferObject({indexCount: indexData.length, data: new Uint16Array(indexData)}));
 		};
 

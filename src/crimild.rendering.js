@@ -247,8 +247,14 @@ define(["./crimild.core", "./crimild.math",
 		var that = {};
 
 		var _image;
+		var _name = spec.name || "uSampler";
 
 		Object.defineProperties(that, {
+			name: {
+				get: function() {
+					return _name;
+				}
+			},
 			image: {
 				get: function() {
 					return _image;
@@ -1073,15 +1079,25 @@ define(["./crimild.core", "./crimild.math",
 
         	},
 
-        	enableTexture: function(aTexture, program) {
+        	enableTexture: function(aTexture, index, program) {
         		if (aTexture.image.isReady()) {
 	        		if (!aTexture.renderCache) {
 	        			this.loadTexture(aTexture);
 	        		}
 
-					gl.activeTexture(gl.TEXTURE0);
-	                gl.bindTexture(gl.TEXTURE_2D, aTexture.renderCache);
-	                gl.uniform1i(program.renderCache.samplerUniform, 0)
+	        		var uniformLocation = program.renderCache.customUniforms[aTexture.name];
+	        		if (!uniformLocation) {
+	        			uniformLocation = gl.getUniformLocation(program.renderCache, aTexture.name);
+	        			if (uniformLocation) {
+		        			program.renderCache.customUniforms[aTexture.name] = uniformLocation;
+	        			}
+	        		}
+
+	        		if (uniformLocation) {
+						gl.activeTexture(gl.TEXTURE0 + index);
+	                	gl.bindTexture(gl.TEXTURE_2D, aTexture.renderCache);
+						this.setUniformInt(uniformLocation, index);
+					}
         		}
         	},
 
@@ -1316,7 +1332,7 @@ define(["./crimild.core", "./crimild.math",
 				// setup textures
 				this.setUniformInt(program.renderCache.useTexturesUniform, currentEffect.getTextureCount() > 0 ? 1 : 0);
 				for (var t = 0; t < currentEffect.getTextureCount(); t++) {
-					this.enableTexture(currentEffect.getTextureAt(t), program);
+					this.enableTexture(currentEffect.getTextureAt(t), t, program);
 				}
 
 				// setup material 
