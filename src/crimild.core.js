@@ -122,19 +122,57 @@ define(["./crimild.math"], function(math) {
 	};
 
 	var vertexFormat = function(spec) {
-		var that = {
-			positions: 3,
-			normals: 0,
-			colors: 0,
-			textureCoords: 0
-		};
+		var spec = spec || {};
+		var that = {};
 
-		if (spec) {
-			that.positions = spec.positions ? spec.positions : that.positions;
-			that.colors = spec.colors ? spec.colors : that.colors;
-			that.normals = spec.normals ? spec.normals : that.normals;
-			that.textureCoords = spec.textureCoords ? spec.textureCoords : that.textureCoords;
-		}
+		var _positions = spec.positions || 3;
+		var _normals = spec.normals || 0;
+		var _colors = spec.colors || 0;
+		var _textureCoords = spec.textureCoords || 0;
+		var _tangents = spec.tangents || 0;
+
+		Object.defineProperties(that, {
+			positions: {
+				get: function() {
+					return _positions;
+				},
+				set: function(value) {
+					_positions = value;
+				}
+			},
+			normals: {
+				get: function() {
+					return _normals;
+				},
+				set: function(value) {
+					_normals = value;
+				}
+			},
+			colors: {
+				get: function() {
+					return _colors;
+				},
+				set: function(value) {
+					_colors = value;
+				}
+			},
+			textureCoords: {
+				get: function() {
+					return _textureCoords;
+				},
+				set: function(value) {
+					_textureCoords = value;
+				}
+			},
+			tangents: {
+				get: function() {
+					return _tangents;
+				},
+				set: function(value) {
+					_tangents = value;
+				}
+			}
+		});
 
 		that.getPositionsOffset = function() {
 			return 0;
@@ -152,8 +190,12 @@ define(["./crimild.math"], function(math) {
 			return that.getColorsOffset() + that.colors;
 		};
 
+		that.getTangentsOffset = function() {
+			return that.getTextureCoordsOffset() + that.textureCoords;
+		};
+
 		that.getVertexSize = function() {
-			return that.positions + that.normals + that.colors + that.textureCoords;
+			return that.positions + that.normals + that.colors + that.textureCoords + that.tangents;
 		};
 
 		that.getVertexSizeInBytes = function() {

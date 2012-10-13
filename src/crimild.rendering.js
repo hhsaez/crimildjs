@@ -1020,6 +1020,28 @@ define(["./crimild.core", "./crimild.math",
 		        			4 * vf.getPositionsOffset());
 	        		}
         		}
+
+        		if (program.renderCache.vertexTangentAttribute >= 0) {
+        			if (vf.tangents > 0) {
+		        		gl.vertexAttribPointer(program.renderCache.vertexTangentAttribute, 
+		        			vf.tangents, 
+		        			gl.FLOAT, 
+		        			false, 
+		        			vf.getVertexSizeInBytes(), 
+		        			4 * vf.getTangentsOffset());
+        			}
+        			else {
+	        			// fallback: the shader requires tangents but none was 
+	        			// provided by the geometry. use positions instead, although this
+	        			// will end up in an undefined result 
+		        		gl.vertexAttribPointer(program.renderCache.vertexTangentAttribute, 
+		        			vf.positions, 
+		        			gl.FLOAT, 
+		        			false, 
+		        			vf.getVertexSizeInBytes(), 
+		        			4 * vf.getPositionsOffset());
+        			}
+        		}
         	},
 
         	disableVertexBuffer: function() {
@@ -1216,6 +1238,11 @@ define(["./crimild.core", "./crimild.math",
                 	gl.enableVertexAttribArray(program.renderCache.vertexTextureCoordAttribute);
                 }
         		
+        		program.renderCache.vertexTangentAttribute = gl.getAttribLocation(program.renderCache, "aVertexTangent");
+        		if (program.renderCache.vertexTangentAttribute >= 0) {
+        			gl.enableVertexAttribArray(program.renderCache.vertexTangentAttribute);
+        		}
+
         		program.renderCache.pMatrixUniform = gl.getUniformLocation(program.renderCache, "uPMatrix");
         		program.renderCache.mvMatrixUniform = gl.getUniformLocation(program.renderCache, "uMVMatrix");
         		program.renderCache.nMatrixUniform = gl.getUniformLocation(program.renderCache, "uNMatrix");
