@@ -339,34 +339,6 @@ define(["crimild.core"], function(core) {
 		return that;
 	};
 
-	/*
-	var spherePrimitive = function(spec) {
-		spec = spec || {};
-		var that = parametricPrimitive(spec);
-
-		var radius = spec.radius || 1.0;
-		var divisions = spec.divisions || [20, 20];
-		var upperBound = spec.upperBound || [Math.PI, 2.0 * Math.PI];
-		var textureCount = spec.textureCount || [1, 1];
-
-		that.evaluate = function(domain, dest) {
-			if (!dest) {
-				dest = vec3.create();
-			}
-
-			dest[0] = radius * Math.sin(domain[0]) * Math.cos(domain[1]);
-			dest[1] = radius * Math.cos(domain[0]);
-			dest[2] = radius * -Math.sin(domain[0]) * Math.sin(domain[1]);
-
-			return dest;
-		};
-
-		that.setInterval({divisions: divisions, upperBound: upperBound, textureCount: textureCount});
-		that.generate();
-
-		return that;
-	};*/
-
 	var spherePrimitive = function(spec) {
 		spec = spec || {}
 		var that = core.primitive(spec);
