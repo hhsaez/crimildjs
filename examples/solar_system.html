@@ -16,8 +16,10 @@
         function initCrimild(canvasId) {
             require(["crimild"], function(crimild) {
                 var assetManager = crimild.utils.assetManager();
-                assetManager.queueImage("../assets/crate.gif");
-                assetManager.queueFile("../assets/world.txt");
+                assetManager.queueImage("../assets/sun.gif");
+                assetManager.queueImage("../assets/moon.gif");
+                assetManager.queueImage("../assets/earth.jpg");
+                assetManager.queueImage("../assets/mars.jpg");
                 assetManager.loadAll(function() {
                     var orbitingComponent = function(spec) {
                         spec = spec || {};
@@ -53,18 +55,44 @@
                                     crimild.rendering.lightingComponent({
                                         lights: [
                                             crimild.rendering.light({
-                                                color: [1, 1, 0],
+                                                color: [1, 1, 1],
                                             })
                                         ]
                                     })
                                 ],
                                 local: crimild.math.transformation({
-                                    translate: [0.0, 0.0, 1000.0]
+                                    translate: [0.0, 0.0, 40.0]
                                 })
                             }),
                             crimild.core.groupNode({
                                 name: "Sun",
+                                local: crimild.math.transformation({
+                                    rotate: quat4.fromAngleAxis(-0.45 * Math.PI, [1, 0, 0])
+                                }),
                                 nodes: [
+                                    crimild.core.geometryNode({
+                                        primitives: [
+                                            crimild.primitives.spherePrimitive({
+                                                vertexFormat: crimild.core.vertexFormat({positions: 3, normals: 3, textureCoords: 2}),
+                                                radius: 25
+                                            })
+                                        ],
+                                        components: [
+                                            crimild.rendering.renderComponent({
+                                                effects: [
+                                                    crimild.rendering.effect({
+                                                        ambient: [1, 1, 1],
+                                                        diffuse: [1, 1, 1],
+                                                        textures: [
+                                                            crimild.rendering.texture({
+                                                                image: assetManager.getImage("../assets/sun.gif")
+                                                            })
+                                                        ]
+                                                    })
+                                                ]
+                                            })
+                                        ],
+                                    }),
                                     crimild.core.groupNode({
                                         nodes: [
                                             crimild.core.groupNode({
@@ -76,7 +104,16 @@
                                                                 vertexFormat: crimild.core.vertexFormat(),
                                                                 radius: 1
                                                             })
-                                                        ]
+                                                        ],
+                                                        components: [
+                                                            crimild.rendering.renderComponent({
+                                                                effects: [
+                                                                    crimild.rendering.effect({
+                                                                        diffuse: [0.5, 0.5, 0.75],
+                                                                    })
+                                                                ]
+                                                            })
+                                                        ],
                                                     })
                                                 ],
                                                 components: [
@@ -92,7 +129,16 @@
                                                                 vertexFormat: crimild.core.vertexFormat(),
                                                                 radius: 1.5
                                                             })
-                                                        ]
+                                                        ],
+                                                        components: [
+                                                            crimild.rendering.renderComponent({
+                                                                effects: [
+                                                                    crimild.rendering.effect({
+                                                                        diffuse: [1, 0.5, 0.5],
+                                                                    })
+                                                                ]
+                                                            })
+                                                        ],
                                                     })
                                                 ],
                                                 components: [
@@ -110,13 +156,26 @@
                                                                     crimild.core.geometryNode({
                                                                         primitives: [
                                                                             crimild.primitives.spherePrimitive({
-                                                                                vertexFormat: crimild.core.vertexFormat()
+                                                                                vertexFormat: crimild.core.vertexFormat({positions: 3, normals: 3, textureCoords: 2}),
+                                                                            })
+                                                                        ],
+                                                                        components: [
+                                                                            crimild.rendering.renderComponent({
+                                                                                effects: [
+                                                                                    crimild.rendering.effect({
+                                                                                        textures: [
+                                                                                            crimild.rendering.texture({
+                                                                                                image: assetManager.getImage("../assets/moon.gif")
+                                                                                            })
+                                                                                        ]
+                                                                                    })
+                                                                                ]
                                                                             })
                                                                         ],
                                                                     })
                                                                 ],
                                                                 components: [
-                                                                    orbitingComponent({a: 4, b: 4, speed: 0.1})
+                                                                    orbitingComponent({a: 7, b: 7, speed: 0.07})
                                                                 ],
                                                             })
                                                         ]
@@ -124,10 +183,26 @@
                                                     crimild.core.geometryNode({
                                                         primitives: [
                                                             crimild.primitives.spherePrimitive({
-                                                                vertexFormat: crimild.core.vertexFormat(),
+                                                                vertexFormat: crimild.core.vertexFormat({positions: 3, normals: 3, textureCoords: 2}),
                                                                 radius: 4
                                                             })
-                                                        ]
+                                                        ],
+                                                        local: crimild.math.transformation({
+                                                            rotate: quat4.fromAngleAxis(0.5 * Math.PI, [1, 0, 0])
+                                                        }),
+                                                        components: [
+                                                            crimild.rendering.renderComponent({
+                                                                effects: [
+                                                                    crimild.rendering.effect({
+                                                                        textures: [
+                                                                            crimild.rendering.texture({
+                                                                                image: assetManager.getImage("../assets/earth.jpg")
+                                                                            })
+                                                                        ]
+                                                                    })
+                                                                ]
+                                                            })
+                                                        ],
                                                     })
                                                 ],
                                                 components: [
@@ -137,6 +212,27 @@
                                             crimild.core.groupNode({
                                                 name: "Mars",
                                                 nodes: [
+                                                    crimild.core.geometryNode({
+                                                        primitives: [
+                                                            crimild.primitives.spherePrimitive({
+                                                                vertexFormat: crimild.core.vertexFormat({positions: 3, normals: 3, textureCoords: 2}),
+                                                                radius: 2
+                                                            })
+                                                        ],
+                                                        components: [
+                                                            crimild.rendering.renderComponent({
+                                                                effects: [
+                                                                    crimild.rendering.effect({
+                                                                        textures: [
+                                                                            crimild.rendering.texture({
+                                                                                image: assetManager.getImage("../assets/mars.jpg")
+                                                                            })
+                                                                        ]
+                                                                    })
+                                                                ]
+                                                            })
+                                                        ],
+                                                    }),
                                                     crimild.core.groupNode({
                                                         nodes: [
                                                             crimild.core.groupNode({
@@ -148,7 +244,8 @@
                                                                     crimild.core.geometryNode({
                                                                         primitives: [
                                                                             crimild.primitives.spherePrimitive({
-                                                                                vertexFormat: crimild.core.vertexFormat()
+                                                                                vertexFormat: crimild.core.vertexFormat(),
+                                                                                radius: 0.5
                                                                             })
                                                                         ],
                                                                     })
@@ -166,7 +263,8 @@
                                                                     crimild.core.geometryNode({
                                                                         primitives: [
                                                                             crimild.primitives.spherePrimitive({
-                                                                                vertexFormat: crimild.core.vertexFormat()
+                                                                                vertexFormat: crimild.core.vertexFormat(),
+                                                                                radius: 0.5
                                                                             })
                                                                         ],
                                                                     })
@@ -177,14 +275,6 @@
                                                             })
                                                         ]
                                                     }),
-                                                    crimild.core.geometryNode({
-                                                        primitives: [
-                                                            crimild.primitives.spherePrimitive({
-                                                                vertexFormat: crimild.core.vertexFormat(),
-                                                                radius: 2
-                                                            })
-                                                        ]
-                                                    })
                                                 ],
                                                 components: [
                                                     orbitingComponent({a: 100, b: 100, speed: 0.0015})
@@ -192,22 +282,11 @@
                                             }),
                                         ]
                                     }),
-                                    crimild.core.geometryNode({
-                                        primitives: [
-                                            crimild.primitives.spherePrimitive({
-                                                vertexFormat: crimild.core.vertexFormat(),
-                                                radius: 20
-                                            })
-                                        ],
-                                    })
                                 ],
-                                components: [
-                                ]
                             })
                         ],
                         local: crimild.math.transformation({
-                            translate: [0, 0, -200],
-                            rotate: quat4.fromAngleAxis(-1.0, [1, 0, 0])
+                            translate: [0, 0, -150],
                         }),
                         components: [
                             (function() {
@@ -225,7 +304,7 @@
                     crimild.simulation.run({
                         canvas: document.getElementById(canvasId), 
                         scene: scene
-                    });
+                    }).getRenderer().setClearColor([0, 0, 0.1, 1]);
                 })
             });
         }
@@ -253,7 +332,7 @@
                 <div style="float: right;"><a href="camera.html">Next&nbsp;&gt;</a></div>
                 <div style="clear: all;"><a href="picking.html">&lt;&nbsp;Previous</a></div>
             </div>
-            <h3>Crimild JS Example: Solar System (work in progress)</h3>
+            <h3>Crimild JS Example: Solar System</h3>
 
             <p>This example employs a complex node hierarchy and transforms to recreate the Solar System</p>
 
