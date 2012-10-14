@@ -76,7 +76,7 @@ define(["crimild.core", "crimild.rendering"], function(core, rendering) {
 			for (var i = 0; i < fileQueue.length; i++) {
 				var url = fileQueue[i];
 				var request = new XMLHttpRequest();
-				request.open("GET", url);
+				request.open("GET", url, false);
 				request.onload = function() {
 					if (request.status === 200) {
 						successCount += 1;
@@ -96,7 +96,7 @@ define(["crimild.core", "crimild.rendering"], function(core, rendering) {
 						callback();
 					}
 				};
-				request.send();
+				request.send(null);
 			}
 		};
 

@@ -15,11 +15,9 @@
     <script type="text/javascript">
         function initCrimild(canvasId) {
             require(["crimild"], function(crimild) {
-                var sceneName = "../assets/scene.obj";
-
                 var assetManager = crimild.utils.assetManager();
-                assetManager.queueImage("../assets/crate.gif");
-                assetManager.queueFile(sceneName);
+                assetManager.queueFile("../assets/scene.obj");
+                assetManager.queueFile("../assets/scene.mtl");
                 assetManager.loadAll(function() {
                     var scene = crimild.core.groupNode({
                         name: "scene",
@@ -40,7 +38,8 @@
                                 })
                             }),
                             crimild.obj.objNode({
-                                file: assetManager.getFile(sceneName),
+                                file: assetManager.getFile("../assets/scene.obj"),
+                                mtlfile: assetManager.getFile("../assets/scene.mtl"),
                                 components: [
                                     crimild.components.rotationComponent({angle: -0.01, axis: [0, 1, 0]}),
                                 ]

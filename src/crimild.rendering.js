@@ -1123,8 +1123,8 @@ define(["./crimild.core", "./crimild.math",
         		}
         	},
 
-        	disableTexture: function(aTexture) {
-        		gl.bindTexture(gl.TEXTURE_2D, null);
+        	disableTexture: function(aTexture, index) {
+
         	},
 
         	compileShader: function(shader, shaderType) {

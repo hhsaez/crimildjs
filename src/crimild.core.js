@@ -66,8 +66,10 @@ define(["./crimild.math"], function(math) {
 		};
 
 		that.attachComponent = function(component) {
-			_components[component.getName()] = component;
-			component.node = that;
+			if (component) {
+				_components[component.getName()] = component;
+				component.node = that;
+			}
 		};
 
 		that.getComponent = function(componentName) {
