@@ -933,8 +933,9 @@ define(["./crimild.core", "./crimild.math",
 			setCurrentCamera: function(value) {
 				this.currentCamera = value;
 
-				if (this.currentCamera.target) {
+				if (this.currentCamera && this.currentCamera.target) {
 					this.enableFramebuffer(this.currentCamera.target);
+					this.clearBuffers();
 				}
 				else {
 					this.disableFramebuffer(null);
@@ -944,7 +945,6 @@ define(["./crimild.core", "./crimild.math",
 				this.onCameraFrustumChange();
 				this.onCameraFrameChange();
 
-				this.clearBuffers();
 			},
 
 			getCurrentCamera: function() {
@@ -981,6 +981,13 @@ define(["./crimild.core", "./crimild.math",
 
 			clearBuffers: function() {
 				gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+			},
+
+			clearBuffersInRect: function(x, y, width, height) {
+				gl.enable(gl.SCISSOR_TEST);
+				gl.scissor(x, y, width, height);
+				gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+				gl.disable(gl.SCISSOR_TEST);
 			},
 
         	setMatrixUniforms: function(program) {
@@ -1381,8 +1388,9 @@ define(["./crimild.core", "./crimild.math",
 			},
 
 			renderGeometryNode: function(geometry) {
+				// compute viewmodel matrix as vMatrix * mMatrix
         		geometry.world.toMat4(mMatrix);
-				mat4.multiply(mMatrix, vMatrix, mvMatrix);
+				mat4.multiply(vMatrix, mMatrix, mvMatrix);
 
         		var grc = geometry.getComponent("geometryRender");
         		if (grc) {
