@@ -216,8 +216,8 @@ define(["./crimild.core", "./crimild.math",
 	var image = function(spec) {
 		spec = spec || {}
 		var that = {};
-		var contents = null;
-		var ready = false;
+		var contents = spec.contents || null;
+		var ready = spec.contents ? true : false;
 
 		that.isReady = function() {
 			return ready;
@@ -226,18 +226,6 @@ define(["./crimild.core", "./crimild.math",
 		that.getContents = function() {
 			return contents;
 		};
-
-		if (spec.url) {
-			contents = new Image();
-			contents.onload = function() {
-				ready = true;
-			};
-			contents.src = spec.url;
-		}
-		else if (spec.contents) {
-			contents = spec.contents;
-			ready = true;
-		}
 
 		return that;
 	};
@@ -679,6 +667,44 @@ define(["./crimild.core", "./crimild.math",
 		return that;
 	};
 
+	var framebuffer = function(spec) {
+		spec = spec || {};
+		var that = {};
+
+		var _texture = spec.texture || texture();
+		var _width = spec.width || 512;
+		var _height = spec.height || 512;
+
+		Object.defineProperties(that, {
+			texture: {
+				get: function() {
+					return _texture;
+				},
+				set: function(value) {
+					_texture = value;
+				}
+			},
+			width: {
+				get: function() {
+					return _width;
+				},
+				set: function(value) {
+					_width = width;
+				}
+			},
+			height: {
+				get: function() {
+					return _height
+				},
+				set: function(value) {
+					_height = value;
+				}
+			}
+		});
+
+		return that;
+	};
+
 	var camera = function(spec) {
 		spec = spec || {};
 		var that = {};
@@ -686,6 +712,7 @@ define(["./crimild.core", "./crimild.math",
 		var _transformation = spec.transformation || math.transformation();
 		var _viewport = spec.viewport || [0, 0, 1, 1];
 		var _pMatrix = spec.projection || mat4.create();
+		var _target = spec.target;
 		var _renderer = null;
 
 		if (!spec.projection) {
@@ -716,7 +743,15 @@ define(["./crimild.core", "./crimild.math",
 				set: function(value) {
 					_transformation.set(value);
 				}
-			}
+			},
+			target: {
+				get: function() {
+					return _target;
+				},
+				set: function(value) {
+					_target = value;
+				}
+			},
 		});
 
 		that.computeViewMatrix = function(dest) {
@@ -747,7 +782,7 @@ define(["./crimild.core", "./crimild.math",
 
 		var that = core.nodeComponent(spec);
 
-		var _camera = spec.camera || camera();
+		var _camera = spec.camera || camera(spec);
 
 		Object.defineProperties(that, {
 			camera: {
@@ -768,7 +803,7 @@ define(["./crimild.core", "./crimild.math",
 		spec = spec || {};
 		var that = core.node(spec);
 
-		that.attachComponent(cameraComponent());
+		that.attachComponent(cameraComponent(spec));
 
 		return that;
 	};
@@ -898,9 +933,18 @@ define(["./crimild.core", "./crimild.math",
 			setCurrentCamera: function(value) {
 				this.currentCamera = value;
 
+				if (this.currentCamera.target) {
+					this.enableFramebuffer(this.currentCamera.target);
+				}
+				else {
+					this.disableFramebuffer(null);
+				}
+
 				this.onCameraViewportChange();
 				this.onCameraFrustumChange();
 				this.onCameraFrameChange();
+
+				this.clearBuffers();
 			},
 
 			getCurrentCamera: function() {
@@ -1102,29 +1146,60 @@ define(["./crimild.core", "./crimild.math",
         	},
 
         	enableTexture: function(aTexture, index, program) {
-        		if (aTexture.image.isReady()) {
-	        		if (!aTexture.renderCache) {
-	        			this.loadTexture(aTexture);
-	        		}
-
-	        		var uniformLocation = program.renderCache.customUniforms[aTexture.name];
-	        		if (!uniformLocation) {
-	        			uniformLocation = gl.getUniformLocation(program.renderCache, aTexture.name);
-	        			if (uniformLocation) {
-		        			program.renderCache.customUniforms[aTexture.name] = uniformLocation;
-	        			}
-	        		}
-
-	        		if (uniformLocation) {
-						gl.activeTexture(gl.TEXTURE0 + index);
-	                	gl.bindTexture(gl.TEXTURE_2D, aTexture.renderCache);
-						this.setUniformInt(uniformLocation, index);
-					}
+        		if (!aTexture.renderCache) {
+        			this.loadTexture(aTexture);
         		}
+
+        		var uniformLocation = program.renderCache.customUniforms[aTexture.name];
+        		if (!uniformLocation) {
+        			uniformLocation = gl.getUniformLocation(program.renderCache, aTexture.name);
+        			if (uniformLocation) {
+	        			program.renderCache.customUniforms[aTexture.name] = uniformLocation;
+        			}
+        		}
+
+        		if (uniformLocation) {
+					gl.activeTexture(gl.TEXTURE0 + index);
+                	gl.bindTexture(gl.TEXTURE_2D, aTexture.renderCache);
+					this.setUniformInt(uniformLocation, index);
+				}
         	},
 
         	disableTexture: function(aTexture, index) {
 
+        	},
+
+        	enableFramebuffer: function(aFramebuffer) {
+        		if (!aFramebuffer.renderCache) {
+        			aFramebuffer.renderCache = gl.createFramebuffer();
+        			gl.bindFramebuffer(gl.FRAMEBUFFER, aFramebuffer.renderCache);
+
+        			aFramebuffer.texture.renderCache = gl.createTexture();
+        			gl.bindTexture(gl.TEXTURE_2D, aFramebuffer.texture.renderCache);
+        			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+
+        			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, aFramebuffer.width, aFramebuffer.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+        			var renderbuffer = gl.createRenderbuffer();
+        			gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
+        			gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, aFramebuffer.width, aFramebuffer.height);
+
+        			gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, aFramebuffer.texture.renderCache, 0);
+        			gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderbuffer);
+
+        			gl.bindTexture(gl.TEXTURE_2D, null);
+        			gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+        			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        		}
+
+        		if (aFramebuffer.renderCache) {
+	        		gl.bindFramebuffer(gl.FRAMEBUFFER, aFramebuffer.renderCache);
+        		}
+        	},
+
+        	disableFramebuffer: function(aFramebuffer) {
+        		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         	},
 
         	compileShader: function(shader, shaderType) {
@@ -1401,6 +1476,7 @@ define(["./crimild.core", "./crimild.math",
 		effect: effect,
 		renderComponent: renderComponent,
 		geometryRenderComponent: geometryRenderComponent,
+		framebuffer: framebuffer,
 		camera: camera,
 		cameraComponent: cameraComponent,
 		cameraNode: cameraNode,
