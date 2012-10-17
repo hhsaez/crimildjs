@@ -116,9 +116,11 @@ define(["./crimild.core", "./crimild.rendering", "../lib/webgl-utils"], function
 		var that = task(spec);
 
 		that.onUpdate = function() {
-			var scene = simulator.getScene();
-			if (scene) {
-				scene.perform(core.updateScene());
+			for (var i = 0; i < simulator.getSceneCount(); i++) {
+				var scene = simulator.getSceneAt(i);
+				if (scene.root) {
+					scene.root.perform(core.updateScene());
+				}
 			}
 		};
 
@@ -132,15 +134,19 @@ define(["./crimild.core", "./crimild.rendering", "../lib/webgl-utils"], function
 			simulator.getRenderer().clearBuffers();
 
 			var visibilitySet = rendering.visibilitySet();
-			if (simulator.getCameraCount() > 0) {
-				for (var i = 0; i < simulator.getCameraCount(); i++) {
-					simulator.getScene().perform(rendering.computeVisibilitySet({result: visibilitySet, camera: simulator.getCameraAt(i)}));
-					simulator.getRenderer().renderVisibilitySet(visibilitySet);					
+			for (var i = 0; i < simulator.getSceneCount(); i++) {
+				var scene = simulator.getSceneAt(i);
+
+				if (scene.cameras.length > 0) {
+					for (var c in scene.cameras) {
+						scene.root.perform(rendering.computeVisibilitySet({result: visibilitySet, camera: scene.cameras[c]}));
+						simulator.getRenderer().renderVisibilitySet(visibilitySet);
+					}
 				}
-			}
-			else {
-				simulator.getScene().perform(rendering.computeVisibilitySet({result: visibilitySet}));
-				simulator.getRenderer().renderVisibilitySet(visibilitySet);
+				else {
+					scene.root.perform(rendering.computeVisibilitySet({result: visibilitySet}));
+					simulator.getRenderer().renderVisibilitySet(visibilitySet);
+				}
 			}
 		};
 
@@ -196,32 +202,25 @@ define(["./crimild.core", "./crimild.rendering", "../lib/webgl-utils"], function
 		spec = spec || {};
 
 		var renderer = rendering.renderer();
-		var scene = null;
 		var tasks = taskManager();
-		var cameras = [];
+		var scenes = [];
 
-		simulator.setScene = function(aScene) {
-			scene = aScene;
+		simulator.addScene = function(root) {
+			root.perform(core.worldStateUpdate());
+			root.perform(rendering.renderStateUpdate());
 
-			scene.perform(core.worldStateUpdate());
-			scene.perform(rendering.renderStateUpdate());
-			scene.perform(fetchCameras({result: cameras}));
+			var cameras = [];
+			root.perform(fetchCameras({result: cameras}));
+
+			scenes.push({root: root, cameras: cameras});
 		};
 
-		simulator.getScene = function() {
-			return scene;
+		simulator.getSceneCount = function() {
+			return scenes.length;
 		};
 
-		simulator.addCamera = function(aCamera) {
-			cameras.push(aCamera);
-		};
-
-		simulator.getCameraCount = function() {
-			return cameras.length;
-		};
-
-		simulator.getCameraAt = function(index) {
-			return cameras[index];
+		simulator.getSceneAt = function(index) {
+			return scenes[index];
 		};
 
 		simulator.getTasks = function() {
@@ -261,8 +260,10 @@ define(["./crimild.core", "./crimild.rendering", "../lib/webgl-utils"], function
 
 		renderer.configure(gl, canvas.width, canvas.height);
 
-		if (spec.scene) {
-			simulator.setScene(spec.scene);
+		if (spec.scenes) {
+			for (var i in spec.scenes) {
+				simulator.addScene(spec.scenes[i]);
+			}
 		}
 
 		simulator.input = input(spec);

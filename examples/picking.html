@@ -227,7 +227,7 @@
                 });
 
                 var canvas = document.getElementById(canvasId);
-                crimild.simulation.run({canvas: canvas, scene: scene})
+                crimild.simulation.run({canvas: canvas, scenes: [scene]})
                     .getRenderer()
                         .setClearColor([0, 0, 0, 0]);
                 

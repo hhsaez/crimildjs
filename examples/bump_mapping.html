@@ -247,7 +247,7 @@
                     });
 
                     var canvas = document.getElementById(canvasId);
-                    crimild.simulation.run({canvas: canvas, scene: scene});
+                    crimild.simulation.run({canvas: canvas, scenes: [scene]});
                 });
             });
 		}
@@ -272,7 +272,7 @@
         </div>
         <article class="markdown-body">
             <div>
-                <div style="float: right;"><a href="../index.html">Next&nbsp;&gt;</a></div>
+                <div style="float: right;"><a href="multi_camera.html">Next&nbsp;&gt;</a></div>
                 <div style="clear: all;"><a href="specular_map.html">&lt;&nbsp;Previous</a></div>
             </div>
             <h3>Crimild JS Example: Bump Mapping</h3>
