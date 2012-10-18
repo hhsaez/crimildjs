@@ -1,0 +1,433 @@
+<!doctype html>
+<!-- The Time Machine GitHub pages theme was designed and developed by Jon Rohan, on Feb 7, 2012. -->
+<!-- Follow him for fun. http://twitter.com/jonrohan. Tail his code on http://github.com/jonrohan -->
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <link rel="stylesheet" href="../stylesheets/stylesheet.css" media="screen"/>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript" src="../javascripts/script.js"></script>
+    <title>Crimild JS Example</title>
+    <meta name="description" content="WebGL based 3D game framework">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <script data-main="../src/crimild" src="../lib/require.js"></script>
+    <script id="shader-vs" type="x-shader/x-vertex">
+        attribute vec3 aVertexPosition;
+        attribute vec3 aVertexNormal;
+        attribute vec2 aTextureCoord;
+
+        uniform mat4 uMVMatrix;
+        uniform mat4 uPMatrix;
+        uniform mat3 uNMatrix;
+
+        varying vec2 vTextureCoord;
+        varying vec4 vPosition;
+        varying vec3 vNormal;
+        varying vec3 vViewVector;
+
+        void main(void) {
+            vPosition = uMVMatrix * vec4(aVertexPosition, 1.0);
+            vViewVector = normalize(-vPosition.xyz);
+            vTextureCoord = aTextureCoord;
+            vNormal = uNMatrix * aVertexNormal;
+
+            gl_Position = uPMatrix * vPosition;
+        }
+    </script>
+    <script id="shader-fs" type="x-shader/x-fragment">
+        precision highp float;
+
+        struct LightSource {
+            vec3 Position;
+            vec3 Attenuation;
+            vec3 Direction;
+            vec3 Color;
+            float OuterCutoff;
+            float InnerCutoff;
+            float Exponent;
+        };
+
+        struct Material {
+            vec3 Ambient;
+            vec3 Diffuse;
+            vec3 Specular;
+            float Shininess;
+        };
+
+        uniform bool uUseLighting;
+        uniform float uSepiaValue;
+        uniform float uNoiseValue;
+        uniform float uRandomValue;
+        uniform float uScratchValue;
+        uniform float uTimeLapse;
+        uniform float uOuterVignetting;
+        uniform float uInnerVignetting;
+
+        uniform int uLightCount;
+        uniform LightSource uLights[4];
+        uniform Material uMaterial;
+
+        uniform bool uUseTextures;
+        uniform sampler2D uSampler;
+
+        varying vec2 vTextureCoord;
+        varying vec4 vPosition;
+        varying vec3 vNormal;
+        varying vec3 vViewVector;
+
+        /// <summary>
+        /// 2D Noise by Ian McEwan, Ashima Arts.
+        /// <summary>
+        vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+        float snoise (vec2 v)
+        {
+            const vec4 C = vec4(0.211324865405187,  // (3.0-sqrt(3.0))/6.0
+                                0.366025403784439,  // 0.5*(sqrt(3.0)-1.0)
+                                -0.577350269189626, // -1.0 + 2.0 * C.x
+                                0.024390243902439); // 1.0 / 41.0
+
+            // First corner
+            vec2 i  = floor(v + dot(v, C.yy) );
+            vec2 x0 = v -   i + dot(i, C.xx);
+
+            // Other corners
+            vec2 i1;
+            i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+            vec4 x12 = x0.xyxy + C.xxzz;
+            x12.xy -= i1;
+
+            // Permutations
+            i = mod289(i); // Avoid truncation effects in permutation
+            vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 ))
+                + i.x + vec3(0.0, i1.x, 1.0 ));
+
+            vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+            m = m*m ;
+            m = m*m ;
+
+            // Gradients: 41 points uniformly over a line, mapped onto a diamond.
+            // The ring size 17*17 = 289 is close to a multiple of 41 (41*7 = 287)
+
+            vec3 x = 2.0 * fract(p * C.www) - 1.0;
+            vec3 h = abs(x) - 0.5;
+            vec3 ox = floor(x + 0.5);
+            vec3 a0 = x - ox;
+
+            // Normalise gradients implicitly by scaling m
+            // Approximation of: m *= inversesqrt( a0*a0 + h*h );
+            m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+
+            // Compute final noise value at P
+            vec3 g;
+            g.x  = a0.x  * x0.x  + h.x  * x0.y;
+            g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+            return 130.0 * dot(m, g);
+        }
+
+        void main(void) {
+            vec4 baseColor;
+
+            if (uUseTextures) {
+                baseColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+            }
+            else {
+                baseColor = vec4(1.0, 1.0, 1.0, 1.0);
+            }
+
+            vec4 result = vec4(1.0, 1.0, 1.0, 1.0);
+
+            if (uUseLighting) {
+                result = vec4(uMaterial.Ambient * baseColor.rgb, baseColor.a);
+
+                for (int i = 0; i < 4; i++) {
+                    if (i >= uLightCount) {
+                        break;
+                    }
+
+                    // compute light to vertex vector
+                    vec3 L = normalize(uLights[i].Position - vPosition.xyz);
+
+                    // compute diffuse factor
+                    float df = dot(vNormal, L);
+                    if (df > 0.0) {
+                        // compute specular factor
+                        vec3 r = -normalize(reflect(L, vNormal));
+                        float sf = pow(max(dot(r, vViewVector), 0.0), uMaterial.Shininess);
+
+                        // add to color
+                        result.xyz += (df * uMaterial.Diffuse * baseColor.rgb + sf * uMaterial.Specular) * uLights[i].Color;
+                    }
+                }
+            }
+            else {
+                result = baseColor;
+            }
+
+            if (uSepiaValue > 0.0) {
+                float gray = (result.r + result.g + result.b) / 3.0;
+                vec3 grayscale = vec3(gray, gray, gray);
+                vec4 sepia = vec4(0.4392156863, 0.2588235294, 0.07843137255, 1.0);
+                result = vec4((gray < 0.5 ? 2.0 * sepia.r * grayscale.x : 1.0 - 2.0 * (1.0 - grayscale.x) * (1.0 - sepia.r)),
+                              (gray < 0.5 ? 2.0 * sepia.g * grayscale.y : 1.0 - 2.0 * (1.0 - grayscale.y) * (1.0 - sepia.g)),
+                              (gray < 0.5 ? 2.0 * sepia.b * grayscale.z : 1.0 - 2.0 * (1.0 - grayscale.z) * (1.0 - sepia.b)),
+                              1.0);
+                result.rgb = grayscale + uSepiaValue * (result.rgb - grayscale);
+            }
+
+            if (uNoiseValue > 0.0) {
+                float noise = snoise(vTextureCoord * vec2(1024.0 + uRandomValue * 512.0, 1024.0 + uRandomValue * 512.0)) * 0.5;
+                result += noise * uNoiseValue;
+            }
+
+            if (uScratchValue > uRandomValue) {
+                float dist = 1.0 / uScratchValue;
+                float d = distance(vTextureCoord, vec2(uRandomValue * dist, uRandomValue * dist));
+                if (d < 0.4) {
+                    float xPeriod = 8.0;
+                    float yPeriod = 1.0;
+                    float pi = 3.141592;
+                    float phase = uTimeLapse;
+                    float turbulence = snoise(vTextureCoord * 2.5);
+                    float vScratch = 0.5 + (sin(((vTextureCoord.x * xPeriod + vTextureCoord.y * yPeriod + turbulence)) * pi + phase) * 0.5);
+                    vScratch = clamp((vScratch * 3000.0) + 0.35, 0.0, 1.0);
+
+                    result.xyz *= vScratch;
+                }
+            }
+
+            float d = distance(vec2(0.5, 0.5), vTextureCoord) * 1.414213;
+            float vignetting = clamp((uOuterVignetting - d) / (uOuterVignetting - uInnerVignetting), 0.0, 1.0);
+            result.xyz *= vignetting;
+
+            gl_FragColor = result;
+        }
+
+    </script>
+    <script type="text/javascript">
+        function initCrimild(canvasId) {
+            require(["crimild"], function(crimild) {
+                var assetManager = crimild.utils.assetManager();
+                assetManager.queueFile("../assets/scene.obj");
+                assetManager.queueFile("../assets/scene.mtl");
+                assetManager.loadAll(function() {
+                    
+                    var offscreenFramebuffer = crimild.rendering.framebuffer({
+                        width: 1024,
+                        height: 1024
+                    });
+
+                    var offscreenScene = crimild.core.groupNode({
+                        nodes: [
+                            crimild.core.node({
+                                components: [
+                                    crimild.rendering.lightingComponent({
+                                        lights: [
+                                            crimild.rendering.light({
+                                                color: [0.75, 0.75, 0.75],
+                                            })
+                                        ]
+                                    })
+                                ],
+                                local: crimild.math.transformation({
+                                    translate: [0.0, 50.0, 50.0]
+                                })
+                            }),
+                            crimild.obj.objNode({
+                                file: assetManager.getFile("../assets/scene.obj"),
+                                mtlfile: assetManager.getFile("../assets/scene.mtl"),
+                                components: [
+                                    crimild.components.rotationComponent({angle: -0.01, axis: [0, 1, 0]}),
+                                ]
+                            }),
+                            crimild.rendering.cameraNode({
+                                local: crimild.math.transformation({
+                                    translate: [0, 10, 75]
+                                }),
+                                target: offscreenFramebuffer
+                            }),
+                        ],
+                        local: crimild.math.transformation({
+                            translate: [1000, 0, 0]
+                        }),
+                    });
+
+                    var scene = crimild.core.groupNode({
+                        nodes: [
+                            crimild.core.geometryNode({
+                                primitives: [
+                                    crimild.core.primitive({
+                                        vertexBuffer: crimild.core.vertexBufferObject({
+                                            vertexFormat: crimild.core.vertexFormat({
+                                                positions: 3,
+                                                normals: 3,
+                                                textureCoords: 2
+                                            }),
+                                            vertexCount: 4,
+                                            data: new Float32Array([
+                                                -1.3333, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0,
+                                                -1.3333, -1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+                                                1.3333, -1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0,
+                                                1.3333, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                            ])
+                                        }),
+                                        indexBuffer: crimild.core.indexBufferObject({
+                                            indexCount: 6,
+                                            data: new Uint16Array([
+                                                0, 1, 2,
+                                                0, 2, 3
+                                            ])
+                                        })
+                                    }),
+                                ],                            
+                                components: [
+                                    crimild.rendering.renderComponent({
+                                        effects: [
+                                            crimild.rendering.effect({
+                                                shaderProgram: crimild.rendering.shaderProgram({
+                                                    vertexShader: crimild.rendering.shader({
+                                                        scriptId: "shader-vs"
+                                                    }),
+                                                    fragmentShader: crimild.rendering.shader({
+                                                        scriptId: "shader-fs"
+                                                    })
+                                                }),
+                                                textures: [
+                                                    offscreenFramebuffer.texture
+                                                ]
+                                            })
+                                        ]
+                                    }),
+                                ]
+                            }),
+                            crimild.rendering.cameraNode({
+                                local: crimild.math.transformation({
+                                    translate: [0, 0, 2.4],
+                                })
+                            }),
+                        ],
+                        components: [
+                            (function() {
+                                var that = crimild.rendering.shaderUniformComponent({
+                                    uniforms: [
+                                        crimild.rendering.shaderUniform({
+                                            name: "uSepiaValue",
+                                            data: 0.5,
+                                            type: crimild.rendering.shaderUniform.type.FLOAT,
+                                        }),
+                                        crimild.rendering.shaderUniform({
+                                            name: "uNoiseValue",
+                                            data: 0.25,
+                                            type: crimild.rendering.shaderUniform.type.FLOAT,
+                                        }),
+                                        crimild.rendering.shaderUniform({
+                                            name: "uRandomValue",
+                                            data: 50.0,
+                                            type: crimild.rendering.shaderUniform.type.FLOAT,
+                                        }),
+                                        crimild.rendering.shaderUniform({
+                                            name: "uScratchValue",
+                                            data: 100.0,
+                                            type: crimild.rendering.shaderUniform.type.FLOAT,
+                                        }),
+                                        crimild.rendering.shaderUniform({
+                                            name: "uTimeLapse",
+                                            data: 0.0,
+                                            type: crimild.rendering.shaderUniform.type.FLOAT,
+                                        }),
+                                        crimild.rendering.shaderUniform({
+                                            name: "uOuterVignetting",
+                                            data: 1.5,
+                                            type: crimild.rendering.shaderUniform.type.FLOAT,
+                                        }),
+                                        crimild.rendering.shaderUniform({
+                                            name: "uInnerVignetting",
+                                            data: 0.7,
+                                            type: crimild.rendering.shaderUniform.type.FLOAT,
+                                        }),
+                                    ]
+                                })
+
+                                that.update = function() {
+                                    that.getUniform("uSepiaValue").data = document.getElementById("sepia").checked ? 0.5 : 0.0;
+                                    that.getUniform("uNoiseValue").data = document.getElementById("noise").checked ? 0.25 : 0.0;
+                                    that.getUniform("uRandomValue").data = Math.random() * 1000.0;
+                                    that.getUniform("uTimeLapse").data += 1.0 / 60.0;
+                                    that.getUniform("uScratchValue").data = document.getElementById("scratching").checked ? 50.0 : 0.0;
+                                    that.getUniform("uInnerVignetting").data = document.getElementById("vignetting").checked ? 0.7 : 1.5;
+                                };
+
+                                return that;
+                            })(),
+                        ],
+                    });
+
+                    var canvas = document.getElementById(canvasId);
+                    crimild.simulation.run({canvas: canvas, scenes: [offscreenScene, scene]});
+                })
+            });
+        }
+    </script>
+</head>
+
+<body onload="initCrimild('webGLCanvas');">
+  <div class="wrapper">
+    <header>
+      <h1 class="title">Crimild JS</h1>
+    </header>
+    <div id="container">
+      <p class="tagline">WebGL based 3D framework</p>
+      <div id="main" role="main">
+        <div class="download-bar">
+        <div class="inner">
+          <a href="https://github.com/hhsaez/crimildjs/tarball/master" class="download-button tar"><span>Download</span></a>
+          <a href="https://github.com/hhsaez/crimildjs/zipball/master" class="download-button zip"><span>Download</span></a>
+          <a href="https://github.com/hhsaez/crimildjs" class="code">View Crimildjs on GitHub</a>
+        </div>
+        <span class="blc"></span><span class="trc"></span>
+        </div>
+        <article class="markdown-body">
+            <div>
+                <div style="float: right;"><a href="bloom.html">Next&nbsp;&gt;</a></div>
+                <div style="clear: all;"><a href="render_to_texture.html">&lt;&nbsp;Previous</a></div>
+            </div>
+            <h3>Crimild JS Example: Post-processing</h3>
+
+            <p>In this example we use some post-processing effects to simulate old films. The shaders used in this example are based on the ones introduced in the <a href="http://devmaster.net/posts/2989/shader-effects-old-film">old film shader tutorial from DevMaster.net</a></p>
+
+            <canvas id="webGLCanvas" style="border: solid 1px; margin-left: -5px;" width="640" height="480">
+                Your browser does not support WebGL
+            </canvas>
+
+            <div style="position: relative; z-index: 1; left: 5px; top: -480px; float: left; color: white;">
+                <input type="checkbox" id="sepia" checked />Sepia Toning<br/>
+                <input type="checkbox" id="noise" checked />Noise<br/>
+                <input type="checkbox" id="scratching" checked />Scratching<br/>
+                <input type="checkbox" id="vignetting" checked />Vignetting<br/>
+            </div>
+
+        </article>
+      </div>
+    </div>
+    <footer>
+      <div class="owner">
+      <p><a href="https://github.com/hhsaez" class="avatar"><img src="https://secure.gravatar.com/avatar/2e9781f946d0b1182d623cb50a534c23?s=30&amp;d=https://a248.e.akamai.net/assets.github.com%2Fimages%2Fgravatars%2Fgravatar-140.png" width="48" height="48"/></a> <a href="https://github.com/hhsaez">hhsaez</a> maintains <a href="https://github.com/hhsaez/crimildjs">Crimildjs</a></p>
+
+
+      </div>
+      <div class="creds">
+        <small>This page generated using <a href="https://pages.github.com/">GitHub Pages</a><br/>theme by <a href="http://twitter.com/jonrohan/">Jon Rohan</a></small>
+      </div>
+    </footer>
+  </div>
+  <div class="current-section">
+    <a href="#top">Scroll to top</a>
+    <a href="https://github.com/hhsaez/crimildjs/tarball/master" class="tar">tar</a><a href="https://github.com/hhsaez/crimildjs/zipball/master" class="zip">zip</a><a href="" class="code">source code</a>
+    <p class="name"></p>
+  </div>
+
+  
+</body>
+</html>

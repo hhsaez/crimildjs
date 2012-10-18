@@ -671,11 +671,20 @@ define(["./crimild.core", "./crimild.math",
 		spec = spec || {};
 		var that = {};
 
-		var _texture = spec.texture || texture();
+		var _texture = spec.texture || texture(spec);
 		var _width = spec.width || 512;
 		var _height = spec.height || 512;
+		var _name = spec.name;
 
 		Object.defineProperties(that, {
+			name: {
+				get: function() {
+					return _name;
+				},
+				set: function(value) {
+					_name = value;
+				}
+			},
 			texture: {
 				get: function() {
 					return _texture;
@@ -954,7 +963,12 @@ define(["./crimild.core", "./crimild.math",
 			onCameraViewportChange: function() {
 				if (this.currentCamera) {
 					var vp = this.currentCamera.viewport;
-					gl.viewport(vp[0] * width, vp[1] * height, vp[2] * width, vp[3] * height);
+					if (this.currentCamera.target) {
+						gl.viewport(vp[0] * this.currentCamera.target.width, vp[1] * this.currentCamera.target.height, vp[2] * this.currentCamera.target.width, vp[3] * this.currentCamera.target.height);
+					}
+					else {
+						gl.viewport(vp[0] * width, vp[1] * height, vp[2] * width, vp[3] * height);
+					}
 				}
 				else {
 					gl.viewport(0, 0, width, height);
@@ -1157,19 +1171,8 @@ define(["./crimild.core", "./crimild.math",
         			this.loadTexture(aTexture);
         		}
 
-        		var uniformLocation = program.renderCache.customUniforms[aTexture.name];
-        		if (!uniformLocation) {
-        			uniformLocation = gl.getUniformLocation(program.renderCache, aTexture.name);
-        			if (uniformLocation) {
-	        			program.renderCache.customUniforms[aTexture.name] = uniformLocation;
-        			}
-        		}
-
-        		if (uniformLocation) {
-					gl.activeTexture(gl.TEXTURE0 + index);
-                	gl.bindTexture(gl.TEXTURE_2D, aTexture.renderCache);
-					this.setUniformInt(uniformLocation, index);
-				}
+				gl.activeTexture(gl.TEXTURE0 + index);
+            	gl.bindTexture(gl.TEXTURE_2D, aTexture.renderCache);
         	},
 
         	disableTexture: function(aTexture, index) {
