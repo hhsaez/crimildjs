@@ -1,0 +1,441 @@
+<!doctype html>
+<!-- The Time Machine GitHub pages theme was designed and developed by Jon Rohan, on Feb 7, 2012. -->
+<!-- Follow him for fun. http://twitter.com/jonrohan. Tail his code on http://github.com/jonrohan -->
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <link rel="stylesheet" href="../stylesheets/stylesheet.css" media="screen"/>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript" src="../javascripts/script.js"></script>
+    <title>Crimild JS Example</title>
+    <meta name="description" content="WebGL based 3D game framework">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <script data-main="../src/crimild" src="../lib/require.js"></script>
+    <script id="lightcycle-vs" type="x-shader/x-fragment">
+        attribute vec3 aVertexPosition;
+        attribute vec3 aVertexNormal;
+        attribute vec2 aTextureCoord;
+
+        uniform mat4 uMVMatrix;
+        uniform mat4 uPMatrix;
+        uniform mat3 uNMatrix;
+
+        varying vec2 vTextureCoord;
+        varying vec4 vPosition;
+        varying vec3 vNormal;
+        varying vec3 vViewVector;
+
+        void main(void) {
+            vPosition = uMVMatrix * vec4(aVertexPosition, 1.0);
+            vViewVector = normalize(-vPosition.xyz);
+            vTextureCoord = aTextureCoord;
+            vNormal = uNMatrix * aVertexNormal;
+
+            gl_Position = uPMatrix * vPosition;
+        }
+    </script>
+    <script id="lightcycle-fs" type="x-shader/x-fragment">
+        precision highp float;
+
+        struct LightSource {
+            vec3 Position;
+            vec3 Attenuation;
+            vec3 Direction;
+            vec3 Color;
+            float OuterCutoff;
+            float InnerCutoff;
+            float Exponent;
+        };
+
+        struct Material {
+            vec3 Ambient;
+            vec3 Diffuse;
+            vec3 Specular;
+            float Shininess;
+        };
+
+        uniform bool uUseLighting;
+        uniform bool uUsePerPixelShading;
+        uniform int uLightCount;
+        uniform LightSource uLights[4];
+        uniform Material uMaterial;
+
+        uniform bool uUseTextures;
+        uniform sampler2D uSampler;
+        uniform sampler2D uSpecularMapSampler;
+
+        varying vec2 vTextureCoord;
+        varying vec4 vPosition;
+        varying vec3 vNormal;
+        varying vec3 vViewVector;
+
+        void main(void) {
+            vec4 baseColor;
+
+            if (uUseTextures) {
+                baseColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+            }
+            else {
+                baseColor = vec4(1.0, 1.0, 1.0, 1.0);
+            }
+
+            vec4 result = vec4(1.0, 1.0, 1.0, 1.0);
+
+            if (uUseLighting) {
+                result = vec4(uMaterial.Ambient * baseColor.rgb, baseColor.a);
+
+                for (int i = 0; i < 4; i++) {
+                    if (i >= uLightCount) {
+                        break;
+                    }
+
+                    // compute light to vertex vector
+                    vec3 L = normalize(uLights[i].Position - vPosition.xyz);
+
+                    // compute diffuse factor
+                    float df = dot(vNormal, L);
+                    if (df > 0.0) {
+                        // compute specular factor
+                        float sf = 0.0;
+                        float shininess = texture2D(uSpecularMapSampler, vec2(vTextureCoord.s, vTextureCoord.t)).r * 255.0;
+                        if (shininess < 255.0) {
+                            vec3 r = -normalize(reflect(L, vNormal));
+                            sf = pow(max(dot(r, vViewVector), 0.0), shininess);
+                        }
+
+                        // add to color
+                        result.xyz += (df * uMaterial.Diffuse + sf * uMaterial.Specular) * uLights[i].Color * baseColor.rgb;
+                    }
+                }
+            }
+            else {
+                result = baseColor;
+            }
+
+            gl_FragColor = result;
+        }
+    </script>
+    <script id="glow-vs" type="x-shader/x-vertex">
+        attribute vec3 aVertexPosition;
+        attribute vec3 aVertexNormal;
+        attribute vec2 aTextureCoord;
+
+        uniform mat4 uMVMatrix;
+        uniform mat4 uPMatrix;
+        uniform mat3 uNMatrix;
+
+        varying vec2 vTextureCoord;
+        varying vec4 vPosition;
+        varying vec3 vNormal;
+        varying vec3 vViewVector;
+
+        void main(void) {
+            vPosition = uMVMatrix * vec4(aVertexPosition, 1.0);
+            vViewVector = normalize(-vPosition.xyz);
+            vTextureCoord = aTextureCoord;
+            vNormal = uNMatrix * aVertexNormal;
+
+            gl_Position = uPMatrix * vPosition;
+        }
+    </script>
+    <script id="glow-fs" type="x-shader/x-fragment">
+        precision highp float;
+
+        uniform bool uUseTextures;
+        uniform sampler2D uColorSampler;
+        uniform bool uUseBloom;
+
+        varying vec2 vTextureCoord;
+        varying vec4 vPosition;
+        varying vec3 vNormal;
+        varying vec3 vViewVector;
+
+        float Gaussian(float x, float deviation) {
+            return (1.0 / sqrt(2.0 * 3.141592 * deviation)) * exp(-((x * x) / (2.0 * deviation)));
+        }
+
+        void main(void) {
+            vec4 baseColor = texture2D(uColorSampler, vTextureCoord); 
+
+            if (uUseBloom){//} && luminance > 0.1) {
+                float pi = 3.141592;
+                float sigma = 4.0;
+                float blurSize = 0.0035;
+                vec2 blurMultiplyVec = vec2(1.0, 1.0);
+                vec3 perception = vec3(0.299, 0.587, 0.114);
+                float threshold = 0.5;
+                float luminance = dot(perception, baseColor.rgb);
+                vec4 color = luminance > threshold ? vec4(baseColor.rgb, 1.0) : vec4(0.0, 0.0, 0.0, 1);
+
+                vec3 incrementalGaussian;
+                incrementalGaussian.x = 1.0 / (sqrt(2.0 * pi) * sigma);
+                incrementalGaussian.y = exp(-0.5 / (sigma * sigma));
+                incrementalGaussian.z = incrementalGaussian.y * incrementalGaussian.y;
+
+                vec4 avgValue = vec4(0.0, 0.0, 0.0, 1.0);
+                float coefficientSum = 0.0;
+
+                avgValue += color * incrementalGaussian.x;
+                coefficientSum += incrementalGaussian.x;
+                incrementalGaussian.xy *= incrementalGaussian.yz;
+
+                for (float i = 1.0; i <= 4.0; i++) {
+                    vec4 c0 = texture2D(uColorSampler, vTextureCoord - i * blurSize * blurMultiplyVec);
+                    c0 = (dot(perception, c0.rgb) > threshold ? vec4(c0.rgb, 1.0) : vec4(0.0, 0.0, 0.0, 1.0));
+                    c0 *= incrementalGaussian.x;
+                    avgValue += c0;
+
+                    vec4 c1 = texture2D(uColorSampler, vTextureCoord + i * blurSize * blurMultiplyVec);
+                    c1 = (dot(perception, c1.rgb) > threshold ? vec4(c1.rgb, 1.0) : vec4(0.0, 0.0, 0.0, 1.0));
+                    c1 *= incrementalGaussian.x;
+                    avgValue += c1;
+
+                    coefficientSum += 2.0 * incrementalGaussian.x;
+                    incrementalGaussian.xy *= incrementalGaussian.yz;
+                }
+
+                gl_FragColor = avgValue / coefficientSum + baseColor;
+            }
+            else {
+                gl_FragColor = baseColor;   
+            }
+        }
+    </script>
+    <script type="text/javascript">
+        /*
+            El modelo original tuvo ser modificado para poder renderizarlo. Se cambiaron las texturas a PNG y
+            se edito el archivo de materiales (MTL) para reflejar esto cambios.
+        */
+
+        function initCrimild(canvasId) {
+            require(["crimild"], function(crimild) {
+                var assetManager = crimild.utils.assetManager();
+                assetManager.queueFile("../assets/lightcycle/HQ_Movie cycle.obj");
+                assetManager.queueFile("../assets/lightcycle/HQ_Movie cycle.mtl");
+                assetManager.queueImage("../assets/lightcycle/MG_MovieCycle_Body_EMSS.png");
+                assetManager.queueImage("../assets/lightcycle/MG_MovieCycle_Body_SPEC.png");
+                assetManager.queueImage("../assets/lightcycle/MG_MovieCycle_Engine_EMSS.png");
+                assetManager.queueImage("../assets/lightcycle/MG_MovieCycle_Tire_EMSS.png");
+                assetManager.queueImage("../assets/lightcycle/MG_MovieCycle_Tire_DIFF.png");
+                assetManager.queueImage("../assets/lightcycle/MG_Player_Baton_EMSS.png");
+                assetManager.queueImage("../assets/lightcycle/MG_Player_Baton_SPEC.png");
+                assetManager.queueImage("../assets/lightcycle/MG_Player_Body_EMSS.png");
+                assetManager.queueImage("../assets/lightcycle/MG_Player_Body_SPEC.png");
+                assetManager.queueImage("../assets/lightcycle/MG_Player_Disc_EMSS.png");
+                assetManager.queueImage("../assets/lightcycle/MG_Player_Disc_SPEC.png");
+                assetManager.queueImage("../assets/lightcycle/MG_Player_Helmet_EMSS.png");
+                assetManager.queueImage("../assets/lightcycle/MG_Player_Helmet_SPEC.png");
+                assetManager.loadAll(function() {
+                    var offscreenFramebuffer = crimild.rendering.framebuffer({
+                        name: "uColorSampler",
+                        width: 1024,
+                        height: 1024
+                    });
+
+                    var scene = crimild.core.groupNode({
+                        name: "scene",
+                        nodes: [
+                            crimild.core.node({
+                                components: [
+                                    crimild.rendering.lightingComponent({
+                                        lights: [
+                                            crimild.rendering.light({
+                                                color: [1, 1, 1],
+                                            })
+                                        ]
+                                    })
+                                ],
+                                local: crimild.math.transformation({
+                                    translate: [0.0, 500.0, 1000.0]
+                                })
+                            }),
+                            crimild.core.groupNode({
+                                nodes: [
+                                    crimild.obj.objNode({
+                                        file: assetManager.getFile("../assets/lightcycle/HQ_Movie cycle.obj"),
+                                        mtlfile: assetManager.getFile("../assets/lightcycle/HQ_Movie cycle.mtl"),
+                                        images: {
+                                            "MG_MovieCycle_Body_EMSS.png": assetManager.getImage("../assets/lightcycle/MG_MovieCycle_Body_EMSS.png"),
+                                            "MG_MovieCycle_Body_SPEC.png": assetManager.getImage("../assets/lightcycle/MG_MovieCycle_Body_SPEC.png"),
+                                            "MG_MovieCycle_Engine_EMSS.png": assetManager.getImage("../assets/lightcycle/MG_MovieCycle_Engine_EMSS.png"),
+                                            "MG_MovieCycle_Tire_EMSS.png": assetManager.getImage("../assets/lightcycle/MG_MovieCycle_Tire_EMSS.png"),
+                                            "MG_MovieCycle_Tire_DIFF.png": assetManager.getImage("../assets/lightcycle/MG_MovieCycle_Tire_DIFF.png"),
+                                            "MG_Player_Baton_EMSS.png": assetManager.getImage("../assets/lightcycle/MG_Player_Baton_EMSS.png"),
+                                            "MG_Player_Baton_SPEC.png": assetManager.getImage("../assets/lightcycle/MG_Player_Baton_SPEC.png"),
+                                            "MG_Player_Body_EMSS.png": assetManager.getImage("../assets/lightcycle/MG_Player_Body_EMSS.png"),
+                                            "MG_Player_Body_SPEC.png": assetManager.getImage("../assets/lightcycle/MG_Player_Body_SPEC.png"),
+                                            "MG_Player_Disc_EMSS.png": assetManager.getImage("../assets/lightcycle/MG_Player_Disc_EMSS.png"),
+                                            "MG_Player_Disc_SPEC.png": assetManager.getImage("../assets/lightcycle/MG_Player_Disc_SPEC.png"),
+                                            "MG_Player_Helmet_EMSS.png": assetManager.getImage("../assets/lightcycle/MG_Player_Helmet_EMSS.png"),
+                                            "MG_Player_Helmet_SPEC.png": assetManager.getImage("../assets/lightcycle/MG_Player_Helmet_SPEC.png"),
+                                        },
+                                        shaderProgram: crimild.rendering.shaderProgram({
+                                            vertexShader: crimild.rendering.shader({
+                                                scriptId: "lightcycle-vs"
+                                            }),
+                                            fragmentShader: crimild.rendering.shader({
+                                                scriptId: "lightcycle-fs"
+                                            })
+                                        }),
+                                        local: crimild.math.transformation({
+                                            rotate: quat4.fromAngleAxis(-0.5 * Math.PI, [1, 0, 0]),
+                                        }),
+                                    })
+                                ],
+                                components: [
+                                    crimild.components.rotationComponent({angle: -0.005, axis: [0, 1, 0]}),
+                                ]
+                            }),
+
+                            crimild.rendering.cameraNode({
+                                local: crimild.math.transformation({
+                                    translate: [0, 0.75, 3]
+                                }),
+                                target: offscreenFramebuffer
+                            }),
+                        ],
+                        local: crimild.math.transformation({
+                            translate: [100, 0, 0]
+                        }),
+                    });
+
+                    var screenScene = crimild.core.groupNode({
+                        nodes: [
+                            crimild.core.geometryNode({
+                                primitives: [
+                                    crimild.core.primitive({
+                                        vertexBuffer: crimild.core.vertexBufferObject({
+                                            vertexFormat: crimild.core.vertexFormat({
+                                                positions: 3,
+                                                normals: 3,
+                                                textureCoords: 2
+                                            }),
+                                            vertexCount: 4,
+                                            data: new Float32Array([
+                                                -1.3333, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0,
+                                                -1.3333, -1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+                                                1.3333, -1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0,
+                                                1.3333, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                            ])
+                                        }),
+                                        indexBuffer: crimild.core.indexBufferObject({
+                                            indexCount: 6,
+                                            data: new Uint16Array([
+                                                0, 1, 2,
+                                                0, 2, 3
+                                            ])
+                                        })
+                                    }),
+                                ],                            
+                                components: [
+                                    crimild.rendering.renderComponent({
+                                        effects: [
+                                            crimild.rendering.effect({
+                                                shaderProgram: crimild.rendering.shaderProgram({
+                                                    vertexShader: crimild.rendering.shader({
+                                                        scriptId: "glow-vs"
+                                                    }),
+                                                    fragmentShader: crimild.rendering.shader({
+                                                        scriptId: "glow-fs"
+                                                    })
+                                                }),
+                                                textures: [
+                                                    offscreenFramebuffer.texture,
+                                                ]
+                                            }),
+                                        ]
+                                    }),
+                                    (function() {
+                                        var that = crimild.rendering.shaderUniformComponent({
+                                            uniforms: [
+                                                crimild.rendering.shaderUniform({
+                                                    name: "uUseBloom",
+                                                    data: document.getElementById("bloom").checked,
+                                                    type: crimild.rendering.shaderUniform.type.BOOL,
+                                                }),
+                                            ]
+                                        });
+
+                                        that.update = function() {
+                                            that.getUniform("uUseBloom").data = document.getElementById("bloom").checked;
+                                        };
+
+                                        return that;
+                                    })(),
+                                ]
+                            }),
+                            crimild.rendering.cameraNode({
+                                local: crimild.math.transformation({
+                                    translate: [0, 0, 2.4],
+                                })
+                            }),
+                        ],
+                    });
+
+                    var canvas = document.getElementById(canvasId);
+                    crimild.simulation.run({canvas: canvas, scenes: [scene, screenScene]}).getRenderer().setClearColor([0.1, 0.1, 0.1, 1]);
+                })
+            });
+        }
+    </script>
+</head>
+
+<body onload="initCrimild('webGLCanvas');">
+  <div class="wrapper">
+    <header>
+      <h1 class="title">Crimild JS</h1>
+    </header>
+    <div id="container">
+      <p class="tagline">WebGL based 3D framework</p>
+      <div id="main" role="main">
+        <div class="download-bar">
+        <div class="inner">
+          <a href="https://github.com/hhsaez/crimildjs/tarball/master" class="download-button tar"><span>Download</span></a>
+          <a href="https://github.com/hhsaez/crimildjs/zipball/master" class="download-button zip"><span>Download</span></a>
+          <a href="https://github.com/hhsaez/crimildjs" class="code">View Crimildjs on GitHub</a>
+        </div>
+        <span class="blc"></span><span class="trc"></span>
+        </div>
+        <article class="markdown-body">
+            <div>
+                <div style="float: right;"><a href="specular_map.html">Next&nbsp;&gt;</a></div>
+                <div style="clear: all;"><a href="camera.html">&lt;&nbsp;Previous</a></div>
+            </div>
+            <h3>Crimild JS Example: Light Cycle</h3>
+
+            <p>This is still work in progress and you shouldn't be looking at it ;)</p>
+
+            <canvas id="webGLCanvas" style="border: solid 1px; margin-left: -5px;" width="640" height="480">
+                Your browser does not support WebGL
+            </canvas>
+
+            <p>Lightcycle model adapted from <a href="http://thefree3dmodels.com/stuff/vehicles/tron_lightcycle/13-1-0-2624">this one</a></p>
+
+            <div style="position: relative; z-index: 1; left: 560px; top: -520px; float: left; color: white;">
+                <input type="checkbox" id="bloom" checked />Bloom<br/>
+            </div>
+
+        </article>
+      </div>
+    </div>
+    <footer>
+      <div class="owner">
+      <p><a href="https://github.com/hhsaez" class="avatar"><img src="https://secure.gravatar.com/avatar/2e9781f946d0b1182d623cb50a534c23?s=30&amp;d=https://a248.e.akamai.net/assets.github.com%2Fimages%2Fgravatars%2Fgravatar-140.png" width="48" height="48"/></a> <a href="https://github.com/hhsaez">hhsaez</a> maintains <a href="https://github.com/hhsaez/crimildjs">Crimildjs</a></p>
+
+
+      </div>
+      <div class="creds">
+        <small>This page generated using <a href="https://pages.github.com/">GitHub Pages</a><br/>theme by <a href="http://twitter.com/jonrohan/">Jon Rohan</a></small>
+      </div>
+    </footer>
+  </div>
+  <div class="current-section">
+    <a href="#top">Scroll to top</a>
+    <a href="https://github.com/hhsaez/crimildjs/tarball/master" class="tar">tar</a><a href="https://github.com/hhsaez/crimildjs/zipball/master" class="zip">zip</a><a href="" class="code">source code</a>
+    <p class="name"></p>
+  </div>
+
+  
+</body>
+</html>

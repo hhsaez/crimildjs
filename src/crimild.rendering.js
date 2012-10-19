@@ -1171,8 +1171,21 @@ define(["./crimild.core", "./crimild.math",
         			this.loadTexture(aTexture);
         		}
 
-				gl.activeTexture(gl.TEXTURE0 + index);
-            	gl.bindTexture(gl.TEXTURE_2D, aTexture.renderCache);
+        		if (aTexture.renderCache) {
+	        		var uniformLocation = program.renderCache.customUniforms[aTexture.name];
+	        		if (!uniformLocation) {
+	        			uniformLocation = gl.getUniformLocation(program.renderCache, aTexture.name);
+	        			if (uniformLocation) {
+		        			program.renderCache.customUniforms[aTexture.name] = uniformLocation;
+	        			}
+	        		}
+
+	        		if (uniformLocation) {
+						gl.activeTexture(gl.TEXTURE0 + index);
+	                	gl.bindTexture(gl.TEXTURE_2D, aTexture.renderCache);
+						this.setUniformInt(uniformLocation, index);
+					}
+        		}
         	},
 
         	disableTexture: function(aTexture, index) {
