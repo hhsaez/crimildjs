@@ -56,7 +56,7 @@
         };
 
         uniform bool uUseLighting;
-        uniform bool uUsePerPixelShading;
+        uniform bool uUseSpecularMap;
         uniform int uLightCount;
         uniform LightSource uLights[4];
         uniform Material uMaterial;
@@ -98,7 +98,7 @@
                     if (df > 0.0) {
                         // compute specular factor
                         float sf = 0.0;
-                        float shininess = texture2D(uSpecularMapSampler, vec2(vTextureCoord.s, vTextureCoord.t)).r * 255.0;
+                        float shininess = uUseSpecularMap ? (texture2D(uSpecularMapSampler, vec2(vTextureCoord.s, vTextureCoord.t)).r * 255.0) : uMaterial.Shininess;
                         if (shininess < 255.0) {
                             vec3 r = -normalize(reflect(L, vNormal));
                             sf = pow(max(dot(r, vViewVector), 0.0), shininess);
@@ -285,6 +285,23 @@
                                 ],
                                 components: [
                                     crimild.components.rotationComponent({angle: -0.005, axis: [0, 1, 0]}),
+                                    (function() {
+                                        var that = crimild.rendering.shaderUniformComponent({
+                                            uniforms: [
+                                                crimild.rendering.shaderUniform({
+                                                    name: "uUseSpecularMap",
+                                                    data: document.getElementById("specular_map").checked,
+                                                    type: crimild.rendering.shaderUniform.type.BOOL,
+                                                }),
+                                            ]
+                                        });
+
+                                        that.update = function() {
+                                            that.getUniform("uUseSpecularMap").data = document.getElementById("specular_map").checked;
+                                        };
+
+                                        return that;
+                                    })(),
                                 ]
                             }),
 
@@ -374,7 +391,10 @@
                     });
 
                     var canvas = document.getElementById(canvasId);
-                    crimild.simulation.run({canvas: canvas, scenes: [scene, screenScene]}).getRenderer().setClearColor([0.1, 0.1, 0.1, 1]);
+                    crimild.simulation
+                        .run({canvas: canvas, scenes: [scene, screenScene]})
+                        .getRenderer()
+                            .setClearColor([0.1, 0.1, 0.1, 1]);
                 })
             });
         }
@@ -412,8 +432,9 @@
 
             <p>Lightcycle model adapted from <a href="http://thefree3dmodels.com/stuff/vehicles/tron_lightcycle/13-1-0-2624">this one</a></p>
 
-            <div style="position: relative; z-index: 1; left: 560px; top: -520px; float: left; color: white;">
+            <div style="position: relative; z-index: 1; left: 5px; top: -520px; float: left; color: white;">
                 <input type="checkbox" id="bloom" checked />Bloom<br/>
+                <input type="checkbox" id="specular_map" checked />Specular Map<br/>
             </div>
 
         </article>
