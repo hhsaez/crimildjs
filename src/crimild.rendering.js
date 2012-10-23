@@ -5,6 +5,58 @@ define(["./crimild.core", "./crimild.math",
 	
 	"use strict";
 
+	var renderState = function(spec) {
+		spec = spec || {};
+		var that = core.object(spec);
+
+		var _enabled = spec.enabled || false;
+
+		Object.defineProperties(that, {
+			enabled: {
+				get: function() {
+					return _enabled;
+				},
+				set: function(value) {
+					_enabled = value;
+				}
+			}
+		});
+
+		return that;
+	};
+
+	var alphaState = function(spec) {
+		spec = spec || {};
+		spec.name = "alpha";
+		var that = renderState(spec);
+
+		that.enable = function(aRenderer) {
+			aRenderer.enableAlphaState(that);
+		};
+
+		that.disable = function(aRenderer) {
+			aRenderer.disableAlphaState(that);
+		};
+
+		return that;
+	};
+
+	var depthState = function(spec) {
+		spec = spec || {};
+		spec.name = "depth";
+		var that = renderState(spec);
+
+		that.enable = function(aRenderer) {
+			aRenderer.enableDepthState(that);
+		};
+
+		that.disable = function(aRenderer) {
+			aRenderer.disableDepthState(that);
+		};
+
+		return that;
+	};
+
 	var light = function(spec) {
 		spec = spec || {};
 		var that = {};
@@ -123,7 +175,7 @@ define(["./crimild.core", "./crimild.math",
 		return that;
 	};
 
-	// TODO: Rename this to MaterialComponent
+	// TODO: Rename this to MaterialComponent or EffectComponent
 	var renderComponent = function(spec) {
 		spec = spec || {}
 		var that = core.nodeComponent({name: "render"});
@@ -416,6 +468,7 @@ define(["./crimild.core", "./crimild.math",
 		var that = {};
 		var program = null;
 		var textures = [];
+		var renderStates = [];
 
 		var _ambient = [0.2, 0.2, 0.2];
 		var _diffuse = [0.8, 0.8, 0.8];
@@ -459,6 +512,7 @@ define(["./crimild.core", "./crimild.math",
 
 		if (spec.shaderProgram) { program = spec.shaderProgram; }
 		if (spec.textures) { textures = spec.textures; }
+		if (spec.renderStates) { renderStates = spec.renderStates; }
 		if (spec.ambient) { that.ambient = spec.ambient; }
 		if (spec.diffuse) { that.diffuse = spec.diffuse; }
 		if (spec.specular) { that.specular = spec.specular; }
@@ -482,6 +536,18 @@ define(["./crimild.core", "./crimild.math",
 
 		that.getTextureAt = function(index) {
 			return textures[index];
+		};
+
+		that.attachRenderState = function(aRenderState) {
+			renderStates.push(aRenderState);
+		};
+
+		that.getRenderStateCount = function() {
+			return renderStates.length;
+		};
+
+		that.getRenderStateAt = function(index) {
+			return renderStates[index];
 		};
 
 		return that;
@@ -1016,6 +1082,37 @@ define(["./crimild.core", "./crimild.math",
         		}
         	},
 
+        	enableAlphaState: function(as) {
+        		if (as.enabled) {
+					gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+            		gl.enable(gl.BLEND);
+        		}
+        	},
+
+        	disableAlphaState: function(as) {
+        		if (as.enabled) {
+        			gl.disable(gl.BLEND);
+        		}
+        	},
+
+        	enableDepthState: function(ds) {
+        		if (ds.enabled) {
+        			gl.enable(gl.DEPTH_TEST);
+        		}
+        		else {
+        			gl.disable(gl.DEPTH_TEST);
+        		}
+        	},
+
+        	disableDepthState: function(ds) {
+        		if (ds.enable) {
+        			gl.disable(gl.DEPTH_TEST);
+        		}
+        		else {
+        			gl.enable(gl.DEPTH_TEST);
+        		}
+        	},
+
         	loadVertexBuffer: function(vbo) {
         		vbo.renderCache = gl.createBuffer();
         		gl.bindBuffer(gl.ARRAY_BUFFER, vbo.renderCache);
@@ -1471,11 +1568,19 @@ define(["./crimild.core", "./crimild.math",
 				gl.polygonOffset(4, 8);
 				gl.enable(gl.POLYGON_OFFSET_FILL);
 
+				for (var rs = 0; rs < currentEffect.getRenderStateCount(); rs++) {
+					currentEffect.getRenderStateAt(rs).enable(this);
+				}
+
         		var type = primitive.getType() == core.primitive.types.TRIANGLES ? gl.TRIANGLES : gl.LINES;
         		gl.drawElements(type, ibo.getIndexCount(), gl.UNSIGNED_SHORT, 0);
 
         		this.disableIndexBuffer(ibo);
         		this.disableVertexBuffer(vbo);
+
+				for (rs = 0; rs < currentEffect.getRenderStateCount(); rs++) {
+					currentEffect.getRenderStateAt(rs).disable(this);
+				}
 
         		this.disableProgram(program);
 			},
@@ -1488,6 +1593,9 @@ define(["./crimild.core", "./crimild.math",
 	};
 
 	return {
+		renderState: renderState,
+		alphaState: alphaState,
+		depthState: depthState,
 		light: light,
 		lightingComponent: lightingComponent,
 		lightNode: lightNode,

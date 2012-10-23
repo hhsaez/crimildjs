@@ -4,12 +4,9 @@ define(["./crimild.math"], function(math) {
 	var version = "0.1.0";
 
 	var object = function(spec) {
+		spec = spec || {};
 		var that = {};
-		var name = "";
-
-		if (spec) {
-			name = spec.name || "";
-		}
+		var name = spec.name || "";
 
 		that.setName = function(aName) {
 			name = aName;
@@ -429,6 +426,7 @@ define(["./crimild.math"], function(math) {
 			return "CrimildJS v" + this.getVersion() + " July 2012";
 		},
 
+		object: object,
 		node: node,
 		groupNode: groupNode,
 		vertexFormat: vertexFormat,

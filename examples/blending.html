@@ -16,50 +16,36 @@
         function initCrimild(canvasId) {
             require(["crimild"], function(crimild) {
                 var assetManager = crimild.utils.assetManager();
-                assetManager.queueImage("../assets/crate.gif");
+                assetManager.queueImage("../assets/earth.jpg");
                 assetManager.loadAll(function() {
                     var scene = crimild.core.groupNode({
                         name: "scene",
                         nodes: [
-                            crimild.core.node({
-                                name: "a light",
-                                components: [
-                                    crimild.rendering.lightingComponent({
-                                        lights: [
-                                            crimild.rendering.light({
-                                                color: [0.75, 0.75, 0.75],
-                                            })
-                                        ]
-                                    })
-                                ],
-                                local: crimild.math.transformation({
-                                    translate: [0.0, 2.0, 10.0]
-                                })
-                            }),
                             crimild.core.geometryNode({
                                 name: "a cube",
                                 primitives: [
-                                    crimild.primitives.cubePrimitive()
+                                    crimild.primitives.spherePrimitive({ 
+                                        vertexFormat: crimild.core.vertexFormat({ positions: 3, textureCoords: 2 })
+                                    }),
                                 ],
-                                local: crimild.math.transformation({
-                                    translate: [0, 0, 0]
-                                }),
-                                components: [
-                                    crimild.components.rotationComponent({angle: 0.01, axis: [0.5, 0, 1]}),
-                                ]
                             }),
                         ],
                         local: crimild.math.transformation({
-                            translate: [0, 0, -5]
+                            translate: [0, 0, -3]
                         }),
                         components: [
+                            crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
                             crimild.rendering.renderComponent({
                                 effects: [
                                     crimild.rendering.effect({
                                         textures: [
                                             crimild.rendering.texture({
-                                                image: assetManager.getImage("../assets/crate.gif")
+                                                image: assetManager.getImage("../assets/earth.jpg")
                                             })
+                                        ],
+                                        renderStates: [
+                                            crimild.rendering.alphaState({ enabled: true }),
+                                            crimild.rendering.depthState({ enabled: false }),
                                         ]
                                     })
                                 ]
@@ -93,12 +79,12 @@
         </div>
         <article class="markdown-body">
             <div>
-                <div style="float: right;"><a href="blending.html">Next&nbsp;&gt;</a></div>
-                <div style="clear: all;"><a href="textures.html">&lt;&nbsp;Previous</a></div>
+                <div style="float: right;"><a href="picking.html">Next&nbsp;&gt;</a></div>
+                <div style="clear: all;"><a href="texture_lighting.html">&lt;&nbsp;Previous</a></div>
             </div>
-            <h3>Crimild JS Example: Textures &amp; Lighting</h3>
+            <h3>Crimild JS Example: Blending</h3>
 
-            <p>This example shows how to combine textures and lighting</p>
+            <p>This example uses blending to display a transparent sphere</p>
 
             <canvas id="webGLCanvas" style="border: solid 1px; margin-left: -5px;" width="640" height="480">
                 Your browser does not support WebGL
