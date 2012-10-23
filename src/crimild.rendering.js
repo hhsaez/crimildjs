@@ -27,32 +27,20 @@ define(["./crimild.core", "./crimild.math",
 
 	var alphaState = function(spec) {
 		spec = spec || {};
-		spec.name = "alpha";
-		var that = renderState(spec);
-
-		that.enable = function(aRenderer) {
-			aRenderer.enableAlphaState(that);
-		};
-
-		that.disable = function(aRenderer) {
-			aRenderer.disableAlphaState(that);
-		};
+		var that = renderState({
+			name: "alpha",
+			enabled: spec.enabled == true ? true : false
+		});
 
 		return that;
 	};
 
 	var depthState = function(spec) {
 		spec = spec || {};
-		spec.name = "depth";
-		var that = renderState(spec);
-
-		that.enable = function(aRenderer) {
-			aRenderer.enableDepthState(that);
-		};
-
-		that.disable = function(aRenderer) {
-			aRenderer.disableDepthState(that);
-		};
+		var that = renderState({
+			name: "depth",
+			enabled: spec.enabled == false ? false : true
+		});
 
 		return that;
 	};
@@ -466,14 +454,16 @@ define(["./crimild.core", "./crimild.math",
 	var effect = function(spec) {
 		spec = spec || {};
 		var that = {};
-		var program = null;
-		var textures = [];
-		var renderStates = [];
+		var program = spec.shaderProgram || null;
+		var textures = spec.textures || [];
 
 		var _ambient = [0.2, 0.2, 0.2];
 		var _diffuse = [0.8, 0.8, 0.8];
 		var _specular = [0.8, 0.8, 0.8];
 		var _shininess = 50;
+
+		var _alphaState = spec.alphaState || alphaState();
+		var _depthState = spec.depthState || depthState();
 
 		Object.defineProperties(that, {
 			ambient: {
@@ -508,11 +498,24 @@ define(["./crimild.core", "./crimild.math",
 					_shininess = value;
 				}
 			},
+			alphaState: {
+				get: function() {
+					return _alphaState;
+				},
+				set: function(vaue) {
+					_alphaState = alphaState;
+				}
+			},
+			depthState: {
+				get: function() {
+					return _depthState;
+				},
+				set: function(value) {
+					_depthState = value;
+				}
+			}
 		});
 
-		if (spec.shaderProgram) { program = spec.shaderProgram; }
-		if (spec.textures) { textures = spec.textures; }
-		if (spec.renderStates) { renderStates = spec.renderStates; }
 		if (spec.ambient) { that.ambient = spec.ambient; }
 		if (spec.diffuse) { that.diffuse = spec.diffuse; }
 		if (spec.specular) { that.specular = spec.specular; }
@@ -536,18 +539,6 @@ define(["./crimild.core", "./crimild.math",
 
 		that.getTextureAt = function(index) {
 			return textures[index];
-		};
-
-		that.attachRenderState = function(aRenderState) {
-			renderStates.push(aRenderState);
-		};
-
-		that.getRenderStateCount = function() {
-			return renderStates.length;
-		};
-
-		that.getRenderStateAt = function(index) {
-			return renderStates[index];
 		};
 
 		return that;
@@ -1082,34 +1073,23 @@ define(["./crimild.core", "./crimild.math",
         		}
         	},
 
-        	enableAlphaState: function(as) {
+        	setAlphaState: function(as) {
         		if (as.enabled) {
 					gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
             		gl.enable(gl.BLEND);
         		}
-        	},
-
-        	disableAlphaState: function(as) {
-        		if (as.enabled) {
+        		else {
         			gl.disable(gl.BLEND);
         		}
         	},
 
-        	enableDepthState: function(ds) {
+        	setDepthState: function(ds) {
         		if (ds.enabled) {
+        			gl.depthFunc(gl.LEQUAL);
         			gl.enable(gl.DEPTH_TEST);
         		}
         		else {
         			gl.disable(gl.DEPTH_TEST);
-        		}
-        	},
-
-        	disableDepthState: function(ds) {
-        		if (ds.enable) {
-        			gl.disable(gl.DEPTH_TEST);
-        		}
-        		else {
-        			gl.enable(gl.DEPTH_TEST);
         		}
         	},
 
@@ -1568,19 +1548,14 @@ define(["./crimild.core", "./crimild.math",
 				gl.polygonOffset(4, 8);
 				gl.enable(gl.POLYGON_OFFSET_FILL);
 
-				for (var rs = 0; rs < currentEffect.getRenderStateCount(); rs++) {
-					currentEffect.getRenderStateAt(rs).enable(this);
-				}
+				this.setDepthState(currentEffect.depthState);
+				this.setAlphaState(currentEffect.alphaState);
 
         		var type = primitive.getType() == core.primitive.types.TRIANGLES ? gl.TRIANGLES : gl.LINES;
         		gl.drawElements(type, ibo.getIndexCount(), gl.UNSIGNED_SHORT, 0);
 
         		this.disableIndexBuffer(ibo);
         		this.disableVertexBuffer(vbo);
-
-				for (rs = 0; rs < currentEffect.getRenderStateCount(); rs++) {
-					currentEffect.getRenderStateAt(rs).disable(this);
-				}
 
         		this.disableProgram(program);
 			},

@@ -43,10 +43,8 @@
                                                 image: assetManager.getImage("../assets/earth.jpg")
                                             })
                                         ],
-                                        renderStates: [
-                                            crimild.rendering.alphaState({ enabled: true }),
-                                            crimild.rendering.depthState({ enabled: false }),
-                                        ]
+                                        alphaState: crimild.rendering.alphaState({ enabled: true }),
+                                        depthState: crimild.rendering.depthState({ enabled: false }),
                                     })
                                 ]
                             })
