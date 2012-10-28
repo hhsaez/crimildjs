@@ -475,6 +475,7 @@ define(["./crimild.core", "./crimild.math",
 
 		var _alphaState = spec.alphaState || alphaState();
 		var _depthState = spec.depthState || depthState();
+		var _cullState = spec.cullState || cullState();
 
 		Object.defineProperties(that, {
 			ambient: {
@@ -524,7 +525,15 @@ define(["./crimild.core", "./crimild.math",
 				set: function(value) {
 					_depthState = value;
 				}
-			}
+			},
+			cullState: {
+				get: function() {
+					return _cullState;
+				},
+				set: function(value) {
+					_cullState = value;
+				}
+			},
 		});
 
 		if (spec.ambient) { that.ambient = spec.ambient; }
@@ -1119,6 +1128,17 @@ define(["./crimild.core", "./crimild.math",
         		}
         	},
 
+        	setCullState: function(ds) {
+        		if (ds.enabled) {
+        			gl.enable(gl.CULL_FACE);
+        			gl.frontFace(gl.CCW);
+        			gl.cullFace(gl.BACK);
+        		}
+        		else {
+        			gl.disable(gl.CULL_FACE);
+        		}
+        	},
+
         	loadVertexBuffer: function(vbo) {
         		vbo.renderCache = gl.createBuffer();
         		gl.bindBuffer(gl.ARRAY_BUFFER, vbo.renderCache);
@@ -1576,6 +1596,7 @@ define(["./crimild.core", "./crimild.math",
 
 				this.setDepthState(currentEffect.depthState);
 				this.setAlphaState(currentEffect.alphaState);
+				this.setCullState(currentEffect.cullState);
 
         		var type = primitive.getType() == core.primitive.types.TRIANGLES ? gl.TRIANGLES : gl.LINES;
         		gl.drawElements(type, ibo.getIndexCount(), gl.UNSIGNED_SHORT, 0);
@@ -1597,6 +1618,7 @@ define(["./crimild.core", "./crimild.math",
 		renderState: renderState,
 		alphaState: alphaState,
 		depthState: depthState,
+		cullState: cullState,
 		light: light,
 		lightingComponent: lightingComponent,
 		lightNode: lightNode,
