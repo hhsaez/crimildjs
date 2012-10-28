@@ -1,162 +1,124 @@
-<!doctype html>
-<!-- The Time Machine GitHub pages theme was designed and developed by Jon Rohan, on Feb 7, 2012. -->
-<!-- Follow him for fun. http://twitter.com/jonrohan. Tail his code on http://github.com/jonrohan -->
+<!DOCTYPE html>
 <html>
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <link rel="stylesheet" href="stylesheets/stylesheet.css" media="screen"/>
-    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script type="text/javascript" src="javascripts/script.js"></script>
-    <title>Crimildjs</title>
-    <meta name="description" content="WebGL based 3D game framework">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <script data-main="src/crimild" src="lib/require.js"></script>
-    <script type="text/javascript">
-        function initCrimild(canvasId) {
-            require(["crimild"], function(crimild) {
-                var scene = crimild.core.groupNode({
-                    name: "scene",
-                    nodes: [
-                        crimild.core.geometryNode({
-                            name: "a klein bottle",
-                            primitives: [
-                                crimild.primitives.kleinBottlePrimitive({
-                                    type: crimild.core.primitive.types.LINES,
-                                    vertexFormat: crimild.core.vertexFormat(),
-                                    scale: -0.15
-                                })
-                            ],
-                            local: crimild.math.transformation({
-                                translate: [2.0, 0, 0]
-                            })
-                        }),
-                        crimild.core.geometryNode({
-                            name: "a cone",
-                            primitives: [
-                                crimild.primitives.conePrimitive({
-                                    type: crimild.core.primitive.types.TRIANGLES,
-                                    vertexFormat: crimild.core.vertexFormat()
-                                })
-                            ]
-                        }),
-                        crimild.core.geometryNode({
-                            name: "a sphere",
-                            primitives: [
-                                crimild.primitives.spherePrimitive({
-                                    type: crimild.core.primitive.types.LINES,
-                                    vertexFormat: crimild.core.vertexFormat()
-                                })
-                            ],
-                            local: crimild.math.transformation({
-                                translate: [-2.0, 0, 0]
-                            })
-                        })
-                    ],
-                    local: crimild.math.transformation({
-                        translate: [0, 0, -7]
-                    }),
-                    components: [
-                        crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
-                    ]
+    <head>
+        <meta charset="utf-8">
+        <title>crimildjs</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="">
+        <meta name="author" content="">
+
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <style type="text/css">
+            body {
+                padding-top: 60px;
+                padding-bottom: 40px;
+            }
+
+            a.zip,
+            a.zip span {
+              background: transparent url(images/zip.png) no-repeat 0 0;
+              width: 30px;
+              height: 21px;
+              opacity: 0.8;
+              display: inline-block;
+              text-indent: -10000px;
+              -moz-opacity: 0.8;
+              filter:alpha(opacity=8);
+              -webkit-transition: opacity ease-in-out 0.3s;
+            }
+
+            a.tar,
+            a.tar span {
+              background: transparent url(images/tar.png) no-repeat 0 0;
+              width: 30px;
+              height: 21px;
+              opacity: 0.8;
+              display: inline-block;
+              text-indent: -10000px;
+              -moz-opacity: 0.8;
+              filter:alpha(opacity=8);
+              -webkit-transition: opacity ease-in-out 0.3s;
+            }
+
+            a.code {
+              background: transparent url(images/code.png) no-repeat 0 2px;
+              width: 30px;
+              height: 21px;
+              display: block;
+              opacity: 0.8;
+              display: inline-block;
+              text-indent: -10000px;
+              -moz-opacity: 0.8;
+              filter:alpha(opacity=8);
+              -webkit-transition: opacity ease-in-out 0.3s;
+            }
+        </style>
+        <link href="css/bootstrap-responsive.min.css" rel="stylesheet">
+
+        <script src="js/jquery-1.8.2.min.js"></script>
+        <script src="js/bootstrap.min.js"></script>
+        <script type="text/javascript">
+            $(document).ready(function () {
+                $("[rel=tooltip]").tooltip();
+                
+                $(".thumbnail").click(function() {
+                    var exampleName = $(this).attr('example-name');
+                    var width = $(this).attr('example-width') || 640;
+                    var height = $(this).attr('example-height') || 480;
+
+                    $("#myModal")
+                        .modal({ keyboard: true })
+                        .html('<iframe src="examples/' + exampleName + '.html" height="' + height + '" width="' + width + '" style="border: 0; overflow: hidden;" scrolling="no"></iframe>')
+                        .css('width', width)
+                        .css('height', height)
+                        .css('overflow', 'hidden');
                 });
-
-                var canvas = document.getElementById(canvasId);
-                crimild.simulation.run({canvas: canvas, scenes: [scene]});
             });
-        }
-    </script>
-</head>
-
-<body onload="initCrimild('webGLCanvas');">
-  <div class="wrapper">
-    <header>
-      <h1 class="title">Crimild JS</h1>
-    </header>
-    <div id="container">
-      <p class="tagline">WebGL based 3D framework</p>
-      <div id="main" role="main">
-        <div class="download-bar">
-        <div class="inner">
-          <a href="https://github.com/hhsaez/crimildjs/tarball/master" class="download-button tar"><span>Download</span></a>
-          <a href="https://github.com/hhsaez/crimildjs/zipball/master" class="download-button zip"><span>Download</span></a>
-          <a href="https://github.com/hhsaez/crimildjs" class="code">View Crimildjs on GitHub</a>
+        </script>
+    </head>
+    <body>
+        <div class="navbar navbar-inverse navbar-fixed-top">
+            <div class="navbar-inner">
+                <div class="container">
+                    <div style="float: right; padding-top: 10px;">
+                        <a href="https://github.com/hhsaez/crimildjs/tarball/master" class="tar">tar</a>
+                        <a href="https://github.com/hhsaez/crimildjs/zipball/master" class="zip">zip</a>
+                        <a href="https://github.com/hhsaez/crimildjs" class="code">source code</a>
+                    </div>
+                </div>
+            </div>
         </div>
-        <span class="blc"></span><span class="trc"></span>
+
+        <div class="container">
+            <div class="hero-unit">
+                <h1>crimildjs</h1>
+                <h2>A compact framework for 3d web application development</h2>
+                <p>Born as a small experiment, CrimildJS is a compact framework for 3D applications running on the web browser, providing a shader-based rendering pipeline on top of WebGL.</p>
+                <p><a class="btn btn-primary btn-large">View crimildjs in GitHub &raquo;</a></p>
+            </div>
+
+            <ul class="thumbnails">
+                <li class="span1"><a href="#" class="thumbnail" rel="tooltip" data-placement="top" title="Shapes &amp; Colors" example-name="shapes"><img src="images/t_shapes.png" /></a></li>
+                <li class="span1"><a href="#" class="thumbnail" rel="tooltip" data-placement="top" title="Lighting" example-name="lighting"><img src="images/t_lighting.png" /></a></li>
+                <li class="span1"><a href="#" class="thumbnail" rel="tooltip" data-placement="top" title="Toon Shading" example-name="toon_shading"><img src="images/t_toon_shading.png" /></a></li>
+                <li class="span1"><a href="#" class="thumbnail" rel="tooltip" data-placement="top" title="Fancy Wireframe" example-name="polygon_offset"><img src="images/t_fancy_wireframe.png"/></a></li>
+                <li class="span1"><a href="#" class="thumbnail" rel="tooltip" data-placement="top" title="Textures" example-name="textures"><img src="images/t_textures.png"/></a></li>
+                <li class="span1"><a href="#" class="thumbnail" rel="tooltip" data-placement="top" title="Textures &amp; Lighting" example-name="texture_lighting"><img src="images/t_texture_lighting.png"/></a></li>
+                <li class="span1"><a href="#" class="thumbnail" rel="tooltip" data-placement="top" title="Blending" example-name="blending"><img src="images/t_blending.png"/></a></li>
+                <li class="span1"><a href="#" class="thumbnail" rel="tooltip" data-placement="top" title="Object Selection" example-name="picking"><img src="images/t_picking.png"/></a></li>
+                <li class="span1"><a href="#" class="thumbnail" rel="tooltip" data-placement="top" title="Solar System" example-name="solar_system"><img src="images/t_solar_system.png"/></a></li>
+                <li class="span1"><a href="#" class="thumbnail" rel="tooltip" data-placement="top" title="Camera &amp; Input" example-name="camera"><img src="images/t_camera_input.png"/></a></li>
+                <li class="span1"><a href="#" class="thumbnail" rel="tooltip" data-placement="top" title="OBJ Loader" example-name="obj_loader"><img src="images/t_obj.png"/></a></li>
+                <li class="span1"><a href="#" class="thumbnail" rel="tooltip" data-placement="top" title="Specular Map" example-name="specular_map"><img src="images/t_specular.png"/></a></li>
+                <li class="span1"><a href="#" class="thumbnail" rel="tooltip" data-placement="top" title="Bump Mapping" example-name="bump_mapping"><img src="images/t_bump.png"/></a></li>
+                <li class="span1"><a href="#" class="thumbnail" rel="tooltip" data-placement="top" title="Multiple Cameras" example-name="multi_camera"><img src="images/t_multi_camera.png"/></a></li>
+                <li class="span1"><a href="#" class="thumbnail" rel="tooltip" data-placement="top" title="Render to Texture" example-name="render_to_texture"><img src="images/t_render_to_texture.png"/></a></li>
+                <li class="span1"><a href="#" class="thumbnail" rel="tooltip" data-placement="top" title="Postprocessing" example-name="old_film"><img src="images/t_old_film.png"/></a></li>
+                <li class="span1"><a href="#" class="thumbnail" rel="tooltip" data-placement="top" title="Glow &amp; Bloom" example-name="bloom"><img src="images/t_glow.png"/></a></li>
+                <li class="span1"><a href="#" class="thumbnail" rel="tooltip" data-placement="top" title="Lightcycle" example-name="lightcycle"><img src="images/t_lightcycle.png"/></a></li>
+            </ul>
         </div>
-        <article class="markdown-body">
-            <h3>Welcome to CrimildJS</h3>
 
-            <p>Born as a small experiment, CrimildJS is a compact framework for 3D applications running on the web browser,
-                providing a shader-based rendering pipeline on top of WebGL.</p>
-
-            <h3>Live demo</h3>
-
-            <p>You need a browser with WebGL support in order to see the live demo below</p>
-
-            <canvas id="webGLCanvas" style="border: solid 1px; margin-left: -5px;" width="640" height="480">
-                Your browser does not support WebGL
-            </canvas>
-
-            <h3>Documentation</h3>
-
-            <p>Keep scrolling. Nothing to do here ;)</p>
-
-            <h3>More demos</h3>
-
-            <p>
-                <ul>
-                    <li><a href="examples/shapes.html">Shapes and Colors</a></li>
-                    <li><a href="examples/lighting.html">Lighting</a></li>
-                    <li><a href="examples/toon_shading.html">Toon Shading</a></li>
-                    <li><a href="examples/polygon_offset.html">Fancy Wireframe</a></li>
-                    <li><a href="examples/textures.html">Textures</a></li>
-                    <li><a href="examples/texture_lighting.html">Textures &amp; Lighting</a></li>
-                    <li><a href="examples/blending.html">Blending</a></li>
-                    <li><a href="examples/picking.html">Object Selection</a></li>
-                    <li><a href="examples/solar_system.html">Solar System</a></li>
-                    <li><a href="examples/camera.html">Camera &amp; Input</a></li>
-                    <li><a href="examples/obj_loader.html">OBJ Loader</a></li>
-                    <li><a href="examples/specular_map.html">Specular Map</a></li>
-                    <li><a href="examples/bump_mapping.html">Bump Mapping</a></li>
-                    <li><a href="examples/multi_camera.html">Multiple Cameras</a></li>
-                    <li><a href="examples/render_to_texture.html">Render to Texture</a></li>
-                    <li><a href="examples/old_film.html">Old Film</a></li>
-                    <li><a href="examples/bloom.html">Glow and Bloom</a></li>
-                </ul>
-            </p>
-
-            <h3>References</h3>
-
-            <p>
-                <ul>    
-                    <li><a href="http://www.learningwebgl.com" target="blank">Learning WebGL</a></li>
-                    <li><a href="https://github.com/toji/gl-matrix" target="blank">glMatrix</a></li>
-                    <li><a href="http://requirejs.org/" target="blank">RequireJS</a></li>
-                    <li><a href="http://crimild.sourceforge.net" target="blank">Crimild Engine</a></li>
-                </ul>
-            </p>
-
-        </article>
-      </div>
-    </div>
-    <footer>
-      <div class="owner">
-      <p><a href="https://github.com/hhsaez" class="avatar"><img src="https://secure.gravatar.com/avatar/2e9781f946d0b1182d623cb50a534c23?s=30&amp;d=https://a248.e.akamai.net/assets.github.com%2Fimages%2Fgravatars%2Fgravatar-140.png" width="48" height="48"/></a> <a href="https://github.com/hhsaez">hhsaez</a> maintains <a href="https://github.com/hhsaez/crimildjs">Crimildjs</a></p>
-
-
-      </div>
-      <div class="creds">
-        <small>This page generated using <a href="https://pages.github.com/">GitHub Pages</a><br/>theme by <a href="http://twitter.com/jonrohan/">Jon Rohan</a></small>
-      </div>
-    </footer>
-  </div>
-  <div class="current-section">
-    <a href="#top">Scroll to top</a>
-    <a href="https://github.com/hhsaez/crimildjs/tarball/master" class="tar">tar</a><a href="https://github.com/hhsaez/crimildjs/zipball/master" class="zip">zip</a><a href="" class="code">source code</a>
-    <p class="name"></p>
-  </div>
-
-  
-</body>
+        <div class="modal hide" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true"></div>
+    </body>
 </html>
