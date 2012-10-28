@@ -45,6 +45,17 @@ define(["./crimild.core", "./crimild.math",
 		return that;
 	};
 
+	var cullState = function(spec) {
+		spec = spec || {};
+
+		var that = renderState({
+			name: "cull",
+			enabled: spec.enabled == false ? false : true
+		});
+
+		return that;
+	}
+
 	var light = function(spec) {
 		spec = spec || {};
 		var that = {};
@@ -732,6 +743,7 @@ define(["./crimild.core", "./crimild.math",
 		var _width = spec.width || 512;
 		var _height = spec.height || 512;
 		var _name = spec.name;
+		var _clearColor = spec.clearColor ? vec4.create(spec.clearColor) : [0, 0, 0, 1]
 
 		Object.defineProperties(that, {
 			name: {
@@ -765,7 +777,15 @@ define(["./crimild.core", "./crimild.math",
 				set: function(value) {
 					_height = value;
 				}
-			}
+			},
+			clearColor: {
+				get: function() {
+					return _clearColor;
+				},
+				set: function(value) {
+					_clearColor = value;
+				}
+			},
 		});
 
 		return that;
@@ -980,6 +1000,10 @@ define(["./crimild.core", "./crimild.math",
 				this.setClearColor(clearColor);
 				gl.enable(gl.DEPTH_TEST);
 
+				gl.enable(gl.CULL_FACE);
+				gl.frontFace(gl.CCW);
+				gl.cullFace(gl.BACK);
+
 				this.onCameraViewportChange();
 				this.onCameraFrustumChange();
 				this.onCameraFrameChange();
@@ -1001,10 +1025,12 @@ define(["./crimild.core", "./crimild.math",
 
 				if (this.currentCamera && this.currentCamera.target) {
 					this.enableFramebuffer(this.currentCamera.target);
+					gl.clearColor(this.currentCamera.target.clearColor[0], this.currentCamera.target.clearColor[1], this.currentCamera.target.clearColor[2], this.currentCamera.target.clearColor[3]);	
 					this.clearBuffers();
 				}
 				else {
 					this.disableFramebuffer(null);
+					gl.clearColor(this.clearColor[0], this.clearColor[1], this.clearColor[2], this.clearColor[3]);
 				}
 
 				this.onCameraViewportChange();
@@ -1075,7 +1101,7 @@ define(["./crimild.core", "./crimild.math",
 
         	setAlphaState: function(as) {
         		if (as.enabled) {
-					gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+					gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
             		gl.enable(gl.BLEND);
         		}
         		else {

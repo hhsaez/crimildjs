@@ -6,103 +6,150 @@
 	<script type="text/javascript">
 		function initCrimild(canvasId) {
             require(["crimild"], function(crimild) {
-                var offscreenFramebuffer = crimild.rendering.framebuffer({
-                    width: 512,
-                    height: 512
-                });
+                var assetManager = crimild.utils.assetManager();
+                assetManager.queueFile("../examples/assets/old_tv/old_tv.obj");
+                assetManager.queueFile("../examples/assets/old_tv/old_tv.mtl");
+                assetManager.queueImage("../examples/assets/earth.jpg");
 
-                var offscreenScene = crimild.core.groupNode({
-                    name: "offscreen scene",
-                    nodes: [
-                        crimild.core.node({
-                            components: [
-                                crimild.rendering.lightingComponent({
-                                    lights: [
-                                        crimild.rendering.light({
-                                            color: [1, 0, 0],
-                                        })
-                                    ]
-                                })
-                            ],
-                            local: crimild.math.transformation({
-                                translate: [0, 0.25, 5.0]
-                            })
-                        }),
-                        crimild.core.geometryNode({
-                            primitives: [
-                                crimild.primitives.treefoilKnotPrimitive({
-                                    type: crimild.core.primitive.types.TRIANGLES,
-                                    vertexFormat: crimild.core.vertexFormat({normals: 3}),
-                                })
-                            ],
-                            components: [
-                                crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
-                            ]
-                        }),
-                        crimild.rendering.cameraNode({
-                            local: crimild.math.transformation({
-                                translate: [0, 0, 5]
-                            }),
-                            target: offscreenFramebuffer
-                        }),
-                    ],
-                    local: crimild.math.transformation({
-                        translate: [10, 0, 0]
-                    })
-                });
+                assetManager.loadAll(function() {
+                    var offscreenFramebuffer = crimild.rendering.framebuffer({
+                        width: 512,
+                        height: 512,
+                        clearColor: [0, 0, 0, 0]
+                    });
 
-                var scene = crimild.core.groupNode({
-                    name: "onscreen scene",
-                    nodes: [
-                        crimild.core.geometryNode({
-                            primitives: [
-                                crimild.core.primitive({
-                                    vertexBuffer: crimild.core.vertexBufferObject({
-                                        vertexFormat: crimild.core.vertexFormat({
-                                            positions: 3,
-                                            normals: 3,
-                                            textureCoords: 2
-                                        }),
-                                        vertexCount: 4,
-                                        data: new Float32Array([
-                                            -1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-                                            -1.0, -1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0,
-                                            1.0, -1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-                                            1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0,
-                                        ])
-                                    }),
-                                    indexBuffer: crimild.core.indexBufferObject({
-                                        indexCount: 6,
-                                        data: new Uint16Array([
-                                            0, 1, 2,
-                                            0, 2, 3
-                                        ])
+                    var offscreenScene = crimild.core.groupNode({
+                        name: "offscreen scene",
+                        nodes: [
+                            crimild.core.node({
+                                components: [
+                                    crimild.rendering.lightingComponent({
+                                        lights: [
+                                            crimild.rendering.light({
+                                                color: [1, 1, 1],
+                                            })
+                                        ]
                                     })
+                                ],
+                                local: crimild.math.transformation({
+                                    translate: [0, 0.25, 5.0]
+                                })
+                            }),
+                            crimild.core.groupNode({
+                                name: "Earth",
+                                nodes: [
+                                    crimild.core.geometryNode({
+                                        primitives: [
+                                            crimild.primitives.spherePrimitive({
+                                                vertexFormat: crimild.core.vertexFormat({positions: 3, normals: 3, textureCoords: 2}),
+                                                radius: 4
+                                            })
+                                        ],
+                                        components: [
+                                            crimild.rendering.renderComponent({
+                                                effects: [
+                                                    crimild.rendering.effect({
+                                                        textures: [
+                                                            crimild.rendering.texture({
+                                                                image: assetManager.getImage("../examples/assets/earth.jpg")
+                                                            })
+                                                        ],
+                                                        specular: [0, 0, 0]
+                                                    })
+                                                ]
+                                            })
+                                        ],
+                                    })
+                                ],
+                                components: [
+                                    crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
+                                ]
+                            }),
+                            crimild.rendering.cameraNode({
+                                local: crimild.math.transformation({
+                                    translate: [0, 0, 15]
                                 }),
-                            ],                            
-                            components: [
-                                crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
-                                crimild.rendering.renderComponent({
-                                    effects: [
-                                        crimild.rendering.effect({
-                                            textures: [
-                                                offscreenFramebuffer.texture
-                                            ]
-                                        })
-                                    ]
-                                }),
-                            ]
-                        }),
-                        crimild.rendering.cameraNode({
-                            local: crimild.math.transformation({
-                                translate: [0, 0, 2],
-                            })
-                        }),
-                    ]
+                                target: offscreenFramebuffer
+                            }),
+                        ],
+                        local: crimild.math.transformation({
+                            translate: [10, 0, 0]
+                        })
+                    });
+
+                    var scene = crimild.core.groupNode({
+                        name: "onscreen scene",
+                        nodes: [
+                            crimild.core.groupNode({
+                                nodes: [
+                                    crimild.obj.objNode({
+                                        file: assetManager.getFile("../examples/assets/old_tv/old_tv.obj"),
+                                        mtlfile: assetManager.getFile("../examples/assets/old_tv/old_tv.mtl"),
+                                        local: crimild.math.transformation({
+                                            rotate: quat4.fromAngleAxis(0.5 * Math.PI, [0, 1, 0])
+                                        }),
+                                    }),
+                                    crimild.core.geometryNode({
+                                        primitives: [
+                                            crimild.core.primitive({
+                                                vertexBuffer: crimild.core.vertexBufferObject({
+                                                    vertexFormat: crimild.core.vertexFormat({
+                                                        positions: 3,
+                                                        normals: 3,
+                                                        textureCoords: 2
+                                                    }),
+                                                    vertexCount: 4,
+                                                    data: new Float32Array([
+                                                        -15.0, 12.5, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0,
+                                                        -15.0, -12.5, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+                                                        15.0, -12.5, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0,
+                                                        15.0, 12.5, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
+                                                    ])
+                                                }),
+                                                indexBuffer: crimild.core.indexBufferObject({
+                                                    indexCount: 6,
+                                                    data: new Uint16Array([
+                                                        0, 1, 2,
+                                                        0, 2, 3
+                                                    ])
+                                                })
+                                            }),
+                                        ], 
+                                        local: crimild.math.transformation({
+                                            translate: [-4, 15.5, 9]
+                                        }),
+                                        components: [
+                                            crimild.rendering.renderComponent({
+                                                effects: [
+                                                    crimild.rendering.effect({
+                                                        textures: [
+                                                            offscreenFramebuffer.texture,
+                                                        ],
+                                                        depthState: crimild.rendering.depthState({ enabled: false }),
+                                                        alphaState: crimild.rendering.alphaState({ enabled: true }),
+                                                    }),
+                                                ]
+                                            }),
+                                        ]
+                                    }),
+                                ],
+                                components: [
+                                    crimild.components.rotationComponent({angle: -0.001, axis: [0, 1, 0]}),
+                                ],
+                            }),
+                            crimild.rendering.cameraNode({
+                                local: crimild.math.transformation({
+                                    translate: [-20, 40, 70],
+                                    rotate: quat4.fromAngleAxis(-0.1 * Math.PI, [1, 1, 0])
+                                })
+                            }),
+                        ]
+                    });
+
+                    var canvas = document.getElementById(canvasId);
+                    crimild.simulation.run({canvas: canvas, scenes: [offscreenScene, scene]});
                 });
 
-                var canvas = document.getElementById(canvasId);
-                crimild.simulation.run({canvas: canvas, scenes: [offscreenScene, scene]});
             });
 		}
 	</script>
@@ -114,7 +161,7 @@
     </canvas>
 
     <div style="position: absolute; z-index: 1; left: 5px; top: 0px; float: left; color: white; width: 600px;">
-        <p>This example renders an object into an image that is later applied to a quad as a texture</p>
+        <p>This example renders an object into an image that is later applied to a quad as a texture. TV Set model from <a href="http://thefree3dmodels.com/stuff/electronics/tv_set_old/19-1-0-874">this one</a></p>
     </div>
 </body>
 </html>
