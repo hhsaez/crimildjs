@@ -7,10 +7,10 @@
         function initCrimild(canvasId) {
             require(["crimild"], function(crimild) {
                 var assetManager = crimild.utils.assetManager();
-                assetManager.queueImage("../assets/sun.gif");
-                assetManager.queueImage("../assets/moon.gif");
-                assetManager.queueImage("../assets/earth.jpg");
-                assetManager.queueImage("../assets/mars.jpg");
+                assetManager.queueImage("../examples/assets/sun.gif");
+                assetManager.queueImage("../examples/assets/moon.gif");
+                assetManager.queueImage("../examples/assets/earth.jpg");
+                assetManager.queueImage("../examples/assets/mars.jpg");
                 assetManager.loadAll(function() {
                     var orbitingComponent = function(spec) {
                         spec = spec || {};
@@ -76,7 +76,7 @@
                                                         diffuse: [1, 1, 1],
                                                         textures: [
                                                             crimild.rendering.texture({
-                                                                image: assetManager.getImage("../assets/sun.gif")
+                                                                image: assetManager.getImage("../examples/assets/sun.gif")
                                                             })
                                                         ]
                                                     })
@@ -156,7 +156,7 @@
                                                                                     crimild.rendering.effect({
                                                                                         textures: [
                                                                                             crimild.rendering.texture({
-                                                                                                image: assetManager.getImage("../assets/moon.gif")
+                                                                                                image: assetManager.getImage("../examples/assets/moon.gif")
                                                                                             })
                                                                                         ]
                                                                                     })
@@ -187,7 +187,7 @@
                                                                     crimild.rendering.effect({
                                                                         textures: [
                                                                             crimild.rendering.texture({
-                                                                                image: assetManager.getImage("../assets/earth.jpg")
+                                                                                image: assetManager.getImage("../examples/assets/earth.jpg")
                                                                             })
                                                                         ]
                                                                     })
@@ -216,7 +216,7 @@
                                                                     crimild.rendering.effect({
                                                                         textures: [
                                                                             crimild.rendering.texture({
-                                                                                image: assetManager.getImage("../assets/mars.jpg")
+                                                                                image: assetManager.getImage("../examples/assets/mars.jpg")
                                                                             })
                                                                         ]
                                                                     })

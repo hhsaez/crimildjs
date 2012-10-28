@@ -7,7 +7,7 @@
         function initCrimild(canvasId) {
             require(["crimild"], function(crimild) {
                 var assetManager = crimild.utils.assetManager();
-                assetManager.queueImage("../assets/crate.gif");
+                assetManager.queueImage("../examples/assets/crate.gif");
                 assetManager.loadAll(function() {
                     var scene = crimild.core.groupNode({
                         name: "scene",
@@ -49,7 +49,7 @@
                                     crimild.rendering.effect({
                                         textures: [
                                             crimild.rendering.texture({
-                                                image: assetManager.getImage("../assets/crate.gif")
+                                                image: assetManager.getImage("../examples/assets/crate.gif")
                                             })
                                         ]
                                     })

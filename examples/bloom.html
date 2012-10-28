@@ -79,8 +79,8 @@
         function initCrimild(canvasId) {
             require(["crimild"], function(crimild) {
                 var assetManager = crimild.utils.assetManager();
-                assetManager.queueFile("../assets/scene.obj");
-                assetManager.queueFile("../assets/scene.mtl");
+                assetManager.queueFile("../examples/assets/scene.obj");
+                assetManager.queueFile("../examples/assets/scene.mtl");
                 assetManager.loadAll(function() {
                     
                     var offscreenFramebuffer = crimild.rendering.framebuffer({
@@ -105,8 +105,8 @@
                                 })
                             }),
                             crimild.obj.objNode({
-                                file: assetManager.getFile("../assets/scene.obj"),
-                                mtlfile: assetManager.getFile("../assets/scene.mtl"),
+                                file: assetManager.getFile("../examples/assets/scene.obj"),
+                                mtlfile: assetManager.getFile("../examples/assets/scene.mtl"),
                                 components: [
                                     crimild.components.rotationComponent({angle: -0.01, axis: [0, 1, 0]}),
                                 ]

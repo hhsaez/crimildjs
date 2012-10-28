@@ -7,8 +7,8 @@
         function initCrimild(canvasId) {
             require(["crimild"], function(crimild) {
                 var assetManager = crimild.utils.assetManager();
-                assetManager.queueImage("../assets/crate.gif");
-                assetManager.queueFile("../assets/world.txt");
+                assetManager.queueImage("../examples/assets/crate.gif");
+                assetManager.queueFile("../examples/assets/world.txt");
                 assetManager.loadAll(function() {
                     var scene = crimild.core.groupNode({
                         name: "scene",
@@ -76,7 +76,7 @@
                                 })
                             }),
                             (function(){
-                                var worldTxt = assetManager.getFile("../assets/world.txt");
+                                var worldTxt = assetManager.getFile("../examples/assets/world.txt");
                                 var lines  = worldTxt.split("\n");
                                 var vertices = [];
                                 var vertexCount = 0;
@@ -119,7 +119,7 @@
                                                 crimild.rendering.effect({
                                                     textures: [
                                                         crimild.rendering.texture({
-                                                            image: assetManager.getImage("../assets/crate.gif")
+                                                            image: assetManager.getImage("../examples/assets/crate.gif")
                                                         })
                                                     ]
                                                 })

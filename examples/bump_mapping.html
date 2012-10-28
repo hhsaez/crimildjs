@@ -152,7 +152,7 @@
 		function initCrimild(canvasId) {
             require(["crimild"], function(crimild) {
                 var assetManager = crimild.utils.assetManager();
-                assetManager.queueImage("../assets/bump_tangent_normals.png");
+                assetManager.queueImage("../examples/assets/bump_tangent_normals.png");
                 assetManager.loadAll(function() {
                     var customLightNode = function(spec) {
                         spec = spec || {};
@@ -206,7 +206,7 @@
                                                 }),
                                                 textures: [
                                                     crimild.rendering.texture({
-                                                        image: assetManager.getImage("../assets/bump_tangent_normals.png")
+                                                        image: assetManager.getImage("../examples/assets/bump_tangent_normals.png")
                                                     })
                                                 ]
                                             })

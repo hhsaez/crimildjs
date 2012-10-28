@@ -194,29 +194,24 @@
         }
     </script>
     <script type="text/javascript">
-        /*
-            El modelo original tuvo ser modificado para poder renderizarlo. Se cambiaron las texturas a PNG y
-            se edito el archivo de materiales (MTL) para reflejar esto cambios.
-        */
-
         function initCrimild(canvasId) {
             require(["crimild"], function(crimild) {
                 var assetManager = crimild.utils.assetManager();
-                assetManager.queueFile("../assets/lightcycle/HQ_Movie cycle.obj");
-                assetManager.queueFile("../assets/lightcycle/HQ_Movie cycle.mtl");
-                assetManager.queueImage("../assets/lightcycle/MG_MovieCycle_Body_EMSS.png");
-                assetManager.queueImage("../assets/lightcycle/MG_MovieCycle_Body_SPEC.png");
-                assetManager.queueImage("../assets/lightcycle/MG_MovieCycle_Engine_EMSS.png");
-                assetManager.queueImage("../assets/lightcycle/MG_MovieCycle_Tire_EMSS.png");
-                assetManager.queueImage("../assets/lightcycle/MG_MovieCycle_Tire_DIFF.png");
-                assetManager.queueImage("../assets/lightcycle/MG_Player_Baton_EMSS.png");
-                assetManager.queueImage("../assets/lightcycle/MG_Player_Baton_SPEC.png");
-                assetManager.queueImage("../assets/lightcycle/MG_Player_Body_EMSS.png");
-                assetManager.queueImage("../assets/lightcycle/MG_Player_Body_SPEC.png");
-                assetManager.queueImage("../assets/lightcycle/MG_Player_Disc_EMSS.png");
-                assetManager.queueImage("../assets/lightcycle/MG_Player_Disc_SPEC.png");
-                assetManager.queueImage("../assets/lightcycle/MG_Player_Helmet_EMSS.png");
-                assetManager.queueImage("../assets/lightcycle/MG_Player_Helmet_SPEC.png");
+                assetManager.queueFile("../examples/assets/lightcycle/HQ_Movie cycle.obj");
+                assetManager.queueFile("../examples/assets/lightcycle/HQ_Movie cycle.mtl");
+                assetManager.queueImage("../examples/assets/lightcycle/MG_MovieCycle_Body_EMSS.png");
+                assetManager.queueImage("../examples/assets/lightcycle/MG_MovieCycle_Body_SPEC.png");
+                assetManager.queueImage("../examples/assets/lightcycle/MG_MovieCycle_Engine_EMSS.png");
+                assetManager.queueImage("../examples/assets/lightcycle/MG_MovieCycle_Tire_EMSS.png");
+                assetManager.queueImage("../examples/assets/lightcycle/MG_MovieCycle_Tire_DIFF.png");
+                assetManager.queueImage("../examples/assets/lightcycle/MG_Player_Baton_EMSS.png");
+                assetManager.queueImage("../examples/assets/lightcycle/MG_Player_Baton_SPEC.png");
+                assetManager.queueImage("../examples/assets/lightcycle/MG_Player_Body_EMSS.png");
+                assetManager.queueImage("../examples/assets/lightcycle/MG_Player_Body_SPEC.png");
+                assetManager.queueImage("../examples/assets/lightcycle/MG_Player_Disc_EMSS.png");
+                assetManager.queueImage("../examples/assets/lightcycle/MG_Player_Disc_SPEC.png");
+                assetManager.queueImage("../examples/assets/lightcycle/MG_Player_Helmet_EMSS.png");
+                assetManager.queueImage("../examples/assets/lightcycle/MG_Player_Helmet_SPEC.png");
                 assetManager.loadAll(function() {
                     var offscreenFramebuffer = crimild.rendering.framebuffer({
                         name: "uColorSampler",
@@ -244,22 +239,22 @@
                             crimild.core.groupNode({
                                 nodes: [
                                     crimild.obj.objNode({
-                                        file: assetManager.getFile("../assets/lightcycle/HQ_Movie cycle.obj"),
-                                        mtlfile: assetManager.getFile("../assets/lightcycle/HQ_Movie cycle.mtl"),
+                                        file: assetManager.getFile("../examples/assets/lightcycle/HQ_Movie cycle.obj"),
+                                        mtlfile: assetManager.getFile("../examples/assets/lightcycle/HQ_Movie cycle.mtl"),
                                         images: {
-                                            "MG_MovieCycle_Body_EMSS.png": assetManager.getImage("../assets/lightcycle/MG_MovieCycle_Body_EMSS.png"),
-                                            "MG_MovieCycle_Body_SPEC.png": assetManager.getImage("../assets/lightcycle/MG_MovieCycle_Body_SPEC.png"),
-                                            "MG_MovieCycle_Engine_EMSS.png": assetManager.getImage("../assets/lightcycle/MG_MovieCycle_Engine_EMSS.png"),
-                                            "MG_MovieCycle_Tire_EMSS.png": assetManager.getImage("../assets/lightcycle/MG_MovieCycle_Tire_EMSS.png"),
-                                            "MG_MovieCycle_Tire_DIFF.png": assetManager.getImage("../assets/lightcycle/MG_MovieCycle_Tire_DIFF.png"),
-                                            "MG_Player_Baton_EMSS.png": assetManager.getImage("../assets/lightcycle/MG_Player_Baton_EMSS.png"),
-                                            "MG_Player_Baton_SPEC.png": assetManager.getImage("../assets/lightcycle/MG_Player_Baton_SPEC.png"),
-                                            "MG_Player_Body_EMSS.png": assetManager.getImage("../assets/lightcycle/MG_Player_Body_EMSS.png"),
-                                            "MG_Player_Body_SPEC.png": assetManager.getImage("../assets/lightcycle/MG_Player_Body_SPEC.png"),
-                                            "MG_Player_Disc_EMSS.png": assetManager.getImage("../assets/lightcycle/MG_Player_Disc_EMSS.png"),
-                                            "MG_Player_Disc_SPEC.png": assetManager.getImage("../assets/lightcycle/MG_Player_Disc_SPEC.png"),
-                                            "MG_Player_Helmet_EMSS.png": assetManager.getImage("../assets/lightcycle/MG_Player_Helmet_EMSS.png"),
-                                            "MG_Player_Helmet_SPEC.png": assetManager.getImage("../assets/lightcycle/MG_Player_Helmet_SPEC.png"),
+                                            "MG_MovieCycle_Body_EMSS.png": assetManager.getImage("../examples/assets/lightcycle/MG_MovieCycle_Body_EMSS.png"),
+                                            "MG_MovieCycle_Body_SPEC.png": assetManager.getImage("../examples/assets/lightcycle/MG_MovieCycle_Body_SPEC.png"),
+                                            "MG_MovieCycle_Engine_EMSS.png": assetManager.getImage("../examples/assets/lightcycle/MG_MovieCycle_Engine_EMSS.png"),
+                                            "MG_MovieCycle_Tire_EMSS.png": assetManager.getImage("../examples/assets/lightcycle/MG_MovieCycle_Tire_EMSS.png"),
+                                            "MG_MovieCycle_Tire_DIFF.png": assetManager.getImage("../examples/assets/lightcycle/MG_MovieCycle_Tire_DIFF.png"),
+                                            "MG_Player_Baton_EMSS.png": assetManager.getImage("../examples/assets/lightcycle/MG_Player_Baton_EMSS.png"),
+                                            "MG_Player_Baton_SPEC.png": assetManager.getImage("../examples/assets/lightcycle/MG_Player_Baton_SPEC.png"),
+                                            "MG_Player_Body_EMSS.png": assetManager.getImage("../examples/assets/lightcycle/MG_Player_Body_EMSS.png"),
+                                            "MG_Player_Body_SPEC.png": assetManager.getImage("../examples/assets/lightcycle/MG_Player_Body_SPEC.png"),
+                                            "MG_Player_Disc_EMSS.png": assetManager.getImage("../examples/assets/lightcycle/MG_Player_Disc_EMSS.png"),
+                                            "MG_Player_Disc_SPEC.png": assetManager.getImage("../examples/assets/lightcycle/MG_Player_Disc_SPEC.png"),
+                                            "MG_Player_Helmet_EMSS.png": assetManager.getImage("../examples/assets/lightcycle/MG_Player_Helmet_EMSS.png"),
+                                            "MG_Player_Helmet_SPEC.png": assetManager.getImage("../examples/assets/lightcycle/MG_Player_Helmet_SPEC.png"),
                                         },
                                         shaderProgram: crimild.rendering.shaderProgram({
                                             vertexShader: crimild.rendering.shader({
