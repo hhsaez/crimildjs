@@ -12,6 +12,10 @@
                 assetManager.queueImage("../examples/assets/earth.jpg");
 
                 assetManager.loadAll(function() {
+                    var canvas = document.getElementById(canvasId);
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+
                     var offscreenFramebuffer = crimild.rendering.framebuffer({
                         width: 512,
                         height: 512,
@@ -66,6 +70,7 @@
                                 ]
                             }),
                             crimild.rendering.cameraNode({
+                                aspectRatio: canvas.width / canvas.height,
                                 local: crimild.math.transformation({
                                     translate: [0, 0, 15]
                                 }),

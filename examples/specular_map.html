@@ -115,6 +115,10 @@
                 assetManager.queueImage("../examples/assets/earth.jpg");
                 assetManager.queueImage("../examples/assets/earth-specular.gif");
                 assetManager.loadAll(function() {
+                    var canvas = document.getElementById(canvasId);
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+
                     var scene = crimild.core.groupNode({
                         name: "scene",
                         nodes: [
@@ -142,7 +146,7 @@
                                     })
                                 ],
                                 components: [
-                                    crimild.components.rotationComponent({angle: 0.001, axis: [0, 1, 0]}),
+                                    crimild.components.rotationComponent({angle: 0.005, axis: [0, 1, 0]}),
                                     crimild.rendering.renderComponent({
                                         effects: [
                                             crimild.rendering.effect({
@@ -166,14 +170,16 @@
                                     })
                                 ]
                             }),
+                            crimild.rendering.cameraNode({
+                                aspectRatio: canvas.width / canvas.height,
+                                local: crimild.math.transformation({
+                                    translate: [0, 0, 3],
+                                    rotate: quat4.fromAngleAxis(Math.PI / 6.0, [0, 0, 1])
+                                })
+                            })
                         ],
-                        local: crimild.math.transformation({
-                            translate: [0.5, -0.75, -1.25],
-                            rotate: quat4.fromAngleAxis(-Math.PI / 6.0, [0, 0, 1])
-                        })
                     });
 
-                    var canvas = document.getElementById(canvasId);
                     crimild.simulation.run({canvas: canvas, scenes: [scene]}).getRenderer().setClearColor([0, 0, 0, 1.0]);
                 });
             });

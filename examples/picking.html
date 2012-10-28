@@ -95,6 +95,10 @@
     <script type="text/javascript">
         function initCrimild(canvasId) {
             require(["crimild"], function(crimild) {
+                var canvas = document.getElementById(canvasId);
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+
                 var rotY = 2.0 * 0.1745329252;
                 var scene;
 
@@ -193,10 +197,17 @@
                             components: [
                                 crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
                             ]
+                        }),
+                        crimild.rendering.cameraNode({
+                            aspectRatio: canvas.width / canvas.height,
+                            local: crimild.math.transformation({
+                                translate: [0, 0, 50],
+                                rotate: quat4.fromAngleAxis(0.975 * rotY, [1, 0, 0])
+                            }),
                         })
                     ],
                     local: crimild.math.transformation({
-                        translate: [0, 0, -50],
+                        //translate: [0, 0, -50],
                         rotate: quat4.fromAngleAxis(0.975 * rotY, [1, 0, 0])
                     }),
                     components: [
@@ -217,7 +228,6 @@
                     ]
                 });
 
-                var canvas = document.getElementById(canvasId);
                 crimild.simulation.run({canvas: canvas, scenes: [scene]});
                 
                 canvas.onmouseup = function(ev) {

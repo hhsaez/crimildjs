@@ -12,6 +12,10 @@
                 assetManager.queueImage("../examples/assets/earth.jpg");
                 assetManager.queueImage("../examples/assets/mars.jpg");
                 assetManager.loadAll(function() {
+                    var canvas = document.getElementById(canvasId);
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+
                     var orbitingComponent = function(spec) {
                         spec = spec || {};
                         var that = crimild.core.nodeComponent({name: "update"});
@@ -274,11 +278,14 @@
                                         ]
                                     }),
                                 ],
+                            }),
+                            crimild.rendering.cameraNode({
+                                aspectRatio: canvas.width / canvas.height,
+                                local: crimild.math.transformation({
+                                    translate: [0, 0, 150],
+                                }),
                             })
                         ],
-                        local: crimild.math.transformation({
-                            translate: [0, 0, -150],
-                        }),
                         components: [
                             (function() {
                                 var that = crimild.core.nodeComponent({name: "update"});

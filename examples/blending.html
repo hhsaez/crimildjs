@@ -9,6 +9,10 @@
                 var assetManager = crimild.utils.assetManager();
                 assetManager.queueImage("../examples/assets/earth.jpg");
                 assetManager.loadAll(function() {
+                    var canvas = document.getElementById(canvasId);
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+
                     var scene = crimild.core.groupNode({
                         name: "scene",
                         nodes: [
@@ -19,13 +23,18 @@
                                         vertexFormat: crimild.core.vertexFormat({ positions: 3, textureCoords: 2 })
                                     }),
                                 ],
+                                components: [
+                                    crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
+                                ]
                             }),
+                            crimild.rendering.cameraNode({
+                                aspectRatio: canvas.width / canvas.height,
+                                local: crimild.math.transformation({
+                                    translate: [0, 0, 4]
+                                })
+                            })
                         ],
-                        local: crimild.math.transformation({
-                            translate: [0, 0, -4]
-                        }),
                         components: [
-                            crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
                             crimild.rendering.renderComponent({
                                 effects: [
                                     crimild.rendering.effect({

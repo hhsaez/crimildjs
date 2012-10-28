@@ -811,7 +811,7 @@ define(["./crimild.core", "./crimild.math",
 		var _renderer = null;
 
 		if (!spec.projection) {
-			mat4.perspective(45, 4.0 / 3.0, 0.1, 1000.0, _pMatrix);
+			mat4.perspective(45, spec.aspectRatio || (4.0 / 3.0), 0.1, 1000.0, _pMatrix);
 		}
 
 		Object.defineProperties(that, {

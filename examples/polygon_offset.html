@@ -23,6 +23,10 @@
     <script type="text/javascript">
         function initCrimild(canvasId) {
             require(["crimild"], function(crimild) {
+                var canvas = document.getElementById(canvasId);
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+
                 var scene = crimild.core.groupNode({
                     name: "scene",
                     nodes: [
@@ -84,14 +88,16 @@
                             components: [
                                 crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]}),
                             ]
+                        }),
+                        crimild.rendering.cameraNode({
+                            aspectRatio: canvas.width / canvas.height,
+                            local: crimild.math.transformation({
+                                translate: [0, 0, 5],
+                            }),
                         })
                     ],
-                    local: crimild.math.transformation({
-                        translate: [0, 0, -5],
-                    }),
                 });
 
-                var canvas = document.getElementById(canvasId);
                 crimild.simulation.run({canvas: canvas, scenes: [scene]});
             });
         }

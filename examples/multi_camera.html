@@ -6,6 +6,10 @@
 	<script type="text/javascript">
 		function initCrimild(canvasId) {
             require(["crimild"], function(crimild) {
+                var canvas = document.getElementById(canvasId);
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+
                 var scene = crimild.core.groupNode({
                     name: "scene",
                     nodes: [
@@ -41,12 +45,14 @@
                         }),
                         crimild.rendering.cameraNode({
                             viewport: [0, 0.5, 0.5, 0.5],
+                            aspectRatio: canvas.width / canvas.height,
                             local: crimild.math.transformation({
                                 translate: [0, 0, 30]
                             })
                         }),
                         crimild.rendering.cameraNode({
                             viewport: [0.5, 0.5, 0.5, 0.5],
+                            aspectRatio: canvas.width / canvas.height,
                             local: crimild.math.transformation({
                                 translate: [30, 0, 0],
                                 rotate: quat4.fromAngleAxis(0.5 * Math.PI, [0, 1, 0])
@@ -54,6 +60,7 @@
                         }),
                         crimild.rendering.cameraNode({
                             viewport: [0.5, 0, 0.5, 0.5],
+                            aspectRatio: canvas.width / canvas.height,
                             local: crimild.math.transformation({
                                 translate: [-30, 0, 0],
                                 rotate: quat4.fromAngleAxis(-0.5 * Math.PI, [0, 1, 0])
@@ -61,6 +68,7 @@
                         }),
                         crimild.rendering.cameraNode({
                             viewport: [0, 0, 0.5, 0.5],
+                            aspectRatio: canvas.width / canvas.height,
                             local: crimild.math.transformation({
                                 translate: [0, 30, 0],
                                 rotate: quat4.fromAngleAxis(-0.5 * Math.PI, [1, 0, 0])
@@ -69,7 +77,6 @@
                     ],
                 });
 
-                var canvas = document.getElementById(canvasId);
                 crimild.simulation.run({canvas: canvas, scenes: [scene]});
             });
 		}

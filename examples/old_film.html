@@ -205,6 +205,10 @@
                 assetManager.queueFile("../examples/assets/scene.mtl");
                 assetManager.loadAll(function() {
                     
+                    var canvas = document.getElementById(canvasId);
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+
                     var offscreenFramebuffer = crimild.rendering.framebuffer({
                         width: 1024,
                         height: 1024,
@@ -235,6 +239,7 @@
                                 ]
                             }),
                             crimild.rendering.cameraNode({
+                                aspectRatio: canvas.width / canvas.height,
                                 local: crimild.math.transformation({
                                     translate: [0, 10, 75]
                                 }),

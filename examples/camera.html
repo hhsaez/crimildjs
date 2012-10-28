@@ -10,11 +10,15 @@
                 assetManager.queueImage("../examples/assets/crate.gif");
                 assetManager.queueFile("../examples/assets/world.txt");
                 assetManager.loadAll(function() {
+                    var canvas = document.getElementById(canvasId);
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+
                     var scene = crimild.core.groupNode({
                         name: "scene",
                         nodes: [
                             crimild.rendering.cameraNode({
-                                name: "cameraNode",
+                                aspectRatio: canvas.width / canvas.height,
                                 components: [
                                     (function() {
                                         var that = crimild.core.nodeComponent({name: "update"});
@@ -135,8 +139,12 @@
                         ]
                     });
 
+                    var canvas = document.getElementById(canvasId);
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+
                     crimild.simulation.run({
-                        canvas: document.getElementById(canvasId), 
+                        canvas: canvas, 
                         scenes: [scene],
                         grabInput: true
                     });

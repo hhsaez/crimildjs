@@ -213,6 +213,10 @@
                 assetManager.queueImage("../examples/assets/lightcycle/MG_Player_Helmet_EMSS.png");
                 assetManager.queueImage("../examples/assets/lightcycle/MG_Player_Helmet_SPEC.png");
                 assetManager.loadAll(function() {
+                    var canvas = document.getElementById(canvasId);
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                    
                     var offscreenFramebuffer = crimild.rendering.framebuffer({
                         name: "uColorSampler",
                         width: 1024,
@@ -293,6 +297,7 @@
                             }),
 
                             crimild.rendering.cameraNode({
+                                aspectRatio: canvas.width / canvas.height,
                                 local: crimild.math.transformation({
                                     translate: [0, 0.75, 3]
                                 }),
@@ -377,7 +382,6 @@
                         ],
                     });
 
-                    var canvas = document.getElementById(canvasId);
                     crimild.simulation
                         .run({canvas: canvas, scenes: [scene, screenScene]})
                         .getRenderer()

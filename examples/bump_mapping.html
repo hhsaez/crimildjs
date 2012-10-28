@@ -154,6 +154,10 @@
                 var assetManager = crimild.utils.assetManager();
                 assetManager.queueImage("../examples/assets/bump_tangent_normals.png");
                 assetManager.loadAll(function() {
+                    var canvas = document.getElementById(canvasId);
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+
                     var customLightNode = function(spec) {
                         spec = spec || {};
 
@@ -208,7 +212,8 @@
                                                     crimild.rendering.texture({
                                                         image: assetManager.getImage("../examples/assets/bump_tangent_normals.png")
                                                     })
-                                                ]
+                                                ],
+                                                cullState: crimild.rendering.cullState({ enabled: false })
                                             })
                                         ]
                                     }),
@@ -230,14 +235,16 @@
                                         return that;
                                     })(),
                                 ]
+                            }),
+                            crimild.rendering.cameraNode({
+                                aspectRatio: canvas.width / canvas.height,
+                                local: crimild.math.transformation({
+                                    translate: [0, 0, 3],
+                                }),                                
                             })
                         ],
-                        local: crimild.math.transformation({
-                            translate: [0, 0, -3],
-                        }),
                     });
 
-                    var canvas = document.getElementById(canvasId);
                     crimild.simulation.run({canvas: canvas, scenes: [scene]});
                 });
             });
