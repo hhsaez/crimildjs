@@ -43,15 +43,18 @@
                                                 image: assetManager.getImage("../examples/assets/earth.jpg")
                                             })
                                         ],
-                                        alphaState: crimild.rendering.alphaState({ enabled: true }),
+                                        alphaState: crimild.rendering.alphaState({ 
+                                            enabled: true,
+                                            dstBlendFunc: crimild.rendering.alphaState.dstBlendFunc.ONE
+                                        }),
                                         depthState: crimild.rendering.depthState({ enabled: false }),
+                                        cullState: crimild.rendering.cullState({ enabled: false }),
                                     })
                                 ]
                             })
                         ]
                     });
 
-                    var canvas = document.getElementById(canvasId);
                     crimild.simulation.run({canvas: canvas, scenes: [scene]}).getRenderer().setClearColor([0, 0, 0, 1]);
                 })
             });

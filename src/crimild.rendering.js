@@ -32,7 +32,51 @@ define(["./crimild.core", "./crimild.math",
 			enabled: spec.enabled == true ? true : false
 		});
 
+		var _srcBlendFunc = spec.srcBlendFunc || alphaState.srcBlendFunc.SRC_ALPHA;
+		var _dstBlendFunc = spec.dstBlendFunc || alphaState.dstBlendFunc.ONE_MINUS_SRC_ALPHA;
+
+		Object.defineProperties(that, {
+			srcBlendFunc: {
+				get: function() {
+					return _srcBlendFunc;
+				},
+				set: function(value) {
+					_srcBlendFunc = value;
+				},
+			},
+			dstBlendFunc: {
+				get: function() {
+					return _dstBlendFunc;
+				},
+				set: function(value) {
+					_dstBlendFunc = value;
+				}
+			}
+		});
+
 		return that;
+	};
+
+	alphaState.srcBlendFunc = {
+		ZERO: 0,
+    	ONE: 1,
+    	SRC_COLOR: 0x0300,
+    	ONE_MINUS_SRC_COLOR: 0x0301,
+    	SRC_ALPHA: 0x0302,
+    	ONE_MINUS_SRC_ALPHA: 0x0303,
+    	DST_ALPHA: 0x0304,
+    	ONE_MINUS_DST_ALPHA: 0x0305,
+	};
+
+	alphaState.dstBlendFunc = {
+		ZERO: 0,
+    	ONE: 1,
+    	SRC_COLOR: 0x0300,
+    	ONE_MINUS_SRC_COLOR: 0x0301,
+    	SRC_ALPHA: 0x0302,
+    	ONE_MINUS_SRC_ALPHA: 0x0303,
+    	DST_ALPHA: 0x0304,
+    	ONE_MINUS_DST_ALPHA: 0x0305,
 	};
 
 	var depthState = function(spec) {
@@ -1110,8 +1154,8 @@ define(["./crimild.core", "./crimild.math",
 
         	setAlphaState: function(as) {
         		if (as.enabled) {
-					gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
             		gl.enable(gl.BLEND);
+					gl.blendFunc(as.srcBlendFunc, as.dstBlendFunc);
         		}
         		else {
         			gl.disable(gl.BLEND);
