@@ -3,6 +3,7 @@
 <head>
     <title>crimildjs</title>
     <script data-main="../src/crimild" src="../lib/require.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/example.css">
     <script id="lightcycle-vs" type="x-shader/x-fragment">
         attribute vec3 aVertexPosition;
         attribute vec3 aVertexNormal;
@@ -393,12 +394,13 @@
 </head>
 
 <body onload="initCrimild('webGLCanvas');">
-    <canvas id="webGLCanvas" style="margin: -8px; z-index: 0;" width="640" height="480">
+    <canvas id="webGLCanvas">
         Your browser does not support WebGL
     </canvas>
 
-    <div style="position: absolute; z-index: 1; left: 5px; top: 0px; float: left; color: white; width: 600px;">
-        <p>This example uses several single and multipass techniques to render a lightcycle from the movie Tron: Legacy. The lightcycle model was adapted from <a href="http://thefree3dmodels.com/stuff/vehicles/tron_lightcycle/13-1-0-2624">this one</a></p>
+    <div class="hud">
+        <p><a href="../index.html">crimildjs</a> lightcycle example</p>
+        <p>The lightcycle model was adapted from <a href="http://thefree3dmodels.com/stuff/vehicles/tron_lightcycle/13-1-0-2624">this one</a></p>
         <input type="checkbox" id="bloom" checked />Bloom<br/>
         <input type="checkbox" id="specular_map" checked />Specular Map<br/>
     </div>

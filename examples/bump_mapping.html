@@ -3,6 +3,7 @@
 <head>
     <title>crimildjs</title>
     <script data-main="../src/crimild" src="../lib/require.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/example.css">
     <script id="simple-vs" type="x-shader/x-fragment">
         attribute vec3 aVertexPosition;
 
@@ -253,13 +254,13 @@
 </head>
 
 <body onload="initCrimild('webGLCanvas');">
-    <canvas id="webGLCanvas" style="margin: -8px; z-index: 0;" width="640" height="480">
+    <canvas id="webGLCanvas">
         Your browser does not support WebGL
     </canvas>
 
-    <div style="position: absolute; z-index: 1; left: 5px; top: 0px; float: left; color: white; width: 600px;">
-         <p>This examples uses the normal bump mapping technique to increase object details without the need of additional geometric data</p>
-         <input type="checkbox" id="normal_map" checked />Use Normal Map<br/>
+    <div class="hud">
+        <p><a href="../index.html">crimildjs</a> example - bump mapping</p>
+        <input type="checkbox" id="normal_map" checked />Use Normal Map<br/>
     </div>
 </body>
 </html>

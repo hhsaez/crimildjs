@@ -3,6 +3,7 @@
 <head>
     <title>crimildjs</title>
     <script data-main="../src/crimild" src="../lib/require.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/example.css">
     <script id="shader-vs" type="x-shader/x-vertex">
         attribute vec3 aVertexPosition;
         attribute vec3 aVertexNormal;
@@ -370,12 +371,12 @@
 </head>
 
 <body onload="initCrimild('webGLCanvas');">
-    <canvas id="webGLCanvas" style="margin: -8px; z-index: 0;" width="640" height="480">
+    <canvas id="webGLCanvas">
         Your browser does not support WebGL
     </canvas>
 
-    <div style="position: absolute; z-index: 1; left: 5px; top: 0px; float: left; color: white; width: 600px;">
-        <p>In this example we use some post-processing effects to simulate old films. The shaders used in this example are based on the ones introduced in the <a href="http://devmaster.net/posts/2989/shader-effects-old-film">old film shader tutorial from DevMaster.net</a></p>
+    <div class="hud">
+        <p><a href="../index.html">crimildjs</a> example - image processing</p>
         <input type="checkbox" id="sepia" checked />Sepia Toning<br/>
         <input type="checkbox" id="noise" checked />Noise<br/>
         <input type="checkbox" id="scratching" checked />Scratching<br/>

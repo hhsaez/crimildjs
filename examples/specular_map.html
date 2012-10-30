@@ -3,6 +3,7 @@
 <head>
     <title>crimildjs</title>
     <script data-main="../src/crimild" src="../lib/require.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/example.css">
     <script id="specular-vs" type="x-shader/x-vertex">
         attribute vec3 aVertexPosition;
         attribute vec3 aVertexNormal;
@@ -188,12 +189,14 @@
 </head>
 
 <body onload="initCrimild('webGLCanvas');">
-    <canvas id="webGLCanvas" style="margin: -8px; z-index: 0;" width="640" height="480">
+    <canvas id="webGLCanvas">
         Your browser does not support WebGL
     </canvas>
 
-    <div style="position: absolute; z-index: 1; left: 5px; top: 0px; float: left; color: white; width: 600px;">
-        <p>This example uses a specular map to indicate how specular lighting must be computed per pixel. It's based on <a href="http://learningwebgl.com/lessons/lesson15/">lesson 15 of the Learning WebGL lessons series</a>. Earth texture courtesy of <a href="http://www.esa.int/esaEO/SEMGSY2IU7E_index_0.html">the European Space Agency/Envisat</a>.<br/></p>
+    <div class="hud">
+        <p><a href="../index.html">crimildjs</a> example - specular mapping</p>
+        <p>This example is based on <a href="http://learningwebgl.com/lessons/lesson15/">lesson 15 of the Learning WebGL lessons series</a><br />
+        Earth texture courtesy of <a href="http://www.esa.int/esaEO/SEMGSY2IU7E_index_0.html">the European Space Agency/Envisat</a>.<br/></p>
     </div>
 </body>
 </html>

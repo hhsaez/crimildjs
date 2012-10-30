@@ -3,6 +3,7 @@
 <head>
     <title>crimildjs</title>
     <script data-main="../src/crimild" src="../lib/require.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/example.css">
 	<script type="text/javascript">
 		function initCrimild(canvasId) {
             require(["crimild"], function(crimild) {
@@ -161,12 +162,13 @@
 </head>
 
 <body onload="initCrimild('webGLCanvas');">
-    <canvas id="webGLCanvas" style="margin: -8px; z-index: 0;" width="640" height="480">
+    <canvas id="webGLCanvas">
         Your browser does not support WebGL
     </canvas>
 
-    <div style="position: absolute; z-index: 1; left: 5px; top: 0px; float: left; color: white; width: 600px;">
-        <p>This example renders an object into an image that is later applied to a quad as a texture. TV Set model from <a href="http://thefree3dmodels.com/stuff/electronics/tv_set_old/19-1-0-874">this one</a></p>
+    <div class="hud">
+        <p><a href="../index.html">crimildjs</a> example - render to texture</p>
+        <p>TV Set model from <a href="http://thefree3dmodels.com/stuff/electronics/tv_set_old/19-1-0-874">this one</a></p>
     </div>
 </body>
 </html>

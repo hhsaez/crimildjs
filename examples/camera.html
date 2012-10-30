@@ -3,6 +3,7 @@
 <head>
     <title>crimildjs</title>
     <script data-main="../src/crimild" src="../lib/require.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/example.css">
     <script type="text/javascript">
         function initCrimild(canvasId) {
             require(["crimild"], function(crimild) {
@@ -155,14 +156,13 @@
 </head>
 
 <body onload="initCrimild('webGLCanvas');">
-    <canvas id="webGLCanvas" style="margin: -8px; z-index: 0;" width="640" height="480">
+    <canvas id="webGLCanvas">
         Your browser does not support WebGL
     </canvas>
 
-    <div style="position: absolute; z-index: 1; left: 5px; top: 0px; float: left; color: white; width: 600px;">
-        <p>This example shows how to setup and transform a camera using input from the keyboard. It's based on the infamous <a href="http://nehe.gamedev.net/tutorial/loading_and_moving_through_a_3d_world/22003/">NeHe's tutorial no. 10</a></p>
-
-        <p>Use the cursor keys to move and look around. Click here to start</p>
+    <div class="hud">
+        <p><a href="../index.html">crimildjs</a> example - camera &amp; input</p>
+        <p>Use the cursor keys to move.</p>
     </div>
 </body>
 </html>
