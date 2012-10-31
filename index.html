@@ -70,6 +70,15 @@
                         .css('height', 480)
                         .css('overflow', 'hidden');
                     $("#frame-contents").html('<iframe src="' + $(this).attr('href') + '" height="480" width="640" style="border: 0; overflow: hidden;" scrolling="no"></iframe>');
+                    $('.fullscreen').attr('url', $(this).attr('href'));
+                });
+
+                $('.fullscreen').click(function(ev) {
+                	window.location = $(this).attr('url');
+                });
+
+                $('.go-to-github').click(function(ev) {
+                	window.location = "https://github.com/hhsaez/crimildjs";
                 });
             });
         </script>
@@ -92,7 +101,7 @@
                 <h1>crimildjs</h1>
                 <h2>A compact framework for 3d web application development</h2>
                 <p>Born as a small experiment, CrimildJS is a compact framework for 3D applications running on the web browser, providing a shader-based rendering pipeline on top of WebGL.</p>
-                <p><a class="btn btn-primary btn-large">View crimildjs in GitHub &raquo;</a></p>
+                <p><a class="btn btn-primary btn-large go-to-github">View crimildjs in GitHub &raquo;</a></p>
             </div>
 
             <div class="alert">
@@ -121,8 +130,11 @@
         </div>
 
         <div class="modal hide" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-            <div id="frame-contents">
-            </div>
+  			<div style="position: absolute; left: 540px; padding: 5px 0;">
+    			<button class="btn fullscreen"><i class="icon-fullscreen"></i></button>
+    			<button class="btn" data-dismiss="modal" aria-hidden="true"><i class="icon-off"></i></button>
+  			</div>
+            <div id="frame-contents"></div>
         </div>
     </body>
 </html>
