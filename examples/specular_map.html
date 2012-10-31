@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>crimildjs</title>
+    <script type="text/javascript" src="../js/jquery-1.8.2.min.js"></script>
     <script data-main="../src/crimild" src="../lib/require.js"></script>
     <link rel="stylesheet" type="text/css" href="../css/example.css">
     <script id="specular-vs" type="x-shader/x-vertex">
@@ -182,6 +183,9 @@
                     });
 
                     crimild.simulation.run({canvas: canvas, scenes: [scene]}).getRenderer().setClearColor([0, 0, 0, 1.0]);
+
+                    $('#loading').hide();
+                    $('#wrapper').show();
                 });
             });
         }
@@ -189,14 +193,22 @@
 </head>
 
 <body onload="initCrimild('webGLCanvas');">
-    <canvas id="webGLCanvas">
-        Your browser does not support WebGL
-    </canvas>
+    <div id="loading">
+        <div class="hud">
+            <p>loading, please wait...</p>
+        </div>
+    </div>
 
-    <div class="hud">
-        <p><a href="../index.html">crimildjs</a> example - specular mapping</p>
-        <p>This example is based on <a href="http://learningwebgl.com/lessons/lesson15/">lesson 15 of the Learning WebGL lessons series</a><br />
-        Earth texture courtesy of <a href="http://www.esa.int/esaEO/SEMGSY2IU7E_index_0.html">the European Space Agency/Envisat</a>.<br/></p>
+    <div id="wrapper" style="display: none;">
+        <canvas id="webGLCanvas">
+            Your browser does not support WebGL
+        </canvas>
+
+        <div class="hud">
+            <p><a href="../index.html">crimildjs</a> example - specular mapping</p>
+            <p>This example is based on <a href="http://learningwebgl.com/lessons/lesson15/">lesson 15 of the Learning WebGL lessons series</a><br />
+            Earth texture courtesy of <a href="http://www.esa.int/esaEO/SEMGSY2IU7E_index_0.html">the European Space Agency/Envisat</a>.<br/></p>
+        </div>
     </div>
 </body>
 </html>

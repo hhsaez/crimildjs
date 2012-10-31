@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>crimildjs</title>
+    <script type="text/javascript" src="../js/jquery-1.8.2.min.js"></script>
     <script data-main="../src/crimild" src="../lib/require.js"></script>
     <link rel="stylesheet" type="text/css" href="../css/example.css">
     <script id="glow-vs" type="x-shader/x-vertex">
@@ -205,10 +206,12 @@
                         ],
                     });
 
-                    var canvas = document.getElementById(canvasId);
                     crimild.simulation
                         .run({canvas: canvas, scenes: [offscreenScene, scene]})
                         .getRenderer().setClearColor([0, 0, 0, 1]);
+
+                    $('#loading').hide();
+                    $('#wrapper').show();
                 })
             });
         }
@@ -216,13 +219,21 @@
 </head>
 
 <body onload="initCrimild('webGLCanvas');">
-    <canvas id="webGLCanvas">
-        Your browser does not support WebGL
-    </canvas>
+    <div id="loading">
+        <div class="hud">
+            <p>loading, please wait...</p>
+        </div>
+    </div>
 
-    <div class="hud">
-        <p><a href="../index.html">crimildjs</a> example - glow &amp; bloom</p>
-        <input type="checkbox" id="bloom" checked />Bloom<br/>
+    <div id="wrapper" style="display: none;">
+        <canvas id="webGLCanvas">
+            Your browser does not support WebGL
+        </canvas>
+
+        <div class="hud">
+            <p><a href="../index.html">crimildjs</a> example - glow &amp; bloom</p>
+            <input type="checkbox" id="bloom" checked />Bloom<br/>
+        </div>
     </div>
 </body>
 </html>

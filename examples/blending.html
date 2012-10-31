@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>crimildjs</title>
+    <script type="text/javascript" src="../js/jquery-1.8.2.min.js"></script>
     <script data-main="../src/crimild" src="../lib/require.js"></script>
     <link rel="stylesheet" type="text/css" href="../css/example.css">
     <script type="text/javascript">
@@ -57,6 +58,9 @@
                     });
 
                     crimild.simulation.run({canvas: canvas, scenes: [scene]}).getRenderer().setClearColor([0, 0, 0, 1]);
+
+                    $('#loading').hide();
+                    $('#wrapper').show();
                 })
             });
         }
@@ -64,12 +68,20 @@
 </head>
 
 <body onload="initCrimild('webGLCanvas');">
-    <canvas id="webGLCanvas">
-        Your browser does not support WebGL
-    </canvas>
+    <div id="loading">
+        <div class="hud">
+            <p>loading, please wait...</p>
+        </div>
+    </div>
 
-    <div class="hud">
-        <p><a href="../index.html">crimildjs</a> blending example</p>
+    <div id="wrapper" style="display: none;">
+        <canvas id="webGLCanvas">
+            Your browser does not support WebGL
+        </canvas>
+
+        <div class="hud">
+            <p><a href="../index.html">crimildjs</a> blending example</p>
+        </div>
     </div>
 </body>
 </html>

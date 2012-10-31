@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>crimildjs</title>
+    <script type="text/javascript" src="../js/jquery-1.8.2.min.js"></script>
     <script data-main="../src/crimild" src="../lib/require.js"></script>
     <link rel="stylesheet" type="text/css" href="../css/example.css">
     <script id="shader-vs" type="x-shader/x-vertex">
@@ -362,8 +363,10 @@
                         ],
                     });
 
-                    var canvas = document.getElementById(canvasId);
                     crimild.simulation.run({canvas: canvas, scenes: [offscreenScene, scene]});
+
+                    $('#loading').hide();
+                    $('#wrapper').show();
                 })
             });
         }
@@ -371,16 +374,24 @@
 </head>
 
 <body onload="initCrimild('webGLCanvas');">
-    <canvas id="webGLCanvas">
-        Your browser does not support WebGL
-    </canvas>
+    <div id="loading">
+        <div class="hud">
+            <p>loading, please wait...</p>
+        </div>
+    </div>
 
-    <div class="hud">
-        <p><a href="../index.html">crimildjs</a> example - image processing</p>
-        <input type="checkbox" id="sepia" checked />Sepia Toning<br/>
-        <input type="checkbox" id="noise" checked />Noise<br/>
-        <input type="checkbox" id="scratching" checked />Scratching<br/>
-        <input type="checkbox" id="vignetting" checked />Vignetting<br/>
+    <div id="wrapper" style="display: none;">
+        <canvas id="webGLCanvas">
+            Your browser does not support WebGL
+        </canvas>
+
+        <div class="hud">
+            <p><a href="../index.html">crimildjs</a> example - image processing</p>
+            <input type="checkbox" id="sepia" checked />Sepia Toning<br/>
+            <input type="checkbox" id="noise" checked />Noise<br/>
+            <input type="checkbox" id="scratching" checked />Scratching<br/>
+            <input type="checkbox" id="vignetting" checked />Vignetting<br/>
+        </div>
     </div>
 </body>
 </html>

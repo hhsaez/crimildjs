@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>crimildjs</title>
+    <script type="text/javascript" src="../js/jquery-1.8.2.min.js"></script>
     <script data-main="../src/crimild" src="../lib/require.js"></script>
     <link rel="stylesheet" type="text/css" href="../css/example.css">
     <script id="lightcycle-vs" type="x-shader/x-fragment">
@@ -387,6 +388,9 @@
                         .run({canvas: canvas, scenes: [scene, screenScene]})
                         .getRenderer()
                             .setClearColor([0.1, 0.1, 0.1, 1]);
+
+                    $('#loading').hide();
+                    $('#wrapper').show();
                 })
             });
         }
@@ -394,15 +398,23 @@
 </head>
 
 <body onload="initCrimild('webGLCanvas');">
-    <canvas id="webGLCanvas">
-        Your browser does not support WebGL
-    </canvas>
+    <div id="loading">
+        <div class="hud">
+            <p>loading, please wait...</p>
+        </div>
+    </div>
 
-    <div class="hud">
-        <p><a href="../index.html">crimildjs</a> lightcycle example</p>
-        <p>The lightcycle model was adapted from <a href="http://thefree3dmodels.com/stuff/vehicles/tron_lightcycle/13-1-0-2624">this one</a></p>
-        <input type="checkbox" id="bloom" checked />Bloom<br/>
-        <input type="checkbox" id="specular_map" checked />Specular Map<br/>
+    <div id="wrapper" style="display: none;">
+        <canvas id="webGLCanvas">
+            Your browser does not support WebGL
+        </canvas>
+
+        <div class="hud">
+            <p><a href="../index.html">crimildjs</a> lightcycle example</p>
+            <p>The lightcycle model was adapted from <a href="http://thefree3dmodels.com/stuff/vehicles/tron_lightcycle/13-1-0-2624">this one</a></p>
+            <input type="checkbox" id="bloom" checked />Bloom<br/>
+            <input type="checkbox" id="specular_map" checked />Specular Map<br/>
+        </div>
     </div>
 </body>
 </html>

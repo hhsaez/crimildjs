@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>crimildjs</title>
+    <script type="text/javascript" src="../js/jquery-1.8.2.min.js"></script>
     <script data-main="../src/crimild" src="../lib/require.js"></script>
     <link rel="stylesheet" type="text/css" href="../css/example.css">
 	<script type="text/javascript">
@@ -144,6 +145,7 @@
                                 ],
                             }),
                             crimild.rendering.cameraNode({
+                                aspectRatio: canvas.width / canvas.height,
                                 local: crimild.math.transformation({
                                     translate: [-20, 40, 70],
                                     rotate: quat4.fromAngleAxis(-0.1 * Math.PI, [1, 1, 0])
@@ -152,8 +154,10 @@
                         ]
                     });
 
-                    var canvas = document.getElementById(canvasId);
                     crimild.simulation.run({canvas: canvas, scenes: [offscreenScene, scene]});
+
+                    $('#loading').hide();
+                    $('#wrapper').show();
                 });
 
             });
@@ -162,13 +166,23 @@
 </head>
 
 <body onload="initCrimild('webGLCanvas');">
-    <canvas id="webGLCanvas">
-        Your browser does not support WebGL
-    </canvas>
+    <div id="loading">
+        <div class="hud">
+            <p>loading, please wait...</p>
+        </div>
+    </div>
 
-    <div class="hud">
-        <p><a href="../index.html">crimildjs</a> example - render to texture</p>
-        <p>TV Set model from <a href="http://thefree3dmodels.com/stuff/electronics/tv_set_old/19-1-0-874">this one</a></p>
+    <div id="wrapper" style="display: none;">
+        <canvas id="webGLCanvas">
+            Your browser does not support WebGL
+        </canvas>
+
+        <div class="hud">
+            <p><a href="../index.html">crimildjs</a> example - render to texture</p>
+            <p>TV Set model from <a href="http://thefree3dmodels.com/stuff/electronics/tv_set_old/19-1-0-874">this one</a></p>
+        </div>
     </div>
 </body>
 </html>
+
+
