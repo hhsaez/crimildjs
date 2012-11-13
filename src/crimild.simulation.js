@@ -159,6 +159,9 @@ define(["./crimild.core", "./crimild.rendering", "../lib/webgl-utils"], function
 		var that = {};
 		
 		var _grabInput = spec.grabInput || false;
+		var _mouseButtonDown = false;
+		var _mousePos = vec2.create();
+		var _mouseDelta = vec2.create();
 
 		Object.defineProperties(that, {
 			grabInput: {
@@ -173,14 +176,6 @@ define(["./crimild.core", "./crimild.rendering", "../lib/webgl-utils"], function
 
 		var currentState = {};
 
-		that.isKeyDown = function(code) {
-			return currentState[code] == true;
-		};
-
-		that.isKeyUp = function(code) {
-			return currentState[code] == false;
-		};
-
 		document.onkeydown = function(ev) {
 			if (_grabInput) {
 				ev.preventDefault();
@@ -193,6 +188,53 @@ define(["./crimild.core", "./crimild.rendering", "../lib/webgl-utils"], function
 				ev.preventDefault();
 			}
 			currentState[ev.keyCode] = false;
+		};
+
+		spec.canvas.onmousedown = function(ev) {
+			_mouseButtonDown = true;
+		};
+
+		document.onmouseup = function(ev) {
+			_mouseButtonDown = false;
+		};
+
+		document.onmousemove = function(ev) {
+			_mouseDelta[0] = ev.clientX - _mousePos[0];
+			_mouseDelta[1] = ev.clientY - _mousePos[1];
+			_mousePos[0] = ev.clientX;
+			_mousePos[1] = ev.clientY;
+		};
+
+		that.isKeyDown = function(code) {
+			return currentState[code] == true;
+		};
+
+		that.isKeyUp = function(code) {
+			return currentState[code] == false;
+		};
+
+		that.isMouseButtonDown = function() {
+			return _mouseButtonDown == true;
+		};
+
+		that.isMouseButtonUp = function() {
+			return _mouseButtonDown == false;
+		};
+
+		that.getMousePos = function(dest) {
+			if (!dest) {
+				dest = vec2.create;
+			}
+			vec2.set(_mousePos, dest);
+			return dest;
+		};
+
+		that.getMouseDelta = function(dest) {
+			if (!dest) {
+				dest = vec2.create;
+			}
+			vec2.set(_mouseDelta, dest);
+			return dest;
 		};
 
 		return that;

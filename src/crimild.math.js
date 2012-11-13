@@ -83,6 +83,7 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 
 		var _translate = vec3.create([0, 0, 0]);
 		var _rotate = quat4.create([0, 0, 0, 1]);
+		var _inverseRotate = quat4.create([0, 0, 0, 1]);
 		var _scale = 1.0;
 		var _identity = true;
 
@@ -104,6 +105,15 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 					quat4.set(value, _rotate);
 					_identity = false;
 				}	
+			},
+			inverseRotate: {
+				get: function() {
+					quat4.inverse(that.rotate, _inverseRotate);
+					return _inverseRotate;
+				},
+				set: function(value) {
+					quat.set(value, _inverseRotate);
+				}
 			},
 			scale: {
 				get: function() {
@@ -174,10 +184,30 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 		};
 
 		that.computeUp = function(dest) {
+			if (!dest) {
+				dest = vec3.create();
+			}
 
+			quat4.multiplyVec3(that.rotate, [0, 1, 0], dest);
+			return dest;
+		};
+
+		that.computeWorldUp = function(dest) {
+			if (!dest) {
+				dest = vec3.create();
+			}
+
+			quat4.multiplyVec3(that.inverseRotate, [0, 1, 0], dest);
+			return dest;
 		};
 
 		that.computeRight = function(dest) {			
+			if (!dest) {
+				dest = vec3.create();
+			}
+
+			quat4.multiplyVec3(that.rotate, [1, 0, 0], dest);
+			return dest;
 		};
 
 		that.computeFrom = function(a, b) {

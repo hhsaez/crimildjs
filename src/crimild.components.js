@@ -44,9 +44,42 @@ define(["crimild.core"], function(core) {
         return that;
     };
 
+    trackballComponent = function() {
+        var that = crimild.core.nodeComponent({name: "update"});
+
+        var mousePos = vec2.create();
+        var mouseDelta = vec2.create();
+        var mouseDown = false;
+        var qPitch = quat4.create();
+        var qYaw = quat4.create();
+        var qTemp = quat4.create();
+        var vUp = vec3.create();
+
+        that.update = function() {
+            crimild.simulation.simulator.input.getMousePos(mousePos);
+            crimild.simulation.simulator.input.getMouseDelta(mouseDelta);
+
+            if (crimild.simulation.simulator.input.isMouseButtonDown()) {
+                that.node.local.computeWorldUp(vUp);
+
+                quat4.fromAngleAxis((mouseDelta[1] / 10 * Math.PI / 180.0), [1, 0, 0], qPitch);
+                quat4.fromAngleAxis((mouseDelta[0] / 10 * Math.PI / 180.0), [0, 1, 0], qYaw);
+
+                quat4.multiply(qPitch, qYaw, qTemp);
+                quat4.multiply(qTemp, that.node.local.rotate, qTemp);
+                that.node.local.rotate = qTemp;
+            }
+
+            that.node.perform(crimild.core.worldStateUpdate());
+        };
+
+        return that;
+    };
+
 	return {
 		rotationComponent: rotationComponent,
-		orbitingComponent: orbitingComponent
+		orbitingComponent: orbitingComponent,
+        trackballComponent: trackballComponent,
 	};
 
 });
