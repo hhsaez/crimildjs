@@ -4,6 +4,43 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 	// used for calculations
 	var tempVec3 = vec3.create();
 
+	var numeric = {
+		factorial: function(n) {
+			if (n === 0 || n === 1) {
+				return 1;
+			}
+
+			var result = 1;
+			for (var i = 2; i <= n; i++) {
+				result = result * i;
+			}
+			return result;
+		},
+
+		binomialCoefficient: function(n, i) {
+			return this.factorial(n) / (this.factorial(i) * this.factorial(n - i));
+		},
+
+		findRealRoots: function(a, b, c) {
+			var discriminant = b * b - 4 * a * c;
+			if (discriminant < 0) {
+				return [];
+			}
+			else {
+				var s = -b / (2 * a);
+				if (discriminant == 0) {
+					return [s];
+				}
+				else {
+					var sqrtDiscriminant = Math.sqrt(discriminant) / a;
+					var t0 = s + sqrtDiscriminant;
+					var t1 = s - sqrtDiscriminant;
+					return [t0, t1];
+				}
+			}
+		},
+	};
+
 	mat3.multiplyScalar = function(mat, s, dest) {
 		if (!dest) { dest = mat; }
 
@@ -41,25 +78,6 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 		return dest;
 	};
 
-	var findRealRoots = function(a, b, c) {
-		var discriminant = b * b - 4 * a * c;
-		if (discriminant < 0) {
-			return [];
-		}
-		else {
-			var s = -b / (2 * a);
-			if (discriminant == 0) {
-				return [s];
-			}
-			else {
-				var sqrtDiscriminant = Math.sqrt(discriminant) / a;
-				var t0 = s + sqrtDiscriminant;
-				var t1 = s - sqrtDiscriminant;
-				return [t0, t1];
-			}
-		}
-	};
-
 	var testIntersectionSphereRay = function(center, radius, origin, direction) {
 		var dx = origin[0] - center[0];
 		var dy = origin[1] - center[1];
@@ -82,8 +100,8 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 		var that = {};
 
 		var _translate = vec3.create([0, 0, 0]);
-		var _rotate = quat4.create([0, 0, 0, 1]);
-		var _inverseRotate = quat4.create([0, 0, 0, 1]);
+		var _rotate = quat4.fromAngleAxis(0.0, [0, 1, 0]);
+		var _inverseRotate = quat4.inverse(_rotate);
 		var _scale = 1.0;
 		var _identity = true;
 
@@ -142,28 +160,52 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 			_identity = true;
 		};
 
-		that.applyToPoint = function(p) {
+		that.applyToPoint = function(p, dest) {
+			if (!dest) {
+				dest = vec3.create();
+			}
 
+			quat4.multiplyVec3(that.rotate, p, dest);
+			vec3.add(dest, that.translate, dest);
+			return dest;
 		};
 
-		that.applyInverseToPoint = function(p) {
+		that.applyInverseToPoint = function(p, dest) {
+			if (!dest) {
+				dest = vec3.create();
+			}
 
+			vec3.subtract(p, that.translate, dest);
+			quat4.multiplyVec3(that.inverseRotate, dest, dest);
+			return dest;
 		};
 
-		that.applyToVector = function(v) {
+		that.applyToVector = function(v, dest) {
+			if (!dest) {
+				dest = vec3.create();
+			}
 
+			quat4.multiplyVec3(that.rotate, v, dest);
+			return dest;
 		};
 
-		that.applyInverseToVector = function(v) {
+		that.applyInverseToVector = function(v, dest) {
+			if (!dest) {
+				dest = vec3.create();
+			}
 
+			quat4.multiplyVec3(that.inverseRotate, v, dest);
+			return dest;
 		};
 
-		that.applyToUnitVector = function(v) {
-
+		that.applyToUnitVector = function(v, dest) {
+			return that.applyToVector(v, dest);
 		};
 
-		that.applyInverseToUnitVector = function(v) {
-
+		that.applyInverseToUnitVector = function(v, dest) {
+			//return that.applyInverseToVector(v, dest);
+			//vec3.set(v, dest);
+			//return dest;
 		};
 
 		that.applyToPlane = function(p) {
@@ -183,6 +225,15 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 			return dest;
 		};
 
+		that.computeWorldDirection = function(dest) {
+			if (!dest) {
+				dest = vec3.create();
+			}
+
+			quat4.multiplyVec3(that.inverseRotate, [0, 0, -1], dest);
+			return dest;
+		};
+
 		that.computeUp = function(dest) {
 			if (!dest) {
 				dest = vec3.create();
@@ -197,7 +248,11 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 				dest = vec3.create();
 			}
 
-			quat4.multiplyVec3(that.inverseRotate, [0, 1, 0], dest);
+			var invRotate = quat4.create();
+			quat4.inverse(_rotate, invRotate);
+			quat4.multiplyVec3(invRotate, [0, 1, 0], dest);
+
+			//quat4.multiplyVec3(that.inverseRotate, [0, 1, 0], dest);
 			return dest;
 		};
 
@@ -207,6 +262,15 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 			}
 
 			quat4.multiplyVec3(that.rotate, [1, 0, 0], dest);
+			return dest;
+		};
+
+		that.computeWorldRight = function(dest) {
+			if (!dest) {
+				dest = vec3.create();
+			}
+
+			quat4.multiplyVec3(that.inverseRotate, [1, 0, 0], dest);
 			return dest;
 		};
 
@@ -251,7 +315,7 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 			}
 
 			return dest;
-		}
+		};
 
 		return that;
 	};
@@ -263,9 +327,9 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 	};
 
 	return {
+		numeric: numeric,
 		transformation: transformation,
 		boundingVolume: boundingVolume,
-		findRealRoots: findRealRoots,
 		testIntersectionSphereRay: testIntersectionSphereRay
 	}
 

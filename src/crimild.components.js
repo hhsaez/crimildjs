@@ -1,4 +1,4 @@
-define(["crimild.core"], function(core) {
+define(["crimild.core", "crimild.math", "crimild.simulation"], function(core, math, simulation) {
 	"use strict";
 
 	var rotationComponent = function(spec) {
@@ -44,7 +44,7 @@ define(["crimild.core"], function(core) {
         return that;
     };
 
-    trackballComponent = function() {
+    var trackballComponent = function() {
         var that = crimild.core.nodeComponent({name: "update"});
 
         var mousePos = vec2.create();
@@ -76,10 +76,130 @@ define(["crimild.core"], function(core) {
         return that;
     };
 
+    var simpleCameraComponent = function() {
+        var that = crimild.core.nodeComponent({name: "update"});
+        var angle = 0;
+        var tempVec3 = vec3.create();
+        var tempDirection = vec3.create();
+        var speed = 0.025;
+        var z = 0.0;
+        var qPitch = quat4.create();
+        var qYaw = quat4.create();
+        var qRot = quat4.create();
+        var qTemp = quat4.create();
+        var vRight = [1, 0, 0];
+        var vUp = [0, 1, 0];
+
+        that.update = function() {
+            if (simulation.simulator.input.isKeyDown(38)) {
+                z = speed;
+            }
+            else if (simulation.simulator.input.isKeyDown(40)) {
+                z = -speed;
+            }
+            else {
+                z = 0.0;
+            }
+
+            that.node.local.computeWorldUp(vUp);
+            
+            if (simulation.simulator.input.isKeyDown(37)) {
+                quat4.fromAngleAxis(0.05, vUp, qYaw);
+            }
+            else if (simulation.simulator.input.isKeyDown(39)) {
+                quat4.fromAngleAxis(-0.05, vUp, qYaw);
+            }
+            else {
+                quat4.identity(qYaw);
+            }
+
+            if (simulation.simulator.input.isKeyDown("A".charCodeAt(0))) {
+                quat4.fromAngleAxis(0.05, vRight, qPitch);
+            }
+            else if (simulation.simulator.input.isKeyDown("Z".charCodeAt(0))) {
+                quat4.fromAngleAxis(-0.05, vRight, qPitch);
+            }
+            else {
+                quat4.identity(qPitch);
+            }
+
+            quat4.multiply(qPitch, qYaw, qRot);
+            quat4.multiply(that.node.local.rotate, qRot, qTemp);
+            that.node.local.rotate = qTemp;
+
+            that.node.local.computeDirection(tempDirection);
+            that.node.local.translate[0] += z * tempDirection[0];
+            that.node.local.translate[2] += z * tempDirection[2];
+
+            that.node.perform(crimild.core.worldStateUpdate());
+        };
+
+        return that;
+    };
+
+    var lerpTransformComponent = function(spec) {
+        var that = core.nodeComponent(spec);
+
+        var _start = math.transformation();
+        var _end = math.transformation();
+        var _speed = spec.speed || 0.01;
+        var _t = 0;
+
+        Object.defineProperties(that, {
+            start: {
+                get: function() {
+                    return _start;
+                },
+                set: function(value) {
+                    _start.set(value);
+                },
+            },
+            end: {
+                get: function() {
+                    return _end;
+                },
+                set: function(value) {
+                    _end.set(value);
+                }
+            },
+        });
+
+        that.onAttach = function() {
+            that.start.set(spec.start);
+            that.end.set(spec.end);
+            that.node.local.set(that.start);
+            that.node.perform(core.worldStateUpdate());
+        };
+
+        that.update = function() {
+            if (_t > 1.0) {
+                that.node.local.set(that.end);
+                that.node.perform(core.worldStateUpdate());
+
+                if (spec.callback) {
+                    spec.callback(that);
+                }
+                else {
+                    that.node.detachComponent(that);
+                }
+            }
+            else {
+                vec3.lerp(that.start.translate, that.end.translate, Math.min(1, _t), that.node.local.translate);
+                quat4.slerp(that.start.rotate, that.end.rotate, Math.min(1, _t), that.node.local.rotate);
+                that.node.perform(core.worldStateUpdate());
+
+                _t += _speed;
+            }
+        };
+
+        return that;
+    };
+
 	return {
 		rotationComponent: rotationComponent,
 		orbitingComponent: orbitingComponent,
         trackballComponent: trackballComponent,
+        lerpTransformComponent: lerpTransformComponent,
 	};
 
 });

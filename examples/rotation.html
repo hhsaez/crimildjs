@@ -31,11 +31,13 @@
 
                                         var mousePos = vec2.create();
                                         var mouseDelta = vec2.create();
-                                        var mouseDown = false;
                                         var qPitch = quat4.create();
                                         var qYaw = quat4.create();
                                         var qTemp = quat4.create();
+                                        var qRotation = quat4.create();
                                         var vUp = vec3.create();
+                                        var angleYaw = 0;
+                                        var anglePitch = 0;
 
                                         that.update = function() {
                                             crimild.simulation.simulator.input.getMousePos(mousePos);
@@ -44,14 +46,17 @@
                                             if (crimild.simulation.simulator.input.isMouseButtonDown()) {
                                                 that.node.local.computeWorldUp(vUp);
 
-                                                quat4.fromAngleAxis((mouseDelta[1] / 10 * Math.PI / 180.0), [1, 0, 0], qPitch);
-                                                quat4.fromAngleAxis((mouseDelta[0] / 10 * Math.PI / 180.0), [0, 1, 0], qYaw);
+                                                angleYaw += (mouseDelta[0] / 10 * Math.PI / 180.0);
+                                                anglePitch += (mouseDelta[1] / 10 * Math.PI / 180.0);
+
+                                                quat4.fromAngleAxis(anglePitch, [1, 0, 0], qPitch);
+                                                quat4.inverse(qPitch, qTemp);
+                                                quat4.multiplyVec3(qTemp, [0, 1, 0], vUp);
+                                                quat4.fromAngleAxis(angleYaw, vUp, qYaw);
 
                                                 quat4.multiply(qPitch, qYaw, qTemp);
-                                                quat4.multiply(qTemp, that.node.local.rotate, qTemp);
                                                 that.node.local.rotate = qTemp;
                                             }
-
                                             that.node.perform(crimild.core.worldStateUpdate());
                                         };
 

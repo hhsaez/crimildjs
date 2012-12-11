@@ -64,8 +64,23 @@ define(["./crimild.math"], function(math) {
 
 		that.attachComponent = function(component) {
 			if (component) {
+				that.detachComponentWithName(component.getName());
+
 				_components[component.getName()] = component;
 				component.node = that;
+				component.onAttach();
+			}
+		};
+
+		that.detachComponent = function(component) {
+			that.detachComponentWithName(component.getName());
+		};
+
+		that.detachComponentWithName = function(name) {
+			if (_components[name]) {
+				_components[name].onDetach();
+				_components[name].node = null;
+				_components[name] = null;
 			}
 		};
 
@@ -73,9 +88,9 @@ define(["./crimild.math"], function(math) {
 			return _components[componentName];
 		};
 
-		that.updateAllComponents = function() {
+		that.updateAllComponents = function(appTime) {
 			for (var c in _components) {
-				_components[c].update();
+				_components[c].update(appTime);
 			}
 		}
 
@@ -339,9 +354,9 @@ define(["./crimild.math"], function(math) {
 			}
 		});
 
-		that.update = function() {
-
-		};
+		that.onAttach = function() {};
+		that.onDetach = function() {};
+		that.update = function() {};
 
 		return that;
 	};
@@ -399,8 +414,10 @@ define(["./crimild.math"], function(math) {
 	var updateScene = function(spec) {
 		var that = nodeVisitor(spec);
 
+		var _appTime = spec.appTime;
+
 		that.visitNode = function(aNode) {
-			aNode.updateAllComponents();
+			aNode.updateAllComponents(_appTime);
 		};
 
 		that.visitGroupNode = function(aGroup) {
