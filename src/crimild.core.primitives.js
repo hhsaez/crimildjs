@@ -313,7 +313,8 @@ define(["crimild.core"], function(core) {
 	};
 
 	var cylinderPrimitive = function(spec) {
-		spec = spec || {}
+		spec = spec || {};
+
 		var that = parametricPrimitive(spec);
 		var height = spec.height || 2.0;
 		var radius = spec.radius || 1.0;
@@ -334,6 +335,35 @@ define(["crimild.core"], function(core) {
 		};
 
 		that.setInterval({divisions: divisions, upperBound: vec2.createFrom(2.0 * Math.PI, 1.0), textureCount: vec2.createFrom(30, 20)});
+		that.generate();
+
+		return that;
+	};
+
+	var spiralPrimitive = function(spec) {
+		spec = spec || {};
+
+		var that = parametricPrimitive(spec);
+		var height = spec.height || 1.0;
+		var radius = spec.radius || 5.0;
+		var divisions = spec.divisions || vec2.createFrom(20.0, 2.0);
+		var upperBound = spec.upperBound || vec2.createFrom(2.0 * Math.PI, 1.0);
+
+		that.evaluate = function(domain, dest) {
+			if (!dest) {
+				dest = vec3.create();
+			}
+
+			var u = domain[0];
+			var v = domain[1];
+			dest[0] = radius * (1.0 - u / upperBound[0]) * Math.cos(u);
+			dest[1] = height * ((v + u) / (upperBound[0] + upperBound[1]) - 0.5);
+			dest[2] = radius * (1.0 - u / upperBound[0]) * -Math.sin(u);
+
+			return dest;
+		};
+
+		that.setInterval({divisions: divisions, upperBound: upperBound, textureCount: vec2.createFrom(30, 20)});
 		that.generate();
 
 		return that;
@@ -480,6 +510,7 @@ define(["crimild.core"], function(core) {
 		kleinBottlePrimitive: kleinBottlePrimitive,
 		treefoilKnotPrimitive: treefoilKnotPrimitive,
 		cylinderPrimitive: cylinderPrimitive,
+		spiralPrimitive: spiralPrimitive,
 		spherePrimitive: spherePrimitive,
 		cubePrimitive: cubePrimitive
 	};
