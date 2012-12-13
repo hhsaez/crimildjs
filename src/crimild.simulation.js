@@ -256,6 +256,10 @@ define(["./crimild.core", "./crimild.rendering", "../lib/webgl-utils"], function
 		var scenes = [];
 
 		simulator.addScene = function(root) {
+			if (!root) {
+				return;
+			}
+			
 			root.perform(core.worldStateUpdate());
 			root.perform(rendering.renderStateUpdate());
 
