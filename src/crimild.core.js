@@ -90,7 +90,10 @@ define(["./crimild.math"], function(math) {
 
 		that.updateAllComponents = function(appTime) {
 			for (var c in _components) {
-				_components[c].update(appTime);
+				var component = _components[c];
+				if (component) {
+					component.update(appTime);
+				}
 			}
 		}
 

@@ -872,7 +872,7 @@ define(["./crimild.core", "./crimild.math",
 					return _viewport;
 				},
 				set: function(value) {
-					_viewport = value;
+					vec4.set(value, _viewport);
 				}
 			},
 			transformation: {
@@ -910,7 +910,49 @@ define(["./crimild.core", "./crimild.math",
 
 			mat4.set(_pMatrix, dest);
 			return dest;
-		}
+		};
+
+		that.unproject = function(x, y, z, result) {
+			var wx = (2 * (x - _viewport[0]) / _viewport[2]) - 1;
+			var wy = (2 * (y - _viewport[1]) / _viewport[3]) - 1;
+			var wz = 2 * z - 1;
+
+			var m = mat4.create();
+			that.computeViewMatrix(m);
+			mat4.multiply(_pMatrix, m, m);
+			mat4.inverse(m, m);
+
+			var n = [wx, wy, wz, 1];
+			mat4.multiplyVec4(m, n, n);
+
+			if (n[3] === 0) {
+				return false;
+			}
+
+			result[0] = n[0] / n[3];
+			result[1] = n[1] / n[3];
+			result[2] = n[2] / n[3];
+			return true;
+		};
+
+		that.getPickRay = function(x, y, width, height, origin, direction) {
+			var p0 = vec3.create();
+			var p1 = vec3.create();
+
+            if (!that.unproject(x / width, (height - y) / height, 0, p0)) {
+            	return false;
+            }
+
+            if (!that.unproject(x / width, (height - y) / height, 1, p1)) {
+            	return false;
+            }
+
+           	vec3.subtract(p1, p0, direction);
+            vec3.normalize(direction);
+            vec3.set(that.transformation.translate, origin);
+
+            return true;
+		};		
 
 		return that;
 	};
@@ -943,6 +985,10 @@ define(["./crimild.core", "./crimild.math",
 		var that = core.node(spec);
 
 		that.attachComponent(cameraComponent(spec));
+
+		that.get = function() {
+			return that.getComponent("camera").camera;
+		};
 
 		return that;
 	};
