@@ -1,0 +1,212 @@
+<!doctype html>
+<html>
+<head>
+    <title>crimildjs</title>
+    <script type="text/javascript" src="../js/jquery-1.8.2.min.js"></script>
+    <script data-main="../src/crimild" src="../lib/require.js"></script>
+    <link rel="stylesheet" type="text/css" href="../css/example.css">
+    <script id="particle-vs" type="x-shader/x-vertex">
+        attribute vec3 aVertexPosition;
+
+        uniform mat4 uMVMatrix;
+        uniform mat4 uPMatrix;
+
+        void main(void) {
+            gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+            gl_PointSize = 10.0;
+        }
+    </script>
+    <script id="particle-fs" type="x-shader/x-fragment">
+        precision highp float;
+
+        uniform sampler2D uSampler;
+
+        void main(void) {
+            vec4 texColor = texture2D(uSampler, gl_PointCoord);
+            gl_FragColor = vec4(1.0, 0.75, 0.25, 1.0) * texColor;
+            gl_FragColor.a = 0.5;
+        }
+    </script>
+    <script type="text/javascript">
+        function initCrimild(canvasId) {
+            require(["crimild"], function(crimild) {
+                var assetManager = crimild.utils.assetManager();
+                assetManager.queueImage("assets/smoke.gif");
+                assetManager.loadAll(function() {
+                    var canvas = document.getElementById(canvasId);
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+
+                    var particleSystem = function(spec) {
+                        spec = spec || {};
+
+                        var vertices = [];
+                        var indices = [];
+                        var particleCount = spec.particleCount || 10;
+
+                        var _duration = spec.duration || 1;
+                        var _loop = spec.loop || false;
+                        var _gravity = spec.gravity || vec3.create([0, 0, 0]);
+                        var _initialSpeed = spec.initialSpeed || vec3.create([1, 1, 1]);
+
+                        var that = crimild.core.geometryNode(spec);
+
+                        Object.defineProperties(that, {
+                            duration: {
+                                get: function() {
+                                    return _duration;
+                                },
+                                set: function(value) {
+                                    _duration = value;
+                                }
+                            },
+                            loop: {
+                                get: function() {
+                                    return _loop;
+                                },
+                                set: function(value) {
+                                    _loop = value;
+                                }
+                            }
+                        })
+
+                        var particles = [];
+                        for (var i = 0; i < particleCount; i++) {
+                            var particle = {
+                                isAlive: true,
+                                time: 0,
+                                origin: vec3.create([Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5]),
+                                force: vec3.create([_initialSpeed[0] + (Math.random() - 0.5), _initialSpeed[1] + (Math.random() - 1), _initialSpeed[2] + (Math.random() - 1)]),
+                                speed: Math.min(0.01, Math.random() / 100),
+                                position: vec3.create(),
+                            };
+                            particles.push(particle);
+
+                            vertices.push(particle.origin[0]);
+                            vertices.push(particle.origin[1]);
+                            vertices.push(particle.origin[2]);
+                            indices.push(i);
+                        }
+
+                        that.attachPrimitive(crimild.core.primitive({
+                            type: crimild.core.primitive.types.POINTS,
+                            vertexBuffer: crimild.core.vertexBufferObject({
+                                vertexFormat: crimild.core.vertexFormat({ positions: 3 }),
+                                vertexCount: particleCount,
+                                data: new Float32Array(vertices),
+                                cacheEnabled: false,
+                            }),
+                            indexBuffer: crimild.core.indexBufferObject({
+                                indexCount: particleCount,
+                                data: new Uint16Array(indices)
+                            })
+                        }));
+
+                        that.attachComponent(crimild.rendering.renderComponent({
+                            effects: [
+                                crimild.rendering.effect({
+                                    shaderProgram: crimild.rendering.shaderProgram({
+                                        vertexShader: crimild.rendering.shader({
+                                            scriptId: "particle-vs"
+                                        }),
+                                        fragmentShader: crimild.rendering.shader({
+                                            scriptId: "particle-fs"
+                                        })
+                                    }),
+                                    textures: (spec.texture ? [spec.texture] : []),
+                                    alphaState: crimild.rendering.alphaState({enabled: true}),
+                                })
+                            ]
+                        }));
+
+                        that.attachComponent((function() {
+                            var cmp = crimild.core.nodeComponent({name: "particles"});
+
+                            var vTemp = vec3.create();
+
+                            cmp.update = function(appTime) {
+                                var positionData = cmp.node.getPrimitiveAt(0).getVertexBuffer().getData();
+
+                                for (var p = 0; p < particleCount; p++) {
+                                    var particle = particles[p];
+                                    if (particle.isAlive) {
+                                        vec3.scale(particle.force, particle.time, vTemp);
+                                        vec3.add(particle.origin, vTemp, particle.position);
+                                        vec3.scale(_gravity, particle.time * particle.time, vTemp);
+                                        vec3.add(particle.position, vTemp, particle.position);
+
+                                        positionData[p * 3 + 0] = particle.position[0];
+                                        positionData[p * 3 + 1] = particle.position[1];
+                                        positionData[p * 3 + 2] = particle.position[2];
+
+                                        particle.time += particle.speed;
+
+                                        if (particle.time > _duration) {
+                                            particle.time = 0.0;
+
+                                            if (!_loop) {
+                                                particle.isAlive = false;
+                                            }
+                                        }
+                                    }
+
+                                }
+                            };
+
+                            return cmp;
+                        })());
+
+                        return that;
+                    };
+
+                    var scene = crimild.core.groupNode({
+                        name: "scene",
+                        nodes: [
+                            particleSystem({
+                                particleCount: 10000,
+                                duration: 2,
+                                loop: true,
+                                gravity: [0, -4.9, 0],
+                                initialSpeed: [0, 5, 0],
+                                loop: true,
+                                texture: crimild.rendering.texture({
+                                    image: assetManager.getImage("assets/smoke.gif")
+                                }),
+                            }),
+                            crimild.rendering.cameraNode({
+                                aspectRatio: canvas.width / canvas.height,
+                                local: crimild.math.transformation({
+                                    translate: [0, 0, 5]
+                                }),
+                            })
+                        ],
+                    });
+
+                    crimild.simulation.run({canvas: canvas, scenes: [scene]}).getRenderer().setClearColor([0, 0, 0, 1]);
+    
+                    $('#loading').hide();
+                    $('#wrapper').show();
+                })
+            });
+        }
+    </script>
+</head>
+
+<body onload="initCrimild('webGLCanvas');">
+    <div id="loading">
+        <div class="hud">
+            <p>loading, please wait...</p>
+        </div>
+    </div>
+
+    <div id="wrapper" style="display: none;">
+        <canvas id="webGLCanvas">
+            Your browser does not support WebGL
+        </canvas>
+
+        <div class="hud">
+            <p><a href="javascript:window.parent.location = '../index.html';">crimildjs</a> example - particle system</p>
+        </div>
+    </div>
+</body>
+</html>

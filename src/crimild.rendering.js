@@ -98,7 +98,7 @@ define(["./crimild.core", "./crimild.math",
 		});
 
 		return that;
-	}
+	};
 
 	var light = function(spec) {
 		spec = spec || {};
@@ -1241,7 +1241,7 @@ define(["./crimild.core", "./crimild.math",
         	},
 
         	enableVertexBuffer: function(vbo, program) {
-        		if (!vbo.renderCache) {
+        		if (!vbo.isCacheEnabled() || !vbo.renderCache) {
         			this.loadVertexBuffer(vbo);
         		}
         		gl.bindBuffer(gl.ARRAY_BUFFER, vbo.renderCache);
@@ -1688,8 +1688,15 @@ define(["./crimild.core", "./crimild.math",
 				this.setAlphaState(currentEffect.alphaState);
 				this.setCullState(currentEffect.cullState);
 
-        		var type = primitive.getType() == core.primitive.types.TRIANGLES ? gl.TRIANGLES : gl.LINES;
-        		gl.drawElements(type, ibo.getIndexCount(), gl.UNSIGNED_SHORT, 0);
+				var primitiveType = gl.TRIANGLES;
+				if (primitive.getType() == core.primitive.types.POINTS) {
+					primitiveType = gl.POINTS;
+				}
+				else if (primitive.getType() == core.primitive.types.LINES) {
+					primitiveType = gl.LINES;
+				}
+
+        		gl.drawElements(primitiveType, ibo.getIndexCount(), gl.UNSIGNED_SHORT, 0);
 
         		this.disableIndexBuffer(ibo);
         		this.disableVertexBuffer(vbo);

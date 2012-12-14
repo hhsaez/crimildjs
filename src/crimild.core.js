@@ -223,16 +223,12 @@ define(["./crimild.math"], function(math) {
 	};
 
 	var vertexBufferObject = function(spec) {
+		spec = spec || {};
 		var that = {};
-		var data = [];
-		var vertexCount = 0;
-		var vertexFormat = null;
-
-		if (spec) {
-			data = spec.data ? spec.data : [];
-			vertexCount = spec.vertexCount ? spec.vertexCount : 0;
-			vertexFormat = spec.vertexFormat ? spec.vertexFormat : null;
-		}
+		var data = spec.data || [];
+		var vertexCount = spec.vertexCount || 0;
+		var vertexFormat = spec.vertexFormat || null;
+		var cacheEnabled = spec.cacheEnabled == false ? false : true;
 
 		that.getVertexFormat = function() {
 			return vertexFormat;
@@ -244,6 +240,10 @@ define(["./crimild.math"], function(math) {
 
 		that.getData = function() {
 			return data;
+		};
+
+		that.isCacheEnabled = function() {
+			return cacheEnabled;
 		};
 
 		return that;
@@ -271,17 +271,12 @@ define(["./crimild.math"], function(math) {
 	};
 
 	var primitive = function(spec) {
+		spec = spec || {};
 		var that = {};
 
-		var type = primitive.types.TRIANGLES;
-		var vertexBuffer = null;
-		var indexBuffer = null;
-
-		if (spec) {
-			vertexBuffer = spec.vertexBuffer;
-			indexBuffer = spec.indexBuffer;
-			type = spec.type ? spec.type : type;
-		}
+		var type = spec.type || primitive.types.TRIANGLES;
+		var vertexBuffer = spec.vertexBuffer || null;
+		var indexBuffer = spec.indexBuffer || null;
 
 		that.getVertexBuffer = function() {
 			return vertexBuffer;
@@ -308,8 +303,9 @@ define(["./crimild.math"], function(math) {
 	};
 
 	primitive.types = {
-		TRIANGLES: 0,
-		LINES: 1
+		POINTS: 1,
+		LINES: 2,
+		TRIANGLES: 3,
 	};
 
 	var geometryNode = function(spec) {

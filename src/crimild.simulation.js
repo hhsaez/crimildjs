@@ -116,13 +116,17 @@ define(["./crimild.core", "./crimild.rendering", "../lib/webgl-utils"], function
 		var that = task(spec);
 
 		var _startTime = new Date().getTime();
+		var _lastTime = _startTime;
 
 		that.onUpdate = function() {
 			var appTime = new Date().getTime() - _startTime;
+			var deltaTime = appTime - _lastTime;
+			_lastTime = appTime;
+
 			for (var i = 0; i < simulator.getSceneCount(); i++) {
 				var scene = simulator.getSceneAt(i);
 				if (scene.root) {
-					scene.root.perform(core.updateScene({appTime: appTime}));
+					scene.root.perform(core.updateScene({appTime: appTime, deltaTime: deltaTime}));
 				}
 			}
 		};
@@ -259,7 +263,7 @@ define(["./crimild.core", "./crimild.rendering", "../lib/webgl-utils"], function
 			if (!root) {
 				return;
 			}
-			
+
 			root.perform(core.worldStateUpdate());
 			root.perform(rendering.renderStateUpdate());
 
