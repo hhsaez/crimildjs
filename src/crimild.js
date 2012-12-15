@@ -6,7 +6,8 @@ define([
 	"./crimild.rendering", 
 	"./crimild.simulation", 
 	"./crimild.obj",
-	"./crimild.utils"], 
+	"./crimild.utils",
+	"./crimild.particles"], 
 	function(
 		math, 
 		core, 
@@ -15,7 +16,8 @@ define([
 		rendering, 
 		simulation, 
 		obj,
-		utils) {
+		utils,
+		particles) {
 
 	"use strict";
 	
@@ -27,7 +29,8 @@ define([
 		rendering: rendering,
 		simulation: simulation,
 		obj: obj,
-		utils: utils
+		utils: utils,
+		particles: particles,
 	}
 });
 

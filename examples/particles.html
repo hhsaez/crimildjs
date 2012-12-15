@@ -5,42 +5,6 @@
     <script type="text/javascript" src="../js/jquery-1.8.2.min.js"></script>
     <script data-main="../src/crimild" src="../lib/require.js"></script>
     <link rel="stylesheet" type="text/css" href="../css/example.css">
-    <script id="particle-vs" type="x-shader/x-vertex">
-        attribute vec3 aVertexPosition;
-        attribute vec3 aVertexNormal;   // used for initial velocity
-        attribute vec3 aTextureCoord;   // tc0 = lifeTime, tc1 = unused
-
-        uniform mat4 uMVMatrix;
-        uniform mat4 uPMatrix;
-        uniform float uTime;
-        uniform vec3 uGravity;
-
-        varying float vLifetime;
-        varying float vTime;
-
-        void main(void) {
-            vLifetime = aTextureCoord[0];
-            vTime = uTime - vLifetime * floor(uTime / vLifetime);
-            vec3 position = aVertexPosition + aVertexNormal * vTime + 0.5 * vTime * vTime * uGravity;
-
-            gl_Position = uPMatrix * uMVMatrix * vec4(position, 1.0);
-            gl_PointSize = (vLifetime - vTime) * 40.0;
-        }
-    </script>
-    <script id="particle-fs" type="x-shader/x-fragment">
-        precision highp float;
-
-        uniform sampler2D uSampler;
-
-        varying float vLifetime;
-        varying float vTime;
-
-        void main(void) {
-            vec4 texColor = texture2D(uSampler, gl_PointCoord);
-            gl_FragColor = vec4(0.75, 0.75, 0.75, 1.0) * texColor;
-            gl_FragColor.a = 0.5 * (vLifetime - vTime) / vLifetime;
-        }
-    </script>
     <script type="text/javascript">
         function initCrimild(canvasId) {
             require(["crimild"], function(crimild) {
@@ -51,147 +15,19 @@
                     canvas.width = window.innerWidth;
                     canvas.height = window.innerHeight;
 
-                    var particleSystem = function(spec) {
-                        spec = spec || {};
-
-                        var vertices = [];
-                        var indices = [];
-                        var particleCount = spec.particleCount || 10;
-
-                        var _duration = spec.duration || 1;
-                        var _loop = spec.loop || false;
-                        var _gravity = spec.gravity || vec3.create([0, 0, 0]);
-                        var _velocity = spec.velocity || vec3.create([1, 1, 1]);
-
-                        var that = crimild.core.geometryNode(spec);
-
-                        Object.defineProperties(that, {
-                            duration: {
-                                get: function() {
-                                    return _duration;
-                                },
-                                set: function(value) {
-                                    _duration = value;
-                                }
-                            },
-                            loop: {
-                                get: function() {
-                                    return _loop;
-                                },
-                                set: function(value) {
-                                    _loop = value;
-                                }
-                            },
-                            gravity: {
-                                get: function() {
-                                    return _gravity;
-                                },
-                                set: function(value) {
-                                    _gravity = value;
-                                }
-                            }
-                        })
-
-                        for (var i = 0; i < particleCount; i++) {
-                            // particle origin (positions)
-                            vertices.push((Math.random() - 0.5));
-                            vertices.push((Math.random() - 0.5));
-                            vertices.push((Math.random() - 0.5));
-
-                            // particle velocity (normals)
-                            vertices.push(_velocity[0] + (2.0 * Math.random() - 1.0));
-                            vertices.push(_velocity[1] + (2.0 * Math.random() - 1.0));
-                            vertices.push(_velocity[2] + (2.0 * Math.random() - 1.0));
-
-                            // misc (as texture coords)
-                            vertices.push(that.duration * Math.max(0.15, Math.random()));    // lifetime
-                            vertices.push(0);                               // unused
-
-                            // particle index
-                            indices.push(i);
-                        }
-
-                        that.attachPrimitive(crimild.core.primitive({
-                            type: crimild.core.primitive.types.POINTS,
-                            vertexBuffer: crimild.core.vertexBufferObject({
-                                vertexFormat: crimild.core.vertexFormat({ positions: 3, normals: 3, textureCoords: 2 }),
-                                vertexCount: particleCount,
-                                data: new Float32Array(vertices),
-                            }),
-                            indexBuffer: crimild.core.indexBufferObject({
-                                indexCount: particleCount,
-                                data: new Uint16Array(indices)
-                            })
-                        }));
-
-                        that.attachComponent(crimild.rendering.renderComponent({
-                            effects: [
-                                crimild.rendering.effect({
-                                    shaderProgram: crimild.rendering.shaderProgram({
-                                        vertexShader: crimild.rendering.shader({
-                                            scriptId: "particle-vs"
-                                        }),
-                                        fragmentShader: crimild.rendering.shader({
-                                            scriptId: "particle-fs"
-                                        })
-                                    }),
-                                    textures: (spec.texture ? [spec.texture] : []),
-                                    alphaState: crimild.rendering.alphaState({enabled: true}),
-                                })
-                            ]
-                        }));
-
-                        that.attachComponent((function() {
-                            var time = 0;
-
-                            var cmp = crimild.rendering.shaderUniformComponent({
-                                uniforms: [
-                                    crimild.rendering.shaderUniform({
-                                        name: "uTime",
-                                        data: time,
-                                        type: crimild.rendering.shaderUniform.type.FLOAT,
-                                    }),
-                                    crimild.rendering.shaderUniform({
-                                        name: "uGravity",
-                                        data: that.gravity,
-                                        type: crimild.rendering.shaderUniform.type.FLOAT,
-                                        count: 3,
-                                    }),
-                                ]
-                            });
-
-                            cmp.update = function(appTime, deltaTime) {
-                                time += deltaTime / 1000;
-                                /*
-                                if (time > that.duration) {
-                                    time = 0.0
-                                }*/
-
-                                cmp.getUniform("uTime").data = time;
-                            };
-
-                            return cmp;
-                        })());
-
-                        return that;
-                    };
-
                     var scene = crimild.core.groupNode({
                         name: "scene",
                         nodes: [
-                            particleSystem({
+                            crimild.particles.particleSystem({
                                 particleCount: 10000,
                                 duration: 2,
                                 loop: true,
                                 gravity: [0, -9.8, 0],
-                                velocity: [0, 5, 1],
+                                velocity: [0, 5, 0],
                                 loop: true,
                                 texture: crimild.rendering.texture({
                                     image: assetManager.getImage("assets/smoke.gif")
                                 }),
-                                components: [
-                                    crimild.components.rotationComponent({angle: 0.01, axis: [0, 1, 0]})
-                                ]
                             }),
                             crimild.rendering.cameraNode({
                                 aspectRatio: canvas.width / canvas.height,
