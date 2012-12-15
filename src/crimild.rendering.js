@@ -1514,8 +1514,16 @@ define(["./crimild.core", "./crimild.math",
         			}
         			else if (uniform.type === shaderUniform.type.FLOAT) {
         				if (uniform.count === 1) {
-        					//console.log(uniform.data);
         					this.setUniformFloat(uniformLocation, uniform.data);
+        				}
+        				else if (uniform.count === 2) {
+        					this.setUniformFloat(uniformLocation, uniform.data[0], uniform.data[1]);
+        				}
+        				else if (uniform.count === 3) {
+        					this.setUniformFloat(uniformLocation, uniform.data[0], uniform.data[1], uniform.data[2]);
+        				}
+        				else if (uniform.count === 3) {
+        					this.setUniformFloat(uniformLocation, uniform.data[0], uniform.data[1], uniform.data[2], uniform.data[3]);
         				}
         			}
         		}

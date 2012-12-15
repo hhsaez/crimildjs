@@ -121,6 +121,9 @@ define(["./crimild.core", "./crimild.rendering", "../lib/webgl-utils"], function
 		that.onUpdate = function() {
 			var appTime = new Date().getTime() - _startTime;
 			var deltaTime = appTime - _lastTime;
+			if (deltaTime < 0) {
+				deltaTime = 0;
+			}
 			_lastTime = appTime;
 
 			for (var i = 0; i < simulator.getSceneCount(); i++) {

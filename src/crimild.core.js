@@ -88,11 +88,11 @@ define(["./crimild.math"], function(math) {
 			return _components[componentName];
 		};
 
-		that.updateAllComponents = function(appTime) {
+		that.updateAllComponents = function(appTime, deltaTime) {
 			for (var c in _components) {
 				var component = _components[c];
 				if (component) {
-					component.update(appTime);
+					component.update(appTime, deltaTime);
 				}
 			}
 		}
@@ -414,9 +414,10 @@ define(["./crimild.math"], function(math) {
 		var that = nodeVisitor(spec);
 
 		var _appTime = spec.appTime;
+		var _deltaTime = spec.deltaTime;
 
 		that.visitNode = function(aNode) {
-			aNode.updateAllComponents(_appTime);
+			aNode.updateAllComponents(_appTime, _deltaTime);
 		};
 
 		that.visitGroupNode = function(aGroup) {
