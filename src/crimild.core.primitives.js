@@ -438,40 +438,45 @@ define(["crimild.core"], function(core) {
 	};
 
 	var cubePrimitive = function(spec) {
+		spec = spec || {};
 		var that = core.primitive(spec);
+
+		var scale = spec.scale || vec3.create([1, 1, 1]);
+		var textureOffset = spec.textureOffset || vec2.create[1, 1];
+		var textureScale = spec.textureScale || vec2.create([1, 1]);
 
 		that.generate = function() {
 			var vertices = [
 				// Front face
-    			-1.0, -1.0, 1.0, 	0.0, 0.0,
-    			1.0, -1.0, 1.0, 	1.0, 0.0,
-    			1.0, 1.0, 1.0, 		1.0, 1.0,
-    			-1.0, 1.0, 1.0, 	0.0, 1.0,
+    			-scale[0], -scale[1], scale[2], 	textureOffset[0] + textureScale[0] * 0.0, textureOffset[1] + textureScale[1] * 1.0,
+    			scale[0], -scale[1], scale[2], 		textureOffset[0] + textureScale[0] * 1.0, textureOffset[1] + textureScale[1] * 1.0,
+    			scale[0], scale[1], scale[2], 		textureOffset[0] + textureScale[0] * 1.0, textureOffset[1] + textureScale[1] * 0.0,
+    			-scale[0], scale[1], scale[2], 		textureOffset[0] + textureScale[0] * 0.0, textureOffset[1] + textureScale[1] * 0.0,
                 // Back face
-                -1.0, -1.0, -1.0, 	1.0, 0.0,
-                -1.0, 1.0, -1.0, 	1.0, 1.0,
-                1.0, 1.0, -1.0, 	0.0, 1.0,
-                1.0, -1.0, -1.0, 	0.0, 0.0,
+                -scale[0], -scale[1], -scale[2], 	textureOffset[0] + textureScale[0] * 1.0, textureOffset[1] + textureScale[1] * 1.0,
+                -scale[0], scale[1], -scale[2], 	textureOffset[0] + textureScale[0] * 1.0, textureOffset[1] + textureScale[1] * 0.0,
+                scale[0], scale[1], -scale[2], 		textureOffset[0] + textureScale[0] * 0.0, textureOffset[1] + textureScale[1] * 0.0,
+                scale[0], -scale[1], -scale[2], 	textureOffset[0] + textureScale[0] * 0.0, textureOffset[1] + textureScale[1] * 1.0,
                 // Top face 
-                -1.0, 1.0, -1.0, 	0.0, 1.0,
-                -1.0, 1.0, 1.0, 	0.0, 0.0,
-                1.0, 1.0, 1.0, 		1.0, 0.0,
-                1.0, 1.0, -1.0, 	1.0, 1.0,
+                -scale[0], scale[1], -scale[2], 	textureOffset[0] + textureScale[0] * 0.0, textureOffset[1] + textureScale[1] * 0.0,
+                -scale[0], scale[1], scale[2], 		textureOffset[0] + textureScale[0] * 0.0, textureOffset[1] + textureScale[1] * 1.0,
+                scale[0], scale[1], scale[2], 		textureOffset[0] + textureScale[0] * 1.0, textureOffset[1] + textureScale[1] * 1.0,
+                scale[0], scale[1], -scale[2], 		textureOffset[0] + textureScale[0] * 1.0, textureOffset[1] + textureScale[1] * 0.0,
                 // Bottom face 
-                -1.0, -1.0, -1.0, 	1.0, 1.0,
-                1.0, -1.0, -1.0, 	0.0, 1.0,
-                1.0, -1.0, 1.0, 	0.0, 0.0,
-                -1.0, -1.0, 1.0, 	1.0, 0.0,
+                -scale[0], -scale[1], -scale[2], 	textureOffset[0] + textureScale[0] * 1.0, textureOffset[1] + textureScale[1] * 0.0,
+                scale[0], -scale[1], -scale[2], 	textureOffset[0] + textureScale[0] * 0.0, textureOffset[1] + textureScale[1] * 0.0,
+                scale[0], -scale[1], scale[2], 		textureOffset[0] + textureScale[0] * 0.0, textureOffset[1] + textureScale[1] * 1.0,
+                -scale[0], -scale[1], scale[2], 	textureOffset[0] + textureScale[0] * 1.0, textureOffset[1] + textureScale[1] * 1.0,
                 // Right face
-                1.0, -1.0, -1.0,	1.0, 0.0,
-                1.0, 1.0, -1.0,		1.0, 1.0,
-                1.0, 1.0, 1.0,		0.0, 1.0,
-                1.0, -1.0, 1.0,		0.0, 0.0,
+                scale[0], -scale[1], -scale[2],		textureOffset[0] + textureScale[0] * 1.0, textureOffset[1] + textureScale[1] * 1.0,
+                scale[0], scale[1], -scale[2],		textureOffset[0] + textureScale[0] * 1.0, textureOffset[1] + textureScale[1] * 0.0,
+                scale[0], scale[1], scale[2],		textureOffset[0] + textureScale[0] * 0.0, textureOffset[1] + textureScale[1] * 0.0,
+                scale[0], -scale[1], scale[2],		textureOffset[0] + textureScale[0] * 0.0, textureOffset[1] + textureScale[1] * 1.0,
                 // Left face
-                -1.0, -1.0, -1.0,	0.0, 0.0,
-                -1.0, -1.0, 1.0,	1.0, 0.0,
-                -1.0, 1.0, 1.0,		1.0, 1.0,
-                -1.0, 1.0, -1.0,	0.0, 1.0
+                -scale[0], -scale[1], -scale[2],	textureOffset[0] + textureScale[0] * 0.0, textureOffset[1] + textureScale[1] * 1.0,
+              	-scale[0], -scale[1], scale[2],		textureOffset[0] + textureScale[0] * 1.0, textureOffset[1] + textureScale[1] * 1.0,
+                -scale[0], scale[1], scale[2],		textureOffset[0] + textureScale[0] * 1.0, textureOffset[1] + textureScale[1] * 0.0,
+                -scale[0], scale[1], -scale[2],		textureOffset[0] + textureScale[0] * 0.0, textureOffset[1] + textureScale[1] * 0.0
 			];
 
 			that.setVertexBuffer(

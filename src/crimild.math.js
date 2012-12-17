@@ -21,6 +21,27 @@ define(["../lib/glmatrix-1.3.7.min"], function(glMatrix) {
 			return this.factorial(n) / (this.factorial(i) * this.factorial(n - i));
 		},
 
+		computeBezier3D: function(points, t, result) {
+            if (!result) {
+                result = vec3.create();
+            }
+
+            vec3.set([0, 0, 0], result);
+
+            var vTemp = vec3.create();
+            var n = points.length - 1;
+
+            for (var i = 0; i <= n; i++) {
+                var a = this.binomialCoefficient(n, i);
+                var b = Math.pow(1 - t, n - i);
+                var c = Math.pow(t, i);
+                vec3.scale(points[i], a * b * c, vTemp);
+                vec3.add(result, vTemp, result);
+            }
+
+            return result;
+		},
+
 		findRealRoots: function(a, b, c) {
 			var discriminant = b * b - 4 * a * c;
 			if (discriminant < 0) {

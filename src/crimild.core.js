@@ -95,7 +95,23 @@ define(["./crimild.math"], function(math) {
 					component.update(appTime, deltaTime);
 				}
 			}
-		}
+		};
+
+		that.removeAllComponents = function() {
+			for (var c in _components) {
+				var component = _components[c];
+				if (component) {
+					component.onDetach();
+					component.node = null;
+				}
+			}
+
+			_components = {};
+		};
+
+		that.cleanup = function() {
+			that.removeAllComponents();
+		};
 
 		if (spec.components) {
 			for (var i in spec.components) {
@@ -107,13 +123,31 @@ define(["./crimild.math"], function(math) {
 	};
 
 	var groupNode = function(spec) {
+		spec = spec || {};
+
+		// FIXME: we need to handle component attachment manually 
+		// instead of forwarding them to the node prototype since
+		// the invokation of the onAttach method will occur before
+		// the initialization of the groupNode members, and we don't
+		// want that.
+		var components = spec.components;
+		spec.components = null;
+
 		var that = node(spec);
 		var nodes = [];
 
-		that.addNode = function(aNode) {
+		that.attachNode = function(aNode) {
 			nodes.push(aNode);
 			aNode.setParent(that);
 		};
+
+		that.detachNode = function(aNode) {
+			var idx = nodes.indexOf(aNode);
+			if (idx >= 0) {
+				nodes.splice(idx, 1);
+				aNode.setParent(null);
+			}
+		}
 
 		that.getNodeCount = function() {
 			return nodes.length;
@@ -123,15 +157,37 @@ define(["./crimild.math"], function(math) {
 			return nodes[index];
 		};
 
+		that.removeAllNodes = function() {
+			for (var n in nodes) {
+				var node = nodes[n];
+				if (node) {
+					node.clean();
+					node.setParent(null);
+				}
+			}
+
+			nodes = [];
+		};
+
 		that.accept = function(visitor) {
 			visitor.visitGroupNode(this);
 		};
 
-		if (spec) {
-			if (spec.nodes) {
-				for (var i = 0; i < spec.nodes.length; i++) {
-					that.addNode(spec.nodes[i]);
-				}
+		that.cleanup = function() {
+			that.removeAllNodes();
+			that.removeAllComponents();
+		};
+
+		if (spec.nodes) {
+			for (var i = 0; i < spec.nodes.length; i++) {
+				that.attachNode(spec.nodes[i]);
+			}
+		}
+
+		// workaround (see above)
+		if (components) {
+			for (var i in components) {
+				that.attachComponent(components[i]);
 			}
 		}
 
@@ -332,6 +388,15 @@ define(["./crimild.math"], function(math) {
 
 		that.getPrimitiveAt = function(index) {
 			return primitives[index];
+		};
+
+		that.removeAllPrimitives = function() {
+			primitives = [];
+		};
+
+		that.cleanup = function() {
+			that.removeAllComponents();
+			that.removeAllPrimitives();
 		};
 
 		return that;
