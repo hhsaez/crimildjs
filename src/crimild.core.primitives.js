@@ -372,8 +372,10 @@ define(["crimild.core"], function(core) {
 	var spherePrimitive = function(spec) {
 		spec = spec || {}
 		var that = core.primitive(spec);
-		var latitudeBands = 30;
-		var longitudeBands = 30;
+		var latitudeBands = spec.latitudeBands || 30;
+		var longitudeBands = spec.longitudeBands || 30;
+		var textureOffset = spec.textureOffset || [0, 0];
+		var textureScale = spec.textureScale || [1, 1];
 		var radius = spec.radius || 1;
 		var vertexFormat = spec.vertexFormat || core.vertexFormat({positions: 3});
  
@@ -406,8 +408,8 @@ define(["crimild.core"], function(core) {
 					}
 
 					if (vertexFormat.textureCoords > 0) {
-						vertexPositionData.push(u);
-						vertexPositionData.push(v);
+						vertexPositionData.push(textureOffset[0] + textureScale[0] * u);
+						vertexPositionData.push(textureOffset[1] + textureScale[1] * v);
 					}
 
 				}
@@ -509,6 +511,62 @@ define(["crimild.core"], function(core) {
 		return that;
 	};
 
+	var diamondPrimitive = function(spec) {
+		spec = spec || {};
+		var that = core.primitive(spec);
+
+		var scale = spec.scale || vec3.create([1, 1, 1]);
+		var textureOffset = spec.textureOffset || vec2.create[1, 1];
+		var textureScale = spec.textureScale || vec2.create([1, 1]);
+		var vertexFormat = spec.vertexFormat || core.vertexFormat({textureCoords: 2});
+
+		that.generate = function() {
+			var x = scale[0];
+			var y = scale[1];
+			var z = scale[2];
+
+			var vertices = [
+				-x,	0,	0,	textureOffset[0], textureOffset[1] + 0.5 * textureScale[1],
+				0, 	-y, 0,	textureOffset[0] + 0.5 * textureScale[0], textureOffset[1] + textureScale[1],
+				x, 	0, 	0,	textureOffset[0] + textureScale[0], textureOffset[1] + 0.5 * textureScale[1],
+				0, 	y,	0, 	textureOffset[0] + 0.5 * textureScale[0], textureOffset[1],
+				0, 	0, 	z,	textureOffset[0] + 0.5 * textureScale[0], textureOffset[1] + 0.5 * textureScale[1],
+				0, 	0, 	-z, textureOffset[0] + 0.5 * textureScale[0], textureOffset[1] + 0.5 * textureScale[1],
+			];
+
+			that.setVertexBuffer(
+				core.vertexBufferObject({
+					vertexFormat: vertexFormat,
+					data: new Float32Array(vertices),
+					count: 6
+				})
+			);
+
+			var indices = [
+				0, 1, 4, 
+				4, 1, 2, 
+				3, 4, 2, 
+				3, 0, 4,
+
+				3, 2, 5, 
+				2, 1, 5, 
+				5, 1, 0, 
+				3, 5, 0,
+			];
+
+			that.setIndexBuffer(
+				core.indexBufferObject({
+					data: new Uint16Array(indices),
+					indexCount: 24
+				})
+			);
+		};
+
+		that.generate();
+
+		return that;
+	};
+
 	return {
 		parametricPrimitive: parametricPrimitive,
 		conePrimitive: conePrimitive,
@@ -517,7 +575,8 @@ define(["crimild.core"], function(core) {
 		cylinderPrimitive: cylinderPrimitive,
 		spiralPrimitive: spiralPrimitive,
 		spherePrimitive: spherePrimitive,
-		cubePrimitive: cubePrimitive
+		cubePrimitive: cubePrimitive,
+		diamondPrimitive: diamondPrimitive,
 	};
 
 });

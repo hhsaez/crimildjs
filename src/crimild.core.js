@@ -161,7 +161,7 @@ define(["./crimild.math"], function(math) {
 			for (var n in nodes) {
 				var node = nodes[n];
 				if (node) {
-					node.clean();
+					node.cleanup();
 					node.setParent(null);
 				}
 			}
