@@ -13,6 +13,58 @@
     <script type="text/javascript" src="../../js/jquery-1.8.2.min.js"></script>
     <script data-main="../../src/crimild" src="../../lib/require.js"></script>
     <link rel="stylesheet" type="text/css" href="../../css/example.css">
+    <script id="dissolve-vs" type="x-shader/x-fragment">
+        attribute vec3 aVertexPosition;
+        attribute vec2 aTextureCoord;
+
+        uniform mat4 uMMatrix;
+        uniform mat4 uVMatrix;
+        uniform mat4 uPMatrix;
+        uniform mat3 uNMatrix;
+
+        varying vec2 vTextureCoord;
+        varying vec4 vVertexPosition;
+
+        void main(void) {
+            vVertexPosition = uMMatrix * vec4(aVertexPosition, 1.0);
+            gl_Position = uPMatrix * uVMatrix * vVertexPosition;
+            vTextureCoord = aTextureCoord;
+        }
+    </script>
+    <script id="dissolve-fs" type="x-shader/x-fragment">
+        precision mediump float;
+
+        struct Material {
+            vec3 Ambient;
+            vec3 Diffuse;
+            vec3 Specular;
+            float Shininess;
+        };
+
+        uniform bool uUseTextures;
+        uniform sampler2D uSampler;
+        uniform Material uMaterial;
+        uniform float uTime;
+
+        varying vec2 vTextureCoord;
+        varying vec4 vVertexPosition;
+
+        void main(void) {
+            vec4 color = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+            color *= vec4(uMaterial.Diffuse, 1.0);
+
+            float t = uTime + (vVertexPosition.x / (vVertexPosition.z + 0.1));
+            clamp(t, 0.0, 1.0);
+
+            vec4 dissolveColor = texture2D(uSampler, vec2(vTextureCoord.s + 0.25, vTextureCoord.t));
+
+            if (dissolveColor.r < uTime) {
+                discard;
+            }
+
+            gl_FragColor = color;
+        }
+    </script>
     <script type="text/javascript">
         var playerActor = null;
         var worldMap = [];
@@ -21,7 +73,9 @@
         var settings = {
             MAP_SIZE_X: 19,
             MAP_SIZE_Z: 21,
-            PROGRAM_COUNT: 20,
+            PROGRAM_COUNT: 30,
+            ANTIVIRUS_COUNT: 15,
+            CORRUPTION_REQUIRED: 0.5,
             KEY_WALK_FORWARD: "W".charCodeAt(0),
             KEY_WALK_FORWARD_ALT: 38,
             KEY_WALK_BACKWARD: "S".charCodeAt(0),
@@ -96,7 +150,7 @@
                 },
 
                 kill: function(killer) {
-                    if (this.status != actorStatus.DEAD || this.status != actorStatus.DYING) {
+                    if (this.status != actorStatus.DEAD && this.status != actorStatus.DYING) {
                         if (this.status == actorStatus.MOVING) {
                             this.status = actorStatus.ZOMBIE;
                         }
@@ -192,21 +246,42 @@
                 var showMainMenu = function() {
                     $('#loading').hide();
                     $('#mainMenu').show();
+                    $('#gameOver').hide();
+                    $('levelCompleted').hide();
 
-                    $('a.start-game').click(function() {
-                        $('#mainMenu').hide();
-                        $('#game').show();
+                    $('a.start-game-easy').click(function() {
+                        settings.CORRUPTION_REQUIRED = 0.25;
+                        startGame();
+                    });
 
+                    $('a.start-game-normal').click(function() {
+                        settings.CORRUPTION_REQUIRED = 0.5;
+                        startGame();
+                    });
+
+                    $('a.start-game-hard').click(function() {
+                        settings.CORRUPTION_REQUIRED = 0.75;
+                        startGame();
+                    });
+
+                    $('a.start-game-hardcore').click(function() {
+                        settings.CORRUPTION_REQUIRED = 0.95;
                         startGame();
                     });
                 }
 
                 var showGameOver = function() {
+                    $('#loading').hide();
+                    $('#mainMenu').hide();
                     $('#gameOver').show();
+                    $('levelCompleted').hide();
                 }
 
                 var showLevelCompleted = function() {
-                    $('#levelCompleted').show();
+                    $('#loading').hide();
+                    $('#mainMenu').hide();
+                    $('#gameOver').hide();
+                    $('levelCompleted').show();
                 }
 
                 var assetManager = crimild.utils.assetManager();
@@ -217,6 +292,12 @@
                 });
 
                 var startGame = function() {
+                    $('#loading').hide();
+                    $('#mainMenu').hide();
+                    $('#gameOver').hide();
+                    $('levelCompleted').hide();
+                    $('#game').show();
+
                     var canvas = document.getElementById(canvasId);
                     canvas.width = window.innerWidth;
                     canvas.height = window.innerHeight;
@@ -230,7 +311,9 @@
                     })
 
                     var corruptionLevel = 0.0;
+                    var corruptionRequired = settings.CORRUPTION_REQUIRED;
                     var riskLevel = playerRiskLevel.SAFE;
+                    var levelCompleted = false;
 
                     var createActorBehavior = function(type, waypoint) {
                         var cmp = crimild.core.nodeComponent({
@@ -407,28 +490,70 @@
                     };
 
                     var createProgram = function() {
-                        return crimild.core.geometryNode({
-                            primitives: [
-                                crimild.primitives.cubePrimitive({
-                                    scale: [0.15, 0.15, 0.15],
-                                    textureOffset: [0.0, 0.5],
-                                    textureScale: [0.25, 0.25],
-                                })
-                            ],
-                            components: [
-                                crimild.rendering.renderComponent({
-                                    effects: [
-                                        crimild.rendering.effect({
-                                            textures: [
-                                                megaTexture,
+                        return crimild.core.groupNode({
+                            nodes: [
+                                crimild.core.geometryNode({
+                                    primitives: [
+                                        crimild.primitives.cubePrimitive({
+                                            scale: [0.15, 0.15, 0.15],
+                                            textureOffset: [0.0, 0.5],
+                                            textureScale: [0.25, 0.25],
+                                        }),
+                                        crimild.core.primitive({
+                                            type: crimild.core.primitive.types.TRIANGLES,
+                                            vertexBuffer: crimild.core.vertexBufferObject({
+                                                vertexFormat: crimild.core.vertexFormat({
+                                                    positions: 3,
+                                                    textureCoords: 2,
+                                                }),
+                                                data: new Float32Array([
+                                                    -0.15, -0.35, -0.15, 0.51, 0.26, 
+                                                    -0.15, -0.35, 0.15, 0.51, 0.49, 
+                                                    0.15, -0.35, 0.15, 0.74, 0.49, 
+                                                    0.15, -0.35, -0.15, 0.74, 0.26, 
+                                                ]),
+                                                vertexCount: 4,
+                                            }),
+                                            indexBuffer: crimild.core.indexBufferObject({
+                                                data: new Uint16Array([0, 1, 2, 0, 2, 3]),
+                                                indexCount: 6
+                                            })
+                                        }),
+                                    ],
+                                    components: [
+                                        crimild.rendering.renderComponent({
+                                            effects: [
+                                                crimild.rendering.effect({
+                                                    shaderProgram: crimild.rendering.shaderProgram({
+                                                        vertexShader: crimild.rendering.shader({
+                                                            scriptId: "dissolve-vs"
+                                                        }),
+                                                        fragmentShader: crimild.rendering.shader({
+                                                            scriptId: "dissolve-fs"
+                                                        })
+                                                    }),
+                                                    textures: [
+                                                        megaTexture,
+                                                    ],
+                                                    alphaState: crimild.rendering.alphaState({ enabled: true }),
+                                                }),
                                             ],
                                         }),
                                     ],
+                                    local: crimild.math.transformation({
+                                        translate: [0, -0.1, 0],
+                                    })
                                 }),
+                            ],
+                            components: [
                                 (function() {
                                     var cmp = createActorBehavior(actorType.PROGRAM, getAvailableWaypoint());
 
                                     cmp.update = function() {
+                                        if (levelCompleted || corruptionLevel >= corruptionRequired) {
+                                            cmp.actor.status = actorStatus.DEAD;
+                                        }
+
                                         if (cmp.actor.status == actorStatus.DEAD) {
                                             cmp.actor.setWaypoint(null);
                                             cmp.node.getParent().detachNode(cmp.node);
@@ -439,18 +564,51 @@
                                         if (cmp.actor.status == actorStatus.IDLE) {
                                             var choice = Math.random();
                                             if (choice > 0.75) {
-                                                if (!cmp.moveForward()) {
-                                                    if (choice > 0.5) {
-                                                        cmp.turnLeft();
-                                                    }
-                                                    else {
-                                                        cmp.turnRight();
-                                                    }
-                                                }
+                                                cmp.moveForward();
+                                            }
+                                            else if (choice > 0.35) {
+                                                cmp.turnLeft();
+                                            }
+                                            else {
+                                                cmp.turnRight();
                                             }
                                         }
 
                                         cmp.node.perform(crimild.core.worldStateUpdate());
+                                    };
+
+                                    return cmp;
+                                })(),
+                                (function() {
+                                    var time = 0;
+
+                                    var cmp = crimild.rendering.shaderUniformComponent({
+                                        uniforms: [
+                                            crimild.rendering.shaderUniform({
+                                                name: "uTime",
+                                                data: time,
+                                                type: crimild.rendering.shaderUniform.type.FLOAT,
+                                            }),
+                                            crimild.rendering.shaderUniform({
+                                                name: "uAppTime",
+                                                data: time,
+                                                type: crimild.rendering.shaderUniform.type.FLOAT,
+                                            }),
+                                        ]
+                                    });
+
+                                    cmp.update = function(appTime, deltaTime) {
+                                        cmp.getUniform("uAppTime").data = appTime / 1000.0;
+
+                                        if (cmp.node.getComponent("behavior").actor.status == actorStatus.DYING) {
+                                            if (time < 1.0) {
+                                                time += deltaTime / 1000.0;
+                                                cmp.getUniform("uTime").data = time;
+                                            }
+                                            else {
+                                                cmp.node.getComponent("behavior").actor.status = actorStatus.DEAD;
+                                            }
+                                        }
                                     };
 
                                     return cmp;
@@ -462,11 +620,31 @@
                     var createAntivirus = function() {
                         return crimild.core.geometryNode({
                             primitives: [
-                                crimild.primitives.cubePrimitive({
-                                    scale: [0.25, 0.25, 0.25],
-                                    textureOffset: [0.5, 0.5],
+                                crimild.primitives.diamondPrimitive({
+                                    scale: [0.35, 0.45, 0.35],
+                                    textureOffset: [0.0, 0.25],
                                     textureScale: [0.25, 0.25],
-                                })
+                                }),
+                                crimild.core.primitive({
+                                    type: crimild.core.primitive.types.TRIANGLES,
+                                    vertexBuffer: crimild.core.vertexBufferObject({
+                                        vertexFormat: crimild.core.vertexFormat({
+                                            positions: 3,
+                                            textureCoords: 2,
+                                        }),
+                                        data: new Float32Array([
+                                            -0.15, -0.49, -0.15, 0.51, 0.26, 
+                                            -0.15, -0.49, 0.15, 0.51, 0.49, 
+                                            0.15, -0.49, 0.15, 0.74, 0.49, 
+                                            0.15, -0.49, -0.15, 0.74, 0.26, 
+                                        ]),
+                                        vertexCount: 4,
+                                    }),
+                                    indexBuffer: crimild.core.indexBufferObject({
+                                        data: new Uint16Array([0, 1, 2, 0, 2, 3]),
+                                        indexCount: 6
+                                    })
+                                }),
                             ],
                             components: [
                                 crimild.rendering.renderComponent({
@@ -475,6 +653,7 @@
                                             textures: [
                                                 megaTexture,
                                             ],
+                                            alphaState: crimild.rendering.alphaState({ enabled: true }),
                                         }),
                                     ],
                                 }),
@@ -482,7 +661,18 @@
                                     var cmp = createActorBehavior(actorType.ANTIVIRUS, getAvailableWaypoint());
 
                                     cmp.update = function() {
+                                        if (levelCompleted) {
+                                            cmp.actor.status = actorStatus.DEAD;
+                                        }
+
                                         if (cmp.actor.status == actorStatus.DEAD) {
+                                            cmp.actor.setWaypoint(null);
+                                            cmp.node.getParent().detachNode(cmp.node);
+                                            cmp.node.cleanup();
+                                            return;
+                                        }
+
+                                        if (playerActor.status == actorStatus.DEAD || playerActor.status == actorStatus.DYING) {
                                             return;
                                         }
 
@@ -501,7 +691,6 @@
                                         var front = cmp.getWaypointAtFront();
                                         if (front && front.actor && front.actor.type == actorType.PLAYER) {
                                             front.actor.kill(cmp.actor);
-                                            cmp.actor.status = actorStatus.DEAD;
                                         }
 
                                         if (playerActor && riskLevel != playerRiskLevel.FOUND) {
@@ -563,51 +752,453 @@
                         });
                     };
 
+                    var createKernel = function() {
+                        return crimild.core.groupNode({
+                            nodes: [
+                                crimild.core.geometryNode({
+                                    primitives: [
+                                        crimild.primitives.cubePrimitive({
+                                            scale: [0.25, 0.25, 0.25],
+                                            textureOffset: [0.0, 0.75],
+                                            textureScale: [0.25, 0.25],
+                                        }),
+                                        crimild.core.primitive({
+                                            type: crimild.core.primitive.types.TRIANGLES,
+                                            vertexBuffer: crimild.core.vertexBufferObject({
+                                                vertexFormat: crimild.core.vertexFormat({
+                                                    positions: 3,
+                                                    textureCoords: 2,
+                                                }),
+                                                data: new Float32Array([
+                                                    -0.15, -0.49, -0.15, 0.51, 0.26, 
+                                                    -0.15, -0.49, 0.15, 0.51, 0.49, 
+                                                    0.15, -0.49, 0.15, 0.74, 0.49, 
+                                                    0.15, -0.49, -0.15, 0.74, 0.26, 
+                                                ]),
+                                                vertexCount: 4,
+                                            }),
+                                            indexBuffer: crimild.core.indexBufferObject({
+                                                data: new Uint16Array([0, 1, 2, 0, 2, 3]),
+                                                indexCount: 6
+                                            })
+                                        }),
+                                    ],
+                                    components: [
+                                        crimild.rendering.renderComponent({
+                                            effects: [
+                                                crimild.rendering.effect({
+                                                    shaderProgram: crimild.rendering.shaderProgram({
+                                                        vertexShader: crimild.rendering.shader({
+                                                            scriptId: "dissolve-vs"
+                                                        }),
+                                                        fragmentShader: crimild.rendering.shader({
+                                                            scriptId: "dissolve-fs"
+                                                        })
+                                                    }),
+                                                    textures: [
+                                                        megaTexture,
+                                                    ],
+                                                    alphaState: crimild.rendering.alphaState({ enabled: true }),
+                                                }),
+                                            ],
+                                        }),
+                                    ],
+                                }),
+                            ],
+                            components: [
+                                (function() {
+                                    var cmp = createActorBehavior(actorType.PROGRAM, getAvailableWaypoint());
+
+                                    cmp.update = function() {
+                                        if (cmp.actor.status == actorStatus.DEAD) {
+                                            cmp.actor.setWaypoint(null);
+                                            cmp.node.getParent().detachNode(cmp.node);
+                                            cmp.node.cleanup();
+
+                                            levelCompleted = true;
+                                            showLevelCompleted();
+                                            return;
+                                        }
+
+                                        if (cmp.actor.status == actorStatus.IDLE) {
+                                            var choice = Math.random();
+                                            if (choice > 0.75) {
+                                                cmp.moveForward();
+                                            }
+                                            else if (choice > 0.35) {
+                                                cmp.turnLeft();
+                                            }
+                                            else {
+                                                cmp.turnRight();
+                                            }
+                                        }
+
+                                        cmp.node.perform(crimild.core.worldStateUpdate());
+                                    };
+
+                                    return cmp;
+                                })(),
+                                (function() {
+                                    var time = 0;
+
+                                    var cmp = crimild.rendering.shaderUniformComponent({
+                                        uniforms: [
+                                            crimild.rendering.shaderUniform({
+                                                name: "uTime",
+                                                data: time,
+                                                type: crimild.rendering.shaderUniform.type.FLOAT,
+                                            }),
+                                        ]
+                                    });
+
+                                    cmp.update = function(appTime, deltaTime) {
+                                        if (cmp.node.getComponent("behavior").actor.status == actorStatus.DYING) {
+                                            if (time < 1.0) {
+                                                time += deltaTime / 1000.0;
+                                                cmp.getUniform("uTime").data = time;
+                                            }
+                                            else {
+                                                cmp.node.getComponent("behavior").actor.status = actorStatus.DEAD;
+                                            }
+                                        }
+                                    };
+
+                                    return cmp;
+                                })(),
+                            ],
+                        });
+                    };
+
                     var scene = crimild.core.groupNode({
                         name: "scene",
                         nodes: [
+                            (function() {
+                                var walls = {
+                                    vertices: [],
+                                    indices: [],
+                                    indexCount: 0,
+                                    vertexCount: 0,
+                                    height: 1.0,
+                                };
+
+                                var floor = {
+                                    vertices: [],
+                                    indices: [],
+                                    indexCount: 0,
+                                    vertexCount: 0,
+                                }
+
+                                for (var z = 0; z < mapSizeY; z++) {
+                                    for (var x = 0; x < mapSizeX; x++) {
+                                        var tile = worldMap[z * mapSizeX + x];
+                                        if (tile === tiles.WALL) {
+                                            // v0
+                                            walls.vertices.push(x - 0.5); 
+                                            walls.vertices.push(0); 
+                                            walls.vertices.push(z - 0.5); 
+                                            walls.vertices.push(0.51);
+                                            walls.vertices.push(0.24);
+
+                                            // v1
+                                            walls.vertices.push(x - 0.5); 
+                                            walls.vertices.push(0); 
+                                            walls.vertices.push(z + 0.5);
+                                            walls.vertices.push(0.74);
+                                            walls.vertices.push(0.24);
+
+                                            // v2
+                                            walls.vertices.push(x + 0.5); 
+                                            walls.vertices.push(0); 
+                                            walls.vertices.push(z + 0.5);
+                                            walls.vertices.push(0.51);
+                                            walls.vertices.push(0.24);
+
+                                            // v3
+                                            walls.vertices.push(x + 0.5); 
+                                            walls.vertices.push(0); 
+                                            walls.vertices.push(z - 0.5);
+                                            walls.vertices.push(0.74);
+                                            walls.vertices.push(0.24);
+
+                                            // v4
+                                            walls.vertices.push(x - 0.5); 
+                                            walls.vertices.push(walls.height); 
+                                            walls.vertices.push(z - 0.5); 
+                                            walls.vertices.push(0.51);
+                                            walls.vertices.push(0.1);
+
+                                            // v5
+                                            walls.vertices.push(x - 0.5); 
+                                            walls.vertices.push(walls.height); 
+                                            walls.vertices.push(z + 0.5);
+                                            walls.vertices.push(0.74);
+                                            walls.vertices.push(0.1);
+
+                                            // v6
+                                            walls.vertices.push(x + 0.5); 
+                                            walls.vertices.push(walls.height); 
+                                            walls.vertices.push(z + 0.5);
+                                            walls.vertices.push(0.51);
+                                            walls.vertices.push(0.1);
+
+                                            // v7
+                                            walls.vertices.push(x + 0.5); 
+                                            walls.vertices.push(walls.height); 
+                                            walls.vertices.push(z - 0.5);
+                                            walls.vertices.push(0.74);
+                                            walls.vertices.push(0.1);
+
+                                            // north wall
+                                            walls.indices.push(walls.vertexCount + 7);
+                                            walls.indices.push(walls.vertexCount + 3);
+                                            walls.indices.push(walls.vertexCount + 0);
+                                            walls.indices.push(walls.vertexCount + 7);
+                                            walls.indices.push(walls.vertexCount + 0);
+                                            walls.indices.push(walls.vertexCount + 4);
+                                            
+                                            // south wall
+                                            walls.indices.push(walls.vertexCount + 5);
+                                            walls.indices.push(walls.vertexCount + 1);
+                                            walls.indices.push(walls.vertexCount + 2);
+                                            walls.indices.push(walls.vertexCount + 5);
+                                            walls.indices.push(walls.vertexCount + 2);
+                                            walls.indices.push(walls.vertexCount + 6);
+                                            
+                                            // east wall
+                                            walls.indices.push(walls.vertexCount + 6);
+                                            walls.indices.push(walls.vertexCount + 2);
+                                            walls.indices.push(walls.vertexCount + 3);
+                                            walls.indices.push(walls.vertexCount + 6);
+                                            walls.indices.push(walls.vertexCount + 3);
+                                            walls.indices.push(walls.vertexCount + 7);
+                                            
+                                            // west wall
+                                            walls.indices.push(walls.vertexCount + 4);
+                                            walls.indices.push(walls.vertexCount + 0);
+                                            walls.indices.push(walls.vertexCount + 1);
+                                            walls.indices.push(walls.vertexCount + 4);
+                                            walls.indices.push(walls.vertexCount + 1);
+                                            walls.indices.push(walls.vertexCount + 5);
+                                            
+                                            walls.vertexCount += 8;
+                                        }
+                                        else if (tile === tiles.FLOOR) {
+                                            // v0
+                                            floor.vertices.push(x - 0.5); 
+                                            floor.vertices.push(0); 
+                                            floor.vertices.push(z - 0.5); 
+                                            floor.vertices.push(0.01);
+                                            floor.vertices.push(0.01);
+
+                                            // v1
+                                            floor.vertices.push(x - 0.5); 
+                                            floor.vertices.push(0); 
+                                            floor.vertices.push(z + 0.5);
+                                            floor.vertices.push(0.01);
+                                            floor.vertices.push(0.24);
+
+                                            // v2
+                                            floor.vertices.push(x + 0.5); 
+                                            floor.vertices.push(0); 
+                                            floor.vertices.push(z + 0.5);
+                                            floor.vertices.push(0.24);
+                                            floor.vertices.push(0.24);
+
+                                            // v3
+                                            floor.vertices.push(x + 0.5); 
+                                            floor.vertices.push(0); 
+                                            floor.vertices.push(z - 0.5);
+                                            floor.vertices.push(0.24);
+                                            floor.vertices.push(0.01);
+
+                                            floor.indices.push(floor.vertexCount + 0);
+                                            floor.indices.push(floor.vertexCount + 1);
+                                            floor.indices.push(floor.vertexCount + 2);
+                                            floor.indices.push(floor.vertexCount + 0);
+                                            floor.indices.push(floor.vertexCount + 2);
+                                            floor.indices.push(floor.vertexCount + 3);
+                                            floor.vertexCount += 4;
+                                        }
+                                    }
+                                }
+
+                                return crimild.core.groupNode({
+                                    name: "world",
+                                    nodes: [
+                                        crimild.core.geometryNode({
+                                            name: "floor",
+                                            primitives: [
+                                                crimild.core.primitive({
+                                                    type: crimild.core.primitive.types.TRIANGLES,
+                                                    vertexBuffer: crimild.core.vertexBufferObject({
+                                                        vertexFormat: crimild.core.vertexFormat({positions: 3, textureCoords: 2}),
+                                                        data: new Float32Array(floor.vertices),
+                                                        vertexCount: floor.vertices.length / 5,
+                                                    }),
+                                                    indexBuffer: crimild.core.indexBufferObject({
+                                                        data: new Uint16Array(floor.indices),
+                                                        indexCount: floor.indices.length,
+                                                    })
+                                                })
+                                            ],
+                                            components: [
+                                                (function() {
+                                                    var diffuse = vec3.create();
+                                                    var time = 0.0;
+
+                                                    var that = crimild.rendering.renderComponent({
+                                                        effects: [
+                                                            crimild.rendering.effect({
+                                                                textures: [
+                                                                    megaTexture
+                                                                ],
+                                                            })
+                                                        ]
+                                                    });
+                                                    
+                                                    that.update = function(appTime, deltaTime) {
+                                                        var from = [1, 0, 0];
+                                                        var to = [0, 1, 0];
+
+                                                        if (playerActor.status == actorStatus.DEAD) {
+                                                            from = [0.1, 0.1, 0.1];
+                                                            to = [0.5, 0.5, 0.5];
+                                                        }
+                                                        else if (riskLevel == playerRiskLevel.SAFE) {
+                                                            from = [0.25, 0.25, 1.0];
+                                                            to = [0.5, 0.5, 1.0];
+                                                        }
+                                                        else if (riskLevel == playerRiskLevel.WARNING) {
+                                                            from = [0.5, 0.5, 0.0];
+                                                            to = [1.0, 1.0, 0.0];
+                                                        }
+                                                        else if (riskLevel == playerRiskLevel.FOUND) {
+                                                            from = [0.75, 0.0, 0.0];
+                                                            to = [1.0, 0.25, 0.25];
+                                                        }
+
+                                                        time += (2 * deltaTime) / 1000;
+                                                        crimild.math.numeric.computeBezier3D([from, to], -0.5 * Math.cos(time) + 0.5, that.getEffectAt(0).diffuse);
+                                                    };
+
+                                                    return that;
+                                                })(),
+                                            ]
+                                        }),
+                                        crimild.core.geometryNode({
+                                            name: "walls",
+                                            primitives: [
+                                                crimild.core.primitive({
+                                                    type: crimild.core.primitive.types.TRIANGLES,
+                                                    vertexBuffer: crimild.core.vertexBufferObject({
+                                                        vertexFormat: crimild.core.vertexFormat({positions: 3, textureCoords: 2}),
+                                                        data: new Float32Array(walls.vertices),
+                                                        vertexCount: walls.vertices.length / 5,
+                                                    }),
+                                                    indexBuffer: crimild.core.indexBufferObject({
+                                                        data: new Uint16Array(walls.indices),
+                                                        indexCount: walls.indices.length,
+                                                    })
+                                                })
+                                            ],
+                                            components: [
+                                                (function() {
+                                                    var diffuse = vec3.create();
+                                                    var time = 0.0;
+
+                                                    var that = crimild.rendering.renderComponent({
+                                                        effects: [
+                                                            crimild.rendering.effect({
+                                                                shaderProgram: crimild.rendering.shaderProgram({
+                                                                    vertexShader: crimild.rendering.shader({
+                                                                        scriptId: "dissolve-vs"
+                                                                    }),
+                                                                    fragmentShader: crimild.rendering.shader({
+                                                                        scriptId: "dissolve-fs"
+                                                                    })
+                                                                }),
+                                                                textures: [
+                                                                    megaTexture
+                                                                ],
+                                                            })
+                                                        ]
+                                                    });
+                                                    
+                                                    that.update = function(appTime, deltaTime) {
+                                                        var from = [1, 0, 0];
+                                                        var to = [0, 1, 0];
+
+                                                        if (playerActor.status == actorStatus.DEAD) {
+                                                            from = [0.25, 0.25, 0.1];
+                                                            to = [0.5, 0.5, 0.5];
+                                                        }
+                                                        else if (riskLevel == playerRiskLevel.SAFE) {
+                                                            from = [0.1, 0.1, 1.0];
+                                                            to = [0.5, 0.5, 1.0];
+                                                        }
+                                                        else if (riskLevel == playerRiskLevel.WARNING) {
+                                                            from = [0.5, 0.5, 0.0];
+                                                            to = [1.0, 1.0, 0.0];
+                                                        }
+                                                        else if (riskLevel == playerRiskLevel.FOUND) {
+                                                            from = [0.75, 0.0, 0.0];
+                                                            to = [1.0, 0.25, 0.25];
+                                                        }
+
+                                                        time += (2 * deltaTime) / 1000;
+                                                        crimild.math.numeric.computeBezier3D([from, to], -0.5 * Math.cos(time) + 0.5, that.getEffectAt(0).diffuse);
+                                                    };
+
+                                                    return that;
+                                                })(),
+                                                (function() {
+                                                    var time = 0;
+                                                    var max = 0;
+
+                                                    var cmp = crimild.rendering.shaderUniformComponent({
+                                                        uniforms: [
+                                                            crimild.rendering.shaderUniform({
+                                                                name: "uTime",
+                                                                data: time,
+                                                                type: crimild.rendering.shaderUniform.type.FLOAT,
+                                                            }),
+                                                        ]
+                                                    });
+
+                                                    cmp.update = function(appTime, deltaTime) {
+                                                        if (time < Math.min(1.0, corruptionLevel / corruptionRequired)) {
+                                                            time += 0.25 * deltaTime / 1000.0;
+                                                        }
+
+                                                        cmp.getUniform("uTime").data = time;
+                                                    };
+
+                                                    return cmp;
+                                                })(),
+                                            ]
+                                        }),
+                                    ],
+                                    components: [
+                                    ],
+                                    local: crimild.math.transformation({
+                                        translate: [0, -0.5, 0],
+                                    })
+                                });
+                            })(),
                             crimild.core.groupNode({
                                 name: "player",
                                 nodes: [
                                     crimild.rendering.cameraNode({
                                         aspectRatio: canvas.width / canvas.height,
                                     }),
-                                    /*
-                                    crimild.core.node({
-                                        name: "a light",
-                                        components: [
-                                            crimild.rendering.lightingComponent({
-                                                lights: [
-                                                    crimild.rendering.light({
-                                                        diffuse: [0.75, 0.15, 0.15],
-                                                        ambient: [0.25, 0.25, 0.25],
-                                                    })
-                                                ]
-                                            }),
-                                            (function() {
-                                                var cmp = crimild.core.nodeComponent({name: "test"});
-                                                cmp.update = function() {
-                                                    $('#debug #light').html(vec3.str(cmp.node.getComponent("lighting").getLightAt(0).direction));
-                                                };
-                                                return cmp;
-                                            })(),
-                                        ],
-                                        local: crimild.math.transformation({
-                                            translate: [0.0, 10, 0.0]
-                                        })
-                                    }),*/
                                 ],
                                 components: [
                                     (function() {
                                         var cmp = createActorBehavior(actorType.PLAYER, getRandomWaypoint(waypoints));
 
                                         cmp.update = function() {
-                                            if (corruptionLevel >= 0.2) {
-                                                showLevelCompleted();
-                                                return;
-                                            }
-
                                             if (cmp.actor.status == actorStatus.DEAD) {
+                                                showGameOver();
                                                 return;
                                             }
                                             else if (cmp.actor.status == actorStatus.DYING) {
@@ -617,64 +1208,88 @@
 
                                                     var coeff = 0;
 
-                                                    if (cmp.actor.waypoint.northNeighbor && cmp.actor.waypoint.northNeighbor.actor == cmp.actor.killer) {
-                                                        if (cmp.actor.orientation == actorOrientation.SOUTH) {
-                                                            coeff = 2;
+                                                    var killerPosition = cmp.actor.killer.position;
+                                                    var actorPosition = cmp.actor.position;
+
+                                                    if (actorPosition[0] == killerPosition[0]) {
+                                                        if (actorPosition[1] > killerPosition[1]) {
+                                                            // target is at north
+                                                            if (cmp.actor.orientation == actorOrientation.NORTH) {
+                                                                coeff = 0;
+                                                            }
+                                                            else if (cmp.actor.orientation == actorOrientation.SOUTH) {
+                                                                coeff = 2;
+                                                            }
+                                                            else if(cmp.actor.orientation == actorOrientation.WEST) {
+                                                                coeff = -1;
+                                                            }
+                                                            else if(cmp.actor.orientation == actorOrientation.EAST) {
+                                                                coeff = 1;
+                                                            }
                                                         }
-                                                        else if(cmp.actor.orientation == actorOrientation.WEST) {
-                                                            coeff = -1;
-                                                        }
-                                                        else if(cmp.actor.orientation == actorOrientation.EAST) {
-                                                            coeff = 1;
+                                                        else {
+                                                            // target is at south
+                                                            if (cmp.actor.orientation == actorOrientation.NORTH) {
+                                                                coeff = 2;
+                                                            }
+                                                            else if (cmp.actor.orientation == actorOrientation.SOUTH) {
+                                                                coeff = 0;
+                                                            }
+                                                            else if(cmp.actor.orientation == actorOrientation.WEST) {
+                                                                coeff = 1;
+                                                            }
+                                                            else if(cmp.actor.orientation == actorOrientation.EAST) {
+                                                                coeff = -1;
+                                                            }
                                                         }
                                                     }
-                                                    else if (cmp.actor.waypoint.southNeighbor && cmp.actor.waypoint.southNeighbor.actor == cmp.actor.killer) {
-                                                        if (cmp.actor.orientation == actorOrientation.NORTH) {
-                                                            coeff = 2;
+                                                    else {
+                                                        if (actorPosition[0] > killerPosition[0]) {
+                                                            // target is at west
+                                                            if (cmp.actor.orientation == actorOrientation.NORTH) {
+                                                                coeff = 1;
+                                                            }
+                                                            else if (cmp.actor.orientation == actorOrientation.SOUTH) {
+                                                                coeff = -1;
+                                                            }
+                                                            else if(cmp.actor.orientation == actorOrientation.EAST) {
+                                                                coeff = 2;
+                                                            }
+                                                            else if(cmp.actor.orientation == actorOrientation.WEST) {
+                                                                coeff = 0;
+                                                            }
                                                         }
-                                                        else if(cmp.actor.orientation == actorOrientation.WEST) {
-                                                            coeff = 1;
-                                                        }
-                                                        else if(cmp.actor.orientation == actorOrientation.EAST) {
-                                                            coeff = -1;
-                                                        }
-                                                    }
-                                                    else if (cmp.actor.waypoint.westNeighbor && cmp.actor.waypoint.westNeighbor.actor == cmp.actor.killer) {
-                                                        if (cmp.actor.orientation == actorOrientation.NORTH) {
-                                                            coeff = 1;
-                                                        }
-                                                        else if(cmp.actor.orientation == actorOrientation.SOUTH) {
-                                                            coeff = -1;
-                                                        }
-                                                        else if(cmp.actor.orientation == actorOrientation.EAST) {
-                                                            coeff = 2;
-                                                        }
-                                                    }
-                                                    else if (cmp.actor.waypoint.eastNeighbor && cmp.actor.waypoint.eastNeighbor.actor == cmp.actor.killer) {
-                                                        if (cmp.actor.orientation == actorOrientation.NORTH) {
-                                                            coeff = -1;
-                                                        }
-                                                        else if(cmp.actor.orientation == actorOrientation.WEST) {
-                                                            coeff = 2;
-                                                        }
-                                                        else if(cmp.actor.orientation == actorOrientation.SOUTH) {
-                                                            coeff = 1;
+                                                        else {
+                                                            // target is at east
+                                                            if (cmp.actor.orientation == actorOrientation.NORTH) {
+                                                                coeff = -1;
+                                                            }
+                                                            else if (cmp.actor.orientation == actorOrientation.SOUTH) {
+                                                                coeff = 1;
+                                                            }
+                                                            else if(cmp.actor.orientation == actorOrientation.WEST) {
+                                                                coeff = 2;
+                                                            }
+                                                            else if(cmp.actor.orientation == actorOrientation.EAST) {
+                                                                coeff = 0;
+                                                            }
                                                         }
                                                     }
 
-                                                    var qTemp = quat4.create();
-                                                    quat4.fromAngleAxis(coeff * Math.PI / 2, [0, 1, 0], qTemp);
-                                                    quat4.multiply(cmp.node.local.rotate, qTemp, endTransformation.rotate);
+                                                    if (coeff != 0) {
+                                                        var qTemp = quat4.create();
+                                                        quat4.fromAngleAxis(coeff * Math.PI / 2, [0, 1, 0], qTemp);
+                                                        quat4.multiply(cmp.node.local.rotate, qTemp, endTransformation.rotate);
 
-                                                    cmp.node.attachComponent(crimild.components.lerpTransformComponent({
-                                                        name: "interpolateBehavior",
-                                                        start: cmp.node.local,
-                                                        end: endTransformation,
-                                                        speed: cmp.actor.speed,
-                                                        callback: function() {
-                                                            showGameOver();
-                                                        }
-                                                    }));
+                                                        cmp.node.attachComponent(crimild.components.lerpTransformComponent({
+                                                            name: "interpolateBehavior",
+                                                            start: cmp.node.local,
+                                                            end: endTransformation,
+                                                            speed: cmp.actor.speed,
+                                                            callback: function() {
+                                                            }
+                                                        }));
+                                                    }
                                                 }
                                                 cmp.actor.status = actorStatus.DEAD;
                                             }
@@ -702,7 +1317,7 @@
                                                     var wp = cmp.getWaypointAtFront();
                                                     if (wp && wp.actor) {
                                                         if (wp.actor.type == actorType.PROGRAM) {
-                                                            wp.actor.status = actorStatus.DEAD;
+                                                            wp.actor.kill();
                                                         }
                                                     }
                                                 }
@@ -713,7 +1328,7 @@
                                             $('#debug #position').html(vec2.str(cmp.actor.position));
                                             $('#debug #orientation').html(cmp.actor.orientation);
                                             $('#debug #status').html(cmp.actor.status);
-                                            $('#debug #corruption').html(corruptionLevel);
+                                            $('#debug #corruption').html(Math.floor(corruptionLevel * 100));
                                         };
 
                                         return cmp;
@@ -741,21 +1356,17 @@
                                 ],
                             }),
                             crimild.core.groupNode({
-                                name: "defenses",
+                                name: "kernel",
                                 components: [
                                     (function() {
                                         var cmp = crimild.core.nodeComponent();
 
                                         cmp.update = function() {
-                                            if (Math.floor(10 * corruptionLevel) > cmp.node.getNodeCount()) {
-                                                cmp.node.attachNode(createAntivirus());
-                                            }
-
-                                            if (cmp.node.getNodeCount() > 0) {
-                                                riskLevel = playerRiskLevel.WARNING;                                                
-                                            }
-                                            else {
-                                                riskLevel = playerRiskLevel.SAFE;                                                
+                                            if (!levelCompleted && corruptionLevel >= corruptionRequired && cmp.node.getNodeCount() == 0) {
+                                                cmp.node.attachNode(createKernel());                                                
+                                                cmp.node.perform(crimild.core.worldStateUpdate());
+                                                cmp.node.perform(crimild.rendering.renderStateUpdate());
+                                                riskLevel = playerRiskLevel.FOUND;
                                             }
                                         };
 
@@ -763,213 +1374,41 @@
                                     })(),
                                 ],
                             }),
-                            (function() {
-                                var vertices = [];
-                                var indices = [];
-                                var indexCount = 0;
-                                var vertexCount = 0;
-                                var wallHeight = 1.0;
-                                var drawWalls = true;
+                            crimild.core.groupNode({
+                                name: "defenses",
+                                components: [
+                                    (function() {
+                                        var cmp = crimild.core.nodeComponent();
 
-                                for (var z = 0; z < mapSizeY; z++) {
-                                    for (var x = 0; x < mapSizeX; x++) {
-                                        var tile = worldMap[z * mapSizeX + x];
-                                        if (drawWalls && tile === tiles.WALL) {
-                                            // v0
-                                            vertices.push(x - 0.5); 
-                                            vertices.push(0); 
-                                            vertices.push(z - 0.5); 
-                                            vertices.push(0.5);
-                                            vertices.push(0.25);
+                                        cmp.update = function() {
+                                            if (levelCompleted) {
+                                                riskLevel = playerRiskLevel.SAFE;
+                                                return;
+                                            }
 
-                                            // v1
-                                            vertices.push(x - 0.5); 
-                                            vertices.push(0); 
-                                            vertices.push(z + 0.5);
-                                            vertices.push(0.75);
-                                            vertices.push(0.25);
-
-                                            // v2
-                                            vertices.push(x + 0.5); 
-                                            vertices.push(0); 
-                                            vertices.push(z + 0.5);
-                                            vertices.push(0.5);
-                                            vertices.push(0.25);
-
-                                            // v3
-                                            vertices.push(x + 0.5); 
-                                            vertices.push(0); 
-                                            vertices.push(z - 0.5);
-                                            vertices.push(0.75);
-                                            vertices.push(0.25);
-
-                                            // v4
-                                            vertices.push(x - 0.5); 
-                                            vertices.push(wallHeight); 
-                                            vertices.push(z - 0.5); 
-                                            vertices.push(0.5);
-                                            vertices.push(0);
-
-                                            // v5
-                                            vertices.push(x - 0.5); 
-                                            vertices.push(wallHeight); 
-                                            vertices.push(z + 0.5);
-                                            vertices.push(0.75);
-                                            vertices.push(0);
-
-                                            // v6
-                                            vertices.push(x + 0.5); 
-                                            vertices.push(wallHeight); 
-                                            vertices.push(z + 0.5);
-                                            vertices.push(0.5);
-                                            vertices.push(0);
-
-                                            // v7
-                                            vertices.push(x + 0.5); 
-                                            vertices.push(wallHeight); 
-                                            vertices.push(z - 0.5);
-                                            vertices.push(0.75);
-                                            vertices.push(0);
-
-                                            // north wall
-                                            indices.push(vertexCount + 4);
-                                            indices.push(vertexCount + 0);
-                                            indices.push(vertexCount + 3);
-                                            indices.push(vertexCount + 4);
-                                            indices.push(vertexCount + 3);
-                                            indices.push(vertexCount + 7);
-                                            
-                                            // south wall
-                                            indices.push(vertexCount + 5);
-                                            indices.push(vertexCount + 1);
-                                            indices.push(vertexCount + 2);
-                                            indices.push(vertexCount + 5);
-                                            indices.push(vertexCount + 2);
-                                            indices.push(vertexCount + 6);
-                                            
-                                            // east wall
-                                            indices.push(vertexCount + 6);
-                                            indices.push(vertexCount + 2);
-                                            indices.push(vertexCount + 3);
-                                            indices.push(vertexCount + 6);
-                                            indices.push(vertexCount + 3);
-                                            indices.push(vertexCount + 7);
-                                            
-                                            // west wall
-                                            indices.push(vertexCount + 4);
-                                            indices.push(vertexCount + 0);
-                                            indices.push(vertexCount + 1);
-                                            indices.push(vertexCount + 4);
-                                            indices.push(vertexCount + 1);
-                                            indices.push(vertexCount + 5);
-                                            
-                                            vertexCount += 8;
-                                        }
-                                        else if (tile === tiles.FLOOR) {
-                                            // v0
-                                            vertices.push(x - 0.5); 
-                                            vertices.push(0); 
-                                            vertices.push(z - 0.5); 
-                                            vertices.push(0);
-                                            vertices.push(0);
-
-                                            // v1
-                                            vertices.push(x - 0.5); 
-                                            vertices.push(0); 
-                                            vertices.push(z + 0.5);
-                                            vertices.push(0);
-                                            vertices.push(0.25);
-
-                                            // v2
-                                            vertices.push(x + 0.5); 
-                                            vertices.push(0); 
-                                            vertices.push(z + 0.5);
-                                            vertices.push(0.25);
-                                            vertices.push(0.25);
-
-                                            // v3
-                                            vertices.push(x + 0.5); 
-                                            vertices.push(0); 
-                                            vertices.push(z - 0.5);
-                                            vertices.push(0.25);
-                                            vertices.push(0);
-
-                                            indices.push(vertexCount + 0);
-                                            indices.push(vertexCount + 1);
-                                            indices.push(vertexCount + 2);
-                                            indices.push(vertexCount + 0);
-                                            indices.push(vertexCount + 2);
-                                            indices.push(vertexCount + 3);
-                                            vertexCount += 4;
-                                        }
-                                    }
-                                }
-
-                                return crimild.core.geometryNode({
-                                    name: "world",
-                                    primitives: [
-                                        crimild.core.primitive({
-                                            type: crimild.core.primitive.types.TRIANGLES,
-                                            vertexBuffer: crimild.core.vertexBufferObject({
-                                                vertexFormat: crimild.core.vertexFormat({positions: 3, textureCoords: 2}),
-                                                data: new Float32Array(vertices),
-                                                vertexCount: vertices.length / 5,
-                                            }),
-                                            indexBuffer: crimild.core.indexBufferObject({
-                                                data: new Uint16Array(indices),
-                                                indexCount: indices.length,
-                                            })
-                                        })
-                                    ],
-                                    components: [
-                                        (function() {
-                                            var diffuse = vec3.create();
-                                            var time = 0.0;
-
-                                            var that = crimild.rendering.renderComponent({
-                                                effects: [
-                                                    crimild.rendering.effect({
-                                                        textures: [
-                                                            megaTexture
-                                                        ],
-                                                        cullState: crimild.rendering.cullState({ enabled: false })
-                                                    })
-                                                ]
-                                            });
-
-                                            that.update = function(appTime, deltaTime) {
-                                                var from = [1, 0, 0];
-                                                var to = [0, 1, 0];
-
-                                                if (playerActor.status == actorStatus.DEAD) {
-                                                    from = [0.1, 0.1, 0.1];
-                                                    to = [0.5, 0.5, 0.5];
-                                                }
-                                                else if (riskLevel == playerRiskLevel.SAFE) {
-                                                    from = [0.0, 0.0, 1.0];
-                                                    to = [0.5, 0.5, 1.0];
-                                                }
-                                                else if (riskLevel == playerRiskLevel.WARNING) {
-                                                    from = [0.5, 0.5, 0.0];
-                                                    to = [1.0, 1.0, 0.0];
-                                                }
-                                                else if (riskLevel == playerRiskLevel.FOUND) {
-                                                    from = [0.75, 0.0, 0.0];
-                                                    to = [1.0, 0.25, 0.25];
+                                            if (corruptionLevel >= corruptionRequired) {
+                                                riskLevel = playerRiskLevel.FOUND;
+                                            }
+                                            else {
+                                                if (Math.floor(settings.ANTIVIRUS_COUNT * corruptionLevel) > cmp.node.getNodeCount()) {
+                                                    cmp.node.attachNode(createAntivirus());
+                                                    cmp.node.perform(crimild.core.worldStateUpdate());
+                                                    cmp.node.perform(crimild.rendering.renderStateUpdate());
                                                 }
 
-                                                time += (2 * deltaTime) / 1000;
-                                                crimild.math.numeric.computeBezier3D([from, to], -0.5 * Math.cos(time) + 0.5, that.getEffectAt(0).diffuse);
-                                            };
+                                                if (cmp.node.getNodeCount() > 0) {
+                                                    riskLevel = playerRiskLevel.WARNING;                                                
+                                                }
+                                                else {
+                                                    riskLevel = playerRiskLevel.SAFE;                                        
+                                                }
+                                            }
+                                        };
 
-                                            return that;
-                                        })(),
-                                    ],
-                                    local: crimild.math.transformation({
-                                        translate: [0, -0.5, 0],
-                                    })
-                                });
-                            })(),
+                                        return cmp;
+                                    })(),
+                                ],
+                            }),
                         ]
                     });
 
@@ -991,13 +1430,18 @@
     </div>
 
     <div id="mainMenu" style="display: none; position: absolute;">
-        <h1>Singleton: The Game</h1>
-        <h2>There can be only one</h2>
-        <p><a class="btn btn-primary btn-large start-game">Start &raquo;</a></p>
+        <h1>Choose difficulty level</h1>
+        <p>
+            <a class="btn btn-primary btn-large start-game-easy">Easy &raquo;</a>
+            <a class="btn btn-primary btn-large start-game-normal">Normal &raquo;</a>
+            <a class="btn btn-primary btn-large start-game-hard">Hard &raquo;</a>
+            <a class="btn btn-primary btn-large start-game-hardcore">Hardcore &raquo;</a>
+        </p>
         <div class="help">
+            <h1>How to play</h1>
             <p>Use the cursor keys to move</p>
             <p>Hit SPACE to kill processes</p>
-            <p>Run from the anti-viruses</p>
+            <p>Run from the antiviruses</p>
         </div>
     </div>
 
@@ -1018,7 +1462,7 @@
         </canvas>
 
         <div class="hud">
-            <div id="debug" style="display: none;">
+            <div id="debug" style="position: absolute; top: 200px; left: 10px; width: 400px; display: none;">
                 <p>Position: <span id="position"></span></p>
                 <p>Orientation: <span id="orientation"></span></p>
                 <p>Status: <span id="status"></span></p>
