@@ -1062,6 +1062,7 @@ define(["./crimild.core", "./crimild.math",
 		var gl = null;
 		var width = 0;
 		var height = 0;
+		var mMatrix = mat4.create();
 		var vMatrix = mat4.create();
     	var mvMatrix = mat4.create();
     	var pMatrix = mat4.create();
@@ -1077,8 +1078,6 @@ define(["./crimild.core", "./crimild.math",
 		});
 
 		// utility variables
-		var mMatrix = mat4.create();
-
 		var defaultEffect = effect({
 	        shaderProgram: shaderProgram({
 	            vertexShader: shader({
@@ -1188,7 +1187,14 @@ define(["./crimild.core", "./crimild.math",
 
         	setMatrixUniforms: function(program) {
         		gl.uniformMatrix4fv(program.renderCache.pMatrixUniform, false, pMatrix);
-        		gl.uniformMatrix4fv(program.renderCache.mvMatrixUniform, false, mvMatrix);
+
+        		if (program.renderCache.modelViewMatrixUniform) {
+        			gl.uniformMatrix4fv(program.renderCache.modelViewMatrixUniform, false, mvMatrix);
+        		}
+        		else {
+        			gl.uniformMatrix4fv(program.renderCache.modelMatrixUniform, false, mMatrix);
+        			gl.uniformMatrix4fv(program.renderCache.viewMatrixUniform, false, vMatrix);	
+        		}
 
         		if (program.renderCache.nMatrixUniform) {
 	                var normalMatrix = mat3.create();
@@ -1563,7 +1569,9 @@ define(["./crimild.core", "./crimild.math",
         		}
 
         		program.renderCache.pMatrixUniform = gl.getUniformLocation(program.renderCache, "uPMatrix");
-        		program.renderCache.mvMatrixUniform = gl.getUniformLocation(program.renderCache, "uMVMatrix");
+        		program.renderCache.modelViewMatrixUniform = gl.getUniformLocation(program.renderCache, "uMVMatrix");
+        		program.renderCache.modelMatrixUniform = gl.getUniformLocation(program.renderCache, "uMMatrix");
+        		program.renderCache.viewMatrixUniform = gl.getUniformLocation(program.renderCache, "uVMatrix");
         		program.renderCache.nMatrixUniform = gl.getUniformLocation(program.renderCache, "uNMatrix");
 
         		program.renderCache.useLightingUniform = gl.getUniformLocation(program.renderCache, "uUseLighting");

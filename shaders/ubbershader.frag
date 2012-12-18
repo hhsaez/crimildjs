@@ -38,14 +38,13 @@ varying vec3 vNormal;
 varying vec3 vViewVector;
 
 void main(void) {
-    vec4 baseColor;
+    vec4 baseColor = vec4(1.0, 1.0, 1.0, 1.0);
 
     if (uUseTextures) {
         baseColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
     }
-    else {
-        baseColor = vec4(uMaterial.Diffuse, 1.0);
-    }
+
+    baseColor *= vec4(uMaterial.Diffuse, 1.0);
 
     vec4 result = vec4(1.0, 1.0, 1.0, 1.0);
 

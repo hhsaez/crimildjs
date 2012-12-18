@@ -8,7 +8,9 @@ attribute vec3 aVertexPosition;
 attribute vec3 aVertexNormal;
 attribute vec2 aTextureCoord;
 
-uniform mat4 uMVMatrix;
+//uniform mat4 uMVMatrix;
+uniform mat4 uMMatrix;
+uniform mat4 uVMatrix;
 uniform mat4 uPMatrix;
 uniform mat3 uNMatrix;
 
@@ -18,10 +20,11 @@ varying vec3 vNormal;
 varying vec3 vViewVector;
 
 void main(void) {
-	vPosition = uMVMatrix * vec4(aVertexPosition, 1.0);
-    vViewVector = normalize(-vPosition.xyz);
+	vPosition = uMMatrix * vec4(aVertexPosition, 1.0);
+	vec4 vViewVertex = uVMatrix * vPosition;
+    vViewVector = normalize(-vViewVertex.xyz);
     vTextureCoord = aTextureCoord;
     vNormal = uNMatrix * aVertexNormal;
 
-    gl_Position = uPMatrix * vPosition;
+    gl_Position = uPMatrix * vViewVertex;
 }
