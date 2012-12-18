@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>crimildjs</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="">
+        <meta name="author" content="">
+
+        <link href="../../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../../css/bootstrap-responsive.min.css" rel="stylesheet">
+        <style type="text/css">
+            body {
+                padding-top: 60px;
+                padding-bottom: 40px;
+            }
+
+            a.zip,
+            a.zip span {
+              background: transparent url('../../img/zip.png') no-repeat 0 0;
+              width: 30px;
+              height: 21px;
+              opacity: 0.8;
+              display: inline-block;
+              text-indent: -10000px;
+              -moz-opacity: 0.8;
+              filter:alpha(opacity=8);
+              -webkit-transition: opacity ease-in-out 0.3s;
+            }
+
+            a.tar,
+            a.tar span {
+              background: transparent url('../../img/tar.png') no-repeat 0 0;
+              width: 30px;
+              height: 21px;
+              opacity: 0.8;
+              display: inline-block;
+              text-indent: -10000px;
+              -moz-opacity: 0.8;
+              filter:alpha(opacity=8);
+              -webkit-transition: opacity ease-in-out 0.3s;
+            }
+
+            a.code {
+              background: transparent url('../../img/code.png') no-repeat 0 2px;
+              width: 30px;
+              height: 21px;
+              display: block;
+              opacity: 0.8;
+              display: inline-block;
+              text-indent: -10000px;
+              -moz-opacity: 0.8;
+              filter:alpha(opacity=8);
+              -webkit-transition: opacity ease-in-out 0.3s;
+            }
+
+            .mosaic li {
+            	float: left;
+            	list-style-type: none;
+            }
+
+            .span1 {
+            	width: 160px;
+            	height: 120px;
+            	margin: 0;
+            }
+
+            .thumbnail {
+            	display: inline;
+            	padding: 0;
+            	line-height: 0;
+            	border: 0;
+            	border-radius: 0;
+            	box-shadow: 0;
+            }
+
+            .thumbnail img {
+            	width: 100%;
+            	height: 100%;
+            }
+
+        </style>
+
+        <script src="../../js/jquery-1.8.2.min.js"></script>
+        <script src="../../js/bootstrap.min.js"></script>
+        <script type="text/javascript">
+            $(document).ready(function () {
+                $("a.play-game").click(function(ev) {
+                    ev.preventDefault();
+
+                    $("#myModal")
+                        .modal({ keyboard: true })
+                        .css('width', 640)
+                        .css('height', 480)
+                        .css('overflow', 'hidden');
+                    $("#frame-contents").html('<iframe src="' + $(this).attr('href') + '" height="480" width="640" style="border: 0; overflow: hidden;" scrolling="no"></iframe>');
+                    $('.fullscreen').attr('url', $(this).attr('href'));
+                });
+
+                $('.fullscreen').click(function(ev) {
+                	window.location = $(this).attr('url');
+                });
+
+                $('.go-to-github').click(function(ev) {
+                	window.location = "https://github.com/hhsaez/crimildjs";
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <div class="navbar navbar-inverse navbar-fixed-top">
+            <div class="navbar-inner">
+                <div class="container">
+                    <div style="float: right; padding-top: 10px;">
+                        <a href="https://github.com/hhsaez/crimildjs/tarball/master" class="tar">tar</a>
+                        <a href="https://github.com/hhsaez/crimildjs/zipball/master" class="zip">zip</a>
+                        <a href="https://github.com/hhsaez/crimildjs" class="code">source code</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="hero-unit">
+                <h1>Singleton: The Game</h1>
+                <h2>There can be only one</h2>
+                <p><a class="btn btn-primary btn-large play-game" href="game.html">Play Game &raquo;</a></p>
+            </div>
+
+            <div class="alert">
+                <strong>Warning!</strong> You need a web browser that supports WebGL in order to run this game.
+            </div>
+        </div>
+
+        <div class="modal hide" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  			<div style="position: absolute; left: 570px; padding: 5px 0;">
+    			<a href="#" class="btn btn-link btn-mini fullscreen"><i class="icon-fullscreen icon-white"></i></a>
+    			<a href="#" class="btn btn-link btn-mini" data-dismiss="modal" aria-hidden="true"><i class="icon-off icon-white"></i></a>
+  			</div>
+            <div id="frame-contents"></div>
+        </div>
+    </body>
+</html>

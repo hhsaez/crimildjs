@@ -1,0 +1,1032 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Singleton: The Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <link href="../../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../../css/bootstrap-responsive.min.css" rel="stylesheet">
+
+    <script type="text/javascript" src="../../js/jquery-1.8.2.min.js"></script>
+    <script data-main="../../src/crimild" src="../../lib/require.js"></script>
+    <link rel="stylesheet" type="text/css" href="../../css/example.css">
+    <script type="text/javascript">
+        var playerActor = null;
+        var worldMap = [];
+        var waypoints = [];
+
+        var settings = {
+            MAP_SIZE_X: 19,
+            MAP_SIZE_Z: 21,
+            PROGRAM_COUNT: 20,
+            KEY_WALK_FORWARD: "W".charCodeAt(0),
+            KEY_WALK_FORWARD_ALT: 38,
+            KEY_WALK_BACKWARD: "S".charCodeAt(0),
+            KEY_WALK_BACKWARD_ALT: 40,
+            KEY_TURN_RIGHT: "D".charCodeAt(0),
+            KEY_TURN_RIGHT_ALT: 39,
+            KEY_TURN_LEFT: "A".charCodeAt(0),
+            KEY_TURN_LEFT_ALT: 37,
+            KEY_STRAFE_LEFT: 'Z'.charCodeAt(0),
+            KEY_STRAFE_RIGHT: 'X'.charCodeAt(0),
+            KEY_ATTACK: 32,
+        };
+
+        var tiles = {
+            WALL: 0,
+            FLOOR: 1,
+            PLAYER: 10,
+            PROGRAM: 21,
+            SCANNER: 22,
+            ANTIVIRUS: 23,
+            KERNEL: 30,
+            UNKNOWN: 999,
+        };
+
+        var actorType = {
+            PLAYER: 0,
+            PROGRAM: 1,
+            UNKNOWN: 999,
+        };
+
+        var actorOrientation = {
+            NORTH: 0,
+            EAST: 1,
+            SOUTH: 2,
+            WEST: 3,
+        };
+
+        var actorStatus = {
+            IDLE: 0,
+            MOVING: 1,
+            ZOMBIE: 900,  
+            DYING: 950,
+            DEAD: 999,          
+        };
+
+        var playerRiskLevel = {
+            SAFE: 0,
+            WARNING: 1,
+            FOUND: 2,
+        };
+
+        function createActor(type, waypoint) {
+            var actor = {
+                position: [0, 0],
+                speed: 0.05,
+                orientation: actorOrientation.NORTH,
+                status: actorStatus.IDLE,
+                waypoint: null,
+                type: type,
+
+                setWaypoint: function(wp) {
+                    if (this.waypoint) {
+                        this.waypoint.setActor(null);
+                    }
+
+                    this.waypoint = wp;
+
+                    if (this.waypoint) {
+                        this.waypoint.setActor(this);
+                        this.position = this.waypoint.position;
+                    }
+                },
+
+                kill: function(killer) {
+                    if (this.status != actorStatus.DEAD || this.status != actorStatus.DYING) {
+                        if (this.status == actorStatus.MOVING) {
+                            this.status = actorStatus.ZOMBIE;
+                        }
+                        else {
+                            this.status = actorStatus.DYING;
+                        }
+                    }
+
+                    this.killer = killer;
+                }
+            };
+
+            if (type == actorType.PLAYER) {
+                playerActor = actor;
+            };
+
+            actor.setWaypoint(waypoint);
+            return actor;
+        }
+
+        function createWaypoint(x, y) {
+            return {
+                position: [x, y],
+                actor: null,
+                northNeighbor: null,
+                eastNeighbor: null,
+                southNeighbor: null,
+                westNeighbor: null,
+
+                setActor: function(actor) {
+                    this.actor = actor;
+                },
+
+                isAvailable: function() {
+                    return this.actor == null;
+                },
+            }
+        }
+
+        function generateLevel(worldTxt, sizeX, sizeY) {
+            var lines = worldTxt.split("\n");
+            var waypointMap = [];
+
+            for (var z = 0; z < sizeY; z++) {
+                for (var x = 0; x < sizeX; x++) {
+                    waypointMap.push(null);
+                }
+            }
+
+            for (var z = 0; z < sizeY; z++) {
+                var vals = lines[z];
+                for (var x = 0; x < sizeX; x++) {
+                    var tile = vals[x];
+                    if (tile == '#') {
+                        worldMap.push(tiles.WALL);
+                    }
+                    else if (tile == ' ') {
+                        worldMap.push(tiles.FLOOR);
+                        var wp = createWaypoint(x, z)
+                        waypointMap[z * sizeX + x] = wp;
+                        waypoints.push(wp);
+                    }
+                }
+            }
+
+            for (var z = 0; z < sizeY; z++) {
+                for (var x = 0; x < sizeX; x++) {
+                    var wp = waypointMap[z * sizeX + x];
+                    if (wp) {
+                        if (x > 0) wp.westNeighbor = waypointMap[z * sizeX + x - 1];
+                        if (x < sizeX - 1) wp.eastNeighbor = waypointMap[z * sizeX + x + 1];
+                        if (z > 0) wp.northNeighbor = waypointMap[(z - 1) * sizeX + x];
+                        if (z < sizeY - 1) wp.southNeighbor = waypointMap[(z + 1) * sizeX + x];
+                    }
+                }
+            }
+        }
+
+        function getRandomWaypoint() {
+            return waypoints[Math.floor(Math.random() * waypoints.length)];
+        }
+
+        function getAvailableWaypoint() {
+            var wp = null;
+            do {
+                wp = getRandomWaypoint(waypoints);    
+            } while (!wp.isAvailable());
+            return wp;
+        }
+
+        function initCrimild(canvasId) {
+            require(["crimild"], function(crimild) {
+                var showMainMenu = function() {
+                    $('#loading').hide();
+                    $('#mainMenu').show();
+
+                    $('a.start-game').click(function() {
+                        $('#mainMenu').hide();
+                        $('#game').show();
+
+                        startGame();
+                    });
+                }
+
+                var showGameOver = function() {
+                    $('#gameOver').show();
+                }
+
+                var showLevelCompleted = function() {
+                    $('#levelCompleted').show();
+                }
+
+                var assetManager = crimild.utils.assetManager();
+                assetManager.queueImage("assets/texture.png");
+                assetManager.queueFile("assets/world.txt");
+                assetManager.loadAll(function() {
+                    showMainMenu();
+                });
+
+                var startGame = function() {
+                    var canvas = document.getElementById(canvasId);
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+
+                    var mapSizeX = settings.MAP_SIZE_X;
+                    var mapSizeY = settings.MAP_SIZE_Z;
+                    generateLevel(assetManager.getFile("assets/world.txt"), mapSizeX, mapSizeY);
+
+                    var megaTexture = crimild.rendering.texture({
+                        image: assetManager.getImage("assets/texture.png")
+                    })
+
+                    var corruptionLevel = 0.0;
+                    var riskLevel = playerRiskLevel.SAFE;
+
+                    var createActorBehavior = function(type, waypoint) {
+                        var cmp = crimild.core.nodeComponent({
+                            name: "behavior",
+                        });
+
+                        cmp.actor = createActor(type, waypoint);
+
+                        cmp.onAttach = function() {
+                            cmp.node.local.translate = [cmp.actor.waypoint.position[0], 0.0, cmp.actor.waypoint.position[1]]
+                        };
+
+                        cmp.updateTransform = function(endTransformation) {
+                            cmp.node.attachComponent(crimild.components.lerpTransformComponent({
+                                name: "interpolateBehavior",
+                                start: cmp.node.local,
+                                end: endTransformation,
+                                speed: cmp.actor.speed,
+                                callback: function() {
+                                    if (cmp.actor.status == actorStatus.MOVING) {
+                                        cmp.actor.status = actorStatus.IDLE;
+                                    }
+                                    else if (cmp.actor.status == actorStatus.ZOMBIE) {
+                                        cmp.actor.status = actorStatus.DYING;
+                                    }
+                                }
+                            }));
+                            cmp.actor.status = actorStatus.MOVING;
+                        };
+
+                        cmp.getWaypointAtFront = function() {
+                            if (cmp.actor.orientation === actorOrientation.NORTH) {
+                                return cmp.actor.waypoint.northNeighbor;
+                            }
+                            else if (cmp.actor.orientation === actorOrientation.SOUTH) {
+                                return cmp.actor.waypoint.southNeighbor;
+                            }
+                            else if (cmp.actor.orientation === actorOrientation.EAST) {
+                                return cmp.actor.waypoint.eastNeighbor;
+                            }
+                            else if (cmp.actor.orientation === actorOrientation.WEST) {
+                                return cmp.actor.waypoint.westNeighbor;
+                            }
+
+                            return null;
+                        };
+
+                        cmp.moveForward = function() {
+                            var targetWaypoint = cmp.getWaypointAtFront();
+                            var endTransformation = crimild.math.transformation();
+                            endTransformation.set(cmp.node.local);
+
+                            if (targetWaypoint && targetWaypoint.isAvailable()) {
+                                endTransformation.translate = [targetWaypoint.position[0], 0, targetWaypoint.position[1]];
+                                cmp.actor.setWaypoint(targetWaypoint);
+                                cmp.updateTransform(endTransformation);
+                                return true;
+                            }
+
+                            return false;
+                        };
+
+                        cmp.moveBackward = function() {
+                            var targetWaypoint = null;
+                            var endTransformation = crimild.math.transformation();
+                            endTransformation.set(cmp.node.local);
+
+                            if (cmp.actor.orientation === actorOrientation.NORTH) {
+                                targetWaypoint = cmp.actor.waypoint.southNeighbor;
+                            }
+                            else if (cmp.actor.orientation === actorOrientation.SOUTH) {
+                                targetWaypoint = cmp.actor.waypoint.northNeighbor;
+                            }
+                            else if (cmp.actor.orientation === actorOrientation.EAST) {
+                                targetWaypoint = cmp.actor.waypoint.westNeighbor;
+                            }
+                            else if (cmp.actor.orientation === actorOrientation.WEST) {
+                                targetWaypoint = cmp.actor.waypoint.eastNeighbor;
+                            }
+
+                            if (targetWaypoint && targetWaypoint.isAvailable()) {
+                                endTransformation.translate = [targetWaypoint.position[0], 0, targetWaypoint.position[1]];
+                                cmp.actor.setWaypoint(targetWaypoint);
+                                cmp.updateTransform(endTransformation);
+                                return true;
+                            }
+
+                            return false;
+                        };
+
+                        cmp.moveLeft = function() {
+                            var targetWaypoint = null;
+                            var endTransformation = crimild.math.transformation();
+                            endTransformation.set(cmp.node.local);
+
+                            if (cmp.actor.orientation === actorOrientation.NORTH) {
+                                targetWaypoint = cmp.actor.waypoint.westNeighbor;
+                            }
+                            else if (cmp.actor.orientation === actorOrientation.SOUTH) {
+                                targetWaypoint = cmp.actor.waypoint.eastNeighbor;
+                            }
+                            else if (cmp.actor.orientation === actorOrientation.EAST) {
+                                targetWaypoint = cmp.actor.waypoint.northNeighbor;
+                            }
+                            else if (cmp.actor.orientation === actorOrientation.WEST) {
+                                targetWaypoint = cmp.actor.waypoint.southNeighbor;
+                            }
+
+                            if (targetWaypoint && targetWaypoint.isAvailable()) {
+                                endTransformation.translate = [targetWaypoint.position[0], 0, targetWaypoint.position[1]];
+                                cmp.actor.setWaypoint(targetWaypoint);
+                                cmp.updateTransform(endTransformation);
+                                return true;
+                            }
+
+                            return false;
+                        };
+
+                        cmp.moveRight = function() {
+                            var targetWaypoint = null;
+                            var endTransformation = crimild.math.transformation();
+                            endTransformation.set(cmp.node.local);
+
+                            if (cmp.actor.orientation === actorOrientation.NORTH) {
+                                targetWaypoint = cmp.actor.waypoint.eastNeighbor;
+                            }
+                            else if (cmp.actor.orientation === actorOrientation.SOUTH) {
+                                targetWaypoint = cmp.actor.waypoint.westNeighbor;
+                            }
+                            else if (cmp.actor.orientation === actorOrientation.EAST) {
+                                targetWaypoint = cmp.actor.waypoint.southNeighbor;
+                            }
+                            else if (cmp.actor.orientation === actorOrientation.WEST) {
+                                targetWaypoint = cmp.actor.waypoint.northNeighbor;
+                            }
+
+                            if (targetWaypoint && targetWaypoint.isAvailable()) {
+                                endTransformation.translate = [targetWaypoint.position[0], 0, targetWaypoint.position[1]];
+                                cmp.actor.setWaypoint(targetWaypoint);
+                                cmp.updateTransform(endTransformation);
+                                return true;
+                            }
+
+                            return false;
+                        };
+
+                        cmp.turnLeft = function() {
+                            var endTransformation = crimild.math.transformation();
+                            endTransformation.set(cmp.node.local);
+
+                            var qTemp = quat4.create();
+                            quat4.fromAngleAxis(Math.PI / 2, [0, 1, 0], qTemp);
+                            quat4.multiply(cmp.node.local.rotate, qTemp, endTransformation.rotate);
+                            cmp.actor.orientation = (cmp.actor.orientation + 3) % 4;
+                            cmp.updateTransform(endTransformation);
+                        };
+
+                        cmp.turnRight = function() {
+                            var endTransformation = crimild.math.transformation();
+                            endTransformation.set(cmp.node.local);
+
+                            var qTemp = quat4.create();
+                            quat4.fromAngleAxis(-Math.PI / 2, [0, 1, 0], qTemp);
+                            quat4.multiply(cmp.node.local.rotate, qTemp, endTransformation.rotate);
+                            cmp.actor.orientation = (cmp.actor.orientation + 1) % 4;
+                            cmp.updateTransform(endTransformation);
+                        };
+
+                        cmp.update = function() {
+                            cmp.node.perform(crimild.core.worldStateUpdate());
+                        };
+
+                        return cmp;
+                    };
+
+                    var createProgram = function() {
+                        return crimild.core.geometryNode({
+                            primitives: [
+                                crimild.primitives.cubePrimitive({
+                                    scale: [0.15, 0.15, 0.15],
+                                    textureOffset: [0.0, 0.5],
+                                    textureScale: [0.25, 0.25],
+                                })
+                            ],
+                            components: [
+                                crimild.rendering.renderComponent({
+                                    effects: [
+                                        crimild.rendering.effect({
+                                            textures: [
+                                                megaTexture,
+                                            ],
+                                        }),
+                                    ],
+                                }),
+                                (function() {
+                                    var cmp = createActorBehavior(actorType.PROGRAM, getAvailableWaypoint());
+
+                                    cmp.update = function() {
+                                        if (cmp.actor.status == actorStatus.DEAD) {
+                                            cmp.actor.setWaypoint(null);
+                                            cmp.node.getParent().detachNode(cmp.node);
+                                            cmp.node.cleanup();
+                                            return;
+                                        }
+
+                                        if (cmp.actor.status == actorStatus.IDLE) {
+                                            var choice = Math.random();
+                                            if (choice > 0.75) {
+                                                if (!cmp.moveForward()) {
+                                                    if (choice > 0.5) {
+                                                        cmp.turnLeft();
+                                                    }
+                                                    else {
+                                                        cmp.turnRight();
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        cmp.node.perform(crimild.core.worldStateUpdate());
+                                    };
+
+                                    return cmp;
+                                })(),
+                            ],
+                        });
+                    };
+
+                    var createAntivirus = function() {
+                        return crimild.core.geometryNode({
+                            primitives: [
+                                crimild.primitives.cubePrimitive({
+                                    scale: [0.25, 0.25, 0.25],
+                                    textureOffset: [0.5, 0.5],
+                                    textureScale: [0.25, 0.25],
+                                })
+                            ],
+                            components: [
+                                crimild.rendering.renderComponent({
+                                    effects: [
+                                        crimild.rendering.effect({
+                                            textures: [
+                                                megaTexture,
+                                            ],
+                                        }),
+                                    ],
+                                }),
+                                (function() {
+                                    var cmp = createActorBehavior(actorType.ANTIVIRUS, getAvailableWaypoint());
+
+                                    cmp.update = function() {
+                                        if (cmp.actor.status == actorStatus.DEAD) {
+                                            return;
+                                        }
+
+                                        if (cmp.actor.status == actorStatus.IDLE) {
+                                            if (!cmp.moveForward()) {
+                                                var choice = Math.random();
+                                                if (choice > 0.5) {
+                                                    cmp.turnLeft();
+                                                }
+                                                else {
+                                                    cmp.turnRight();
+                                                }
+                                            }
+                                        }
+
+                                        var front = cmp.getWaypointAtFront();
+                                        if (front && front.actor && front.actor.type == actorType.PLAYER) {
+                                            front.actor.kill(cmp.actor);
+                                            cmp.actor.status = actorStatus.DEAD;
+                                        }
+
+                                        if (playerActor && riskLevel != playerRiskLevel.FOUND) {
+                                            var playerFound = false;
+
+                                            if (playerActor.position[0] == cmp.actor.position[0]) {
+                                                if (playerActor.position[1] < cmp.actor.position[1]) {
+                                                    var tempWp = cmp.actor.waypoint.northNeighbor;
+                                                    while (tempWp && !playerFound) {
+                                                        if (tempWp.actor && tempWp.actor.type == actorType.PLAYER) {
+                                                            playerFound = true;
+                                                        }
+
+                                                        tempWp = tempWp.northNeighbor;
+                                                    }
+                                                }
+                                                else if (playerActor.position[1] > cmp.actor.position[1]) {
+                                                    var tmpWp = cmp.actor.waypoint.southNeighbor;
+                                                    while (tmpWp && !playerFound) {
+                                                        if (tmpWp.actor && tmpWp.actor.type == actorType.PLAYER) {
+                                                            playerFound = true;
+                                                        }
+                                                        tmpWp = tmpWp.southNeighbor;
+                                                    }
+                                                }
+                                            }
+                                            else if (playerActor.position[1] == cmp.actor.position[1]) {
+                                                if (playerActor.position[0] < cmp.actor.position[0]) {
+                                                    var tmpWp = cmp.actor.waypoint.westNeighbor;
+                                                    while (tmpWp && !playerFound) {
+                                                        if (tmpWp.actor && tmpWp.actor.type == actorType.PLAYER) {
+                                                            playerFound = true;
+                                                        }
+                                                        tmpWp = tmpWp.westNeighbor;
+                                                    }
+                                                }
+                                                else if (playerActor.position[0] > cmp.actor.position[0]) {
+                                                    var tmpWp = cmp.actor.waypoint.eastNeighbor;
+                                                    while (tmpWp && !playerFound) {
+                                                        if (tmpWp.actor && tmpWp.actor.type == actorType.PLAYER) {
+                                                            playerFound = true;
+                                                        }
+                                                        tmpWp = tmpWp.eastNeighbor;
+                                                    }
+                                                }
+                                            }
+                                            
+                                            if (playerFound) {
+                                                riskLevel = playerRiskLevel.FOUND;
+                                            }
+                                        }
+
+                                        cmp.node.perform(crimild.core.worldStateUpdate());
+                                    };
+
+                                    return cmp;
+                                })(),
+                            ],
+                        });
+                    };
+
+                    var scene = crimild.core.groupNode({
+                        name: "scene",
+                        nodes: [
+                            crimild.core.groupNode({
+                                name: "player",
+                                nodes: [
+                                    crimild.rendering.cameraNode({
+                                        aspectRatio: canvas.width / canvas.height,
+                                    }),
+                                    /*
+                                    crimild.core.node({
+                                        name: "a light",
+                                        components: [
+                                            crimild.rendering.lightingComponent({
+                                                lights: [
+                                                    crimild.rendering.light({
+                                                        diffuse: [0.75, 0.15, 0.15],
+                                                        ambient: [0.25, 0.25, 0.25],
+                                                    })
+                                                ]
+                                            }),
+                                            (function() {
+                                                var cmp = crimild.core.nodeComponent({name: "test"});
+                                                cmp.update = function() {
+                                                    $('#debug #light').html(vec3.str(cmp.node.getComponent("lighting").getLightAt(0).direction));
+                                                };
+                                                return cmp;
+                                            })(),
+                                        ],
+                                        local: crimild.math.transformation({
+                                            translate: [0.0, 10, 0.0]
+                                        })
+                                    }),*/
+                                ],
+                                components: [
+                                    (function() {
+                                        var cmp = createActorBehavior(actorType.PLAYER, getRandomWaypoint(waypoints));
+
+                                        cmp.update = function() {
+                                            if (corruptionLevel >= 0.2) {
+                                                showLevelCompleted();
+                                                return;
+                                            }
+
+                                            if (cmp.actor.status == actorStatus.DEAD) {
+                                                return;
+                                            }
+                                            else if (cmp.actor.status == actorStatus.DYING) {
+                                                if (cmp.actor.killer) {
+                                                    var endTransformation = crimild.math.transformation();
+                                                    endTransformation.set(cmp.node.local);
+
+                                                    var coeff = 0;
+
+                                                    if (cmp.actor.waypoint.northNeighbor && cmp.actor.waypoint.northNeighbor.actor == cmp.actor.killer) {
+                                                        if (cmp.actor.orientation == actorOrientation.SOUTH) {
+                                                            coeff = 2;
+                                                        }
+                                                        else if(cmp.actor.orientation == actorOrientation.WEST) {
+                                                            coeff = -1;
+                                                        }
+                                                        else if(cmp.actor.orientation == actorOrientation.EAST) {
+                                                            coeff = 1;
+                                                        }
+                                                    }
+                                                    else if (cmp.actor.waypoint.southNeighbor && cmp.actor.waypoint.southNeighbor.actor == cmp.actor.killer) {
+                                                        if (cmp.actor.orientation == actorOrientation.NORTH) {
+                                                            coeff = 2;
+                                                        }
+                                                        else if(cmp.actor.orientation == actorOrientation.WEST) {
+                                                            coeff = 1;
+                                                        }
+                                                        else if(cmp.actor.orientation == actorOrientation.EAST) {
+                                                            coeff = -1;
+                                                        }
+                                                    }
+                                                    else if (cmp.actor.waypoint.westNeighbor && cmp.actor.waypoint.westNeighbor.actor == cmp.actor.killer) {
+                                                        if (cmp.actor.orientation == actorOrientation.NORTH) {
+                                                            coeff = 1;
+                                                        }
+                                                        else if(cmp.actor.orientation == actorOrientation.SOUTH) {
+                                                            coeff = -1;
+                                                        }
+                                                        else if(cmp.actor.orientation == actorOrientation.EAST) {
+                                                            coeff = 2;
+                                                        }
+                                                    }
+                                                    else if (cmp.actor.waypoint.eastNeighbor && cmp.actor.waypoint.eastNeighbor.actor == cmp.actor.killer) {
+                                                        if (cmp.actor.orientation == actorOrientation.NORTH) {
+                                                            coeff = -1;
+                                                        }
+                                                        else if(cmp.actor.orientation == actorOrientation.WEST) {
+                                                            coeff = 2;
+                                                        }
+                                                        else if(cmp.actor.orientation == actorOrientation.SOUTH) {
+                                                            coeff = 1;
+                                                        }
+                                                    }
+
+                                                    var qTemp = quat4.create();
+                                                    quat4.fromAngleAxis(coeff * Math.PI / 2, [0, 1, 0], qTemp);
+                                                    quat4.multiply(cmp.node.local.rotate, qTemp, endTransformation.rotate);
+
+                                                    cmp.node.attachComponent(crimild.components.lerpTransformComponent({
+                                                        name: "interpolateBehavior",
+                                                        start: cmp.node.local,
+                                                        end: endTransformation,
+                                                        speed: cmp.actor.speed,
+                                                        callback: function() {
+                                                            showGameOver();
+                                                        }
+                                                    }));
+                                                }
+                                                cmp.actor.status = actorStatus.DEAD;
+                                            }
+                                            else if (cmp.actor.status == actorStatus.IDLE) {
+                                                if (crimild.simulation.simulator.input.isKeyDown(settings.KEY_WALK_FORWARD) || crimild.simulation.simulator.input.isKeyDown(settings.KEY_WALK_FORWARD_ALT)) {
+                                                    cmp.moveForward();
+                                                }
+                                                else if (crimild.simulation.simulator.input.isKeyDown(settings.KEY_WALK_BACKWARD) || crimild.simulation.simulator.input.isKeyDown(settings.KEY_WALK_BACKWARD_ALT)) {
+                                                    cmp.moveBackward();
+                                                }
+                                                else if (crimild.simulation.simulator.input.isKeyDown(settings.KEY_STRAFE_LEFT)) {
+                                                    cmp.moveLeft();
+                                                }
+                                                else if (crimild.simulation.simulator.input.isKeyDown(settings.KEY_STRAFE_RIGHT)) {
+                                                    cmp.moveRight();
+                                                }
+                                                else if (crimild.simulation.simulator.input.isKeyDown(settings.KEY_TURN_LEFT) || crimild.simulation.simulator.input.isKeyDown(settings.KEY_TURN_LEFT_ALT)) {
+                                                    cmp.turnLeft();
+                                                }
+                                                else if (crimild.simulation.simulator.input.isKeyDown(settings.KEY_TURN_RIGHT) || crimild.simulation.simulator.input.isKeyDown(settings.KEY_TURN_RIGHT_ALT)) {
+                                                    cmp.turnRight();
+                                                }
+                                                
+                                                if (crimild.simulation.simulator.input.isKeyDown(settings.KEY_ATTACK)) {
+                                                    var wp = cmp.getWaypointAtFront();
+                                                    if (wp && wp.actor) {
+                                                        if (wp.actor.type == actorType.PROGRAM) {
+                                                            wp.actor.status = actorStatus.DEAD;
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            cmp.node.perform(crimild.core.worldStateUpdate());
+
+                                            $('#debug #position').html(vec2.str(cmp.actor.position));
+                                            $('#debug #orientation').html(cmp.actor.orientation);
+                                            $('#debug #status').html(cmp.actor.status);
+                                            $('#debug #corruption').html(corruptionLevel);
+                                        };
+
+                                        return cmp;
+                                    })(),
+                                ],
+                            }),
+                            crimild.core.groupNode({
+                                name: "programs",
+                                components: [
+                                    (function() {
+                                        var cmp = crimild.core.nodeComponent();
+
+                                        cmp.onAttach = function() {
+                                            for (var i = 0; i < settings.PROGRAM_COUNT; i++) {
+                                                cmp.node.attachNode(createProgram());
+                                            }
+                                        };
+
+                                        cmp.update = function() {
+                                            corruptionLevel = 1.0 - cmp.node.getNodeCount() / settings.PROGRAM_COUNT;
+                                        };
+
+                                        return cmp;
+                                    })(),
+                                ],
+                            }),
+                            crimild.core.groupNode({
+                                name: "defenses",
+                                components: [
+                                    (function() {
+                                        var cmp = crimild.core.nodeComponent();
+
+                                        cmp.update = function() {
+                                            if (Math.floor(10 * corruptionLevel) > cmp.node.getNodeCount()) {
+                                                cmp.node.attachNode(createAntivirus());
+                                            }
+
+                                            if (cmp.node.getNodeCount() > 0) {
+                                                riskLevel = playerRiskLevel.WARNING;                                                
+                                            }
+                                            else {
+                                                riskLevel = playerRiskLevel.SAFE;                                                
+                                            }
+                                        };
+
+                                        return cmp;
+                                    })(),
+                                ],
+                            }),
+                            (function() {
+                                var vertices = [];
+                                var indices = [];
+                                var indexCount = 0;
+                                var vertexCount = 0;
+                                var wallHeight = 1.0;
+                                var drawWalls = true;
+
+                                for (var z = 0; z < mapSizeY; z++) {
+                                    for (var x = 0; x < mapSizeX; x++) {
+                                        var tile = worldMap[z * mapSizeX + x];
+                                        if (drawWalls && tile === tiles.WALL) {
+                                            // v0
+                                            vertices.push(x - 0.5); 
+                                            vertices.push(0); 
+                                            vertices.push(z - 0.5); 
+                                            vertices.push(0.5);
+                                            vertices.push(0.25);
+
+                                            // v1
+                                            vertices.push(x - 0.5); 
+                                            vertices.push(0); 
+                                            vertices.push(z + 0.5);
+                                            vertices.push(0.75);
+                                            vertices.push(0.25);
+
+                                            // v2
+                                            vertices.push(x + 0.5); 
+                                            vertices.push(0); 
+                                            vertices.push(z + 0.5);
+                                            vertices.push(0.5);
+                                            vertices.push(0.25);
+
+                                            // v3
+                                            vertices.push(x + 0.5); 
+                                            vertices.push(0); 
+                                            vertices.push(z - 0.5);
+                                            vertices.push(0.75);
+                                            vertices.push(0.25);
+
+                                            // v4
+                                            vertices.push(x - 0.5); 
+                                            vertices.push(wallHeight); 
+                                            vertices.push(z - 0.5); 
+                                            vertices.push(0.5);
+                                            vertices.push(0);
+
+                                            // v5
+                                            vertices.push(x - 0.5); 
+                                            vertices.push(wallHeight); 
+                                            vertices.push(z + 0.5);
+                                            vertices.push(0.75);
+                                            vertices.push(0);
+
+                                            // v6
+                                            vertices.push(x + 0.5); 
+                                            vertices.push(wallHeight); 
+                                            vertices.push(z + 0.5);
+                                            vertices.push(0.5);
+                                            vertices.push(0);
+
+                                            // v7
+                                            vertices.push(x + 0.5); 
+                                            vertices.push(wallHeight); 
+                                            vertices.push(z - 0.5);
+                                            vertices.push(0.75);
+                                            vertices.push(0);
+
+                                            // north wall
+                                            indices.push(vertexCount + 4);
+                                            indices.push(vertexCount + 0);
+                                            indices.push(vertexCount + 3);
+                                            indices.push(vertexCount + 4);
+                                            indices.push(vertexCount + 3);
+                                            indices.push(vertexCount + 7);
+                                            
+                                            // south wall
+                                            indices.push(vertexCount + 5);
+                                            indices.push(vertexCount + 1);
+                                            indices.push(vertexCount + 2);
+                                            indices.push(vertexCount + 5);
+                                            indices.push(vertexCount + 2);
+                                            indices.push(vertexCount + 6);
+                                            
+                                            // east wall
+                                            indices.push(vertexCount + 6);
+                                            indices.push(vertexCount + 2);
+                                            indices.push(vertexCount + 3);
+                                            indices.push(vertexCount + 6);
+                                            indices.push(vertexCount + 3);
+                                            indices.push(vertexCount + 7);
+                                            
+                                            // west wall
+                                            indices.push(vertexCount + 4);
+                                            indices.push(vertexCount + 0);
+                                            indices.push(vertexCount + 1);
+                                            indices.push(vertexCount + 4);
+                                            indices.push(vertexCount + 1);
+                                            indices.push(vertexCount + 5);
+                                            
+                                            vertexCount += 8;
+                                        }
+                                        else if (tile === tiles.FLOOR) {
+                                            // v0
+                                            vertices.push(x - 0.5); 
+                                            vertices.push(0); 
+                                            vertices.push(z - 0.5); 
+                                            vertices.push(0);
+                                            vertices.push(0);
+
+                                            // v1
+                                            vertices.push(x - 0.5); 
+                                            vertices.push(0); 
+                                            vertices.push(z + 0.5);
+                                            vertices.push(0);
+                                            vertices.push(0.25);
+
+                                            // v2
+                                            vertices.push(x + 0.5); 
+                                            vertices.push(0); 
+                                            vertices.push(z + 0.5);
+                                            vertices.push(0.25);
+                                            vertices.push(0.25);
+
+                                            // v3
+                                            vertices.push(x + 0.5); 
+                                            vertices.push(0); 
+                                            vertices.push(z - 0.5);
+                                            vertices.push(0.25);
+                                            vertices.push(0);
+
+                                            indices.push(vertexCount + 0);
+                                            indices.push(vertexCount + 1);
+                                            indices.push(vertexCount + 2);
+                                            indices.push(vertexCount + 0);
+                                            indices.push(vertexCount + 2);
+                                            indices.push(vertexCount + 3);
+                                            vertexCount += 4;
+                                        }
+                                    }
+                                }
+
+                                return crimild.core.geometryNode({
+                                    name: "world",
+                                    primitives: [
+                                        crimild.core.primitive({
+                                            type: crimild.core.primitive.types.TRIANGLES,
+                                            vertexBuffer: crimild.core.vertexBufferObject({
+                                                vertexFormat: crimild.core.vertexFormat({positions: 3, textureCoords: 2}),
+                                                data: new Float32Array(vertices),
+                                                vertexCount: vertices.length / 5,
+                                            }),
+                                            indexBuffer: crimild.core.indexBufferObject({
+                                                data: new Uint16Array(indices),
+                                                indexCount: indices.length,
+                                            })
+                                        })
+                                    ],
+                                    components: [
+                                        (function() {
+                                            var diffuse = vec3.create();
+                                            var time = 0.0;
+
+                                            var that = crimild.rendering.renderComponent({
+                                                effects: [
+                                                    crimild.rendering.effect({
+                                                        textures: [
+                                                            megaTexture
+                                                        ],
+                                                        cullState: crimild.rendering.cullState({ enabled: false })
+                                                    })
+                                                ]
+                                            });
+
+                                            that.update = function(appTime, deltaTime) {
+                                                var from = [1, 0, 0];
+                                                var to = [0, 1, 0];
+
+                                                if (playerActor.status == actorStatus.DEAD) {
+                                                    from = [0.1, 0.1, 0.1];
+                                                    to = [0.5, 0.5, 0.5];
+                                                }
+                                                else if (riskLevel == playerRiskLevel.SAFE) {
+                                                    from = [0.0, 0.0, 1.0];
+                                                    to = [0.5, 0.5, 1.0];
+                                                }
+                                                else if (riskLevel == playerRiskLevel.WARNING) {
+                                                    from = [0.5, 0.5, 0.0];
+                                                    to = [1.0, 1.0, 0.0];
+                                                }
+                                                else if (riskLevel == playerRiskLevel.FOUND) {
+                                                    from = [0.75, 0.0, 0.0];
+                                                    to = [1.0, 0.25, 0.25];
+                                                }
+
+                                                time += (2 * deltaTime) / 1000;
+                                                crimild.math.numeric.computeBezier3D([from, to], -0.5 * Math.cos(time) + 0.5, that.getEffectAt(0).diffuse);
+                                            };
+
+                                            return that;
+                                        })(),
+                                    ],
+                                    local: crimild.math.transformation({
+                                        translate: [0, -0.5, 0],
+                                    })
+                                });
+                            })(),
+                        ]
+                    });
+
+                    crimild.simulation.run({
+                        canvas: canvas, 
+                        scenes: [scene],
+                    });
+                }
+            });
+        }
+    </script>
+</head>
+
+<body onload="initCrimild('webGLCanvas');" style="background-color: black;">
+    <div id="loading">
+        <div class="hud">
+            <p>loading, please wait...</p>
+        </div>
+    </div>
+
+    <div id="mainMenu" style="display: none; position: absolute;">
+        <h1>Singleton: The Game</h1>
+        <h2>There can be only one</h2>
+        <p><a class="btn btn-primary btn-large start-game">Start &raquo;</a></p>
+        <div class="help">
+            <p>Use the cursor keys to move</p>
+            <p>Hit SPACE to kill processes</p>
+            <p>Run from the anti-viruses</p>
+        </div>
+    </div>
+
+    <div id="gameOver" style="display: none; position: absolute;">
+        <h1>Game Over</h1>
+        <h2>You have been derezzed</h2>
+        <p><a class="btn btn-primary btn-large" href="game.html">Back to Main Menu &raquo;</a></p>
+    </div>
+
+    <div id="levelCompleted" style="display: none; position: absolute;">
+        <h1>Congratulations</h1>
+        <p><a class="btn btn-primary btn-large" href="game.html">Play again &raquo;</a></p>
+    </div>
+
+    <div id="game" style="display: none;">
+        <canvas id="webGLCanvas">
+            Your browser does not support WebGL
+        </canvas>
+
+        <div class="hud">
+            <div id="debug" style="display: none;">
+                <p>Position: <span id="position"></span></p>
+                <p>Orientation: <span id="orientation"></span></p>
+                <p>Status: <span id="status"></span></p>
+                <p>Corruption: <span id="corruption"></span>%</p>
+                <p>Light: <span id="light"></span></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+</html>
