@@ -7,12 +7,53 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
+    <link rel="stylesheet" type="text/css" href="../../css/example.css">
     <link href="../../css/bootstrap.min.css" rel="stylesheet">
     <link href="../../css/bootstrap-responsive.min.css" rel="stylesheet">
 
     <script type="text/javascript" src="../../js/jquery-1.8.2.min.js"></script>
+    <script type="text/javascript" src="../../js/bootstrap.min.js"></script>
     <script data-main="../../src/crimild" src="../../lib/require.js"></script>
-    <link rel="stylesheet" type="text/css" href="../../css/example.css">
+    <style type="text/css">
+        body {
+            color: white;
+            padding: 0;
+        }
+
+        .menu {
+            position: absolute;
+            text-align: center;
+        }
+
+        #mainMenu {
+            width:390px;
+            top: 40px;
+            left: 122px;
+        }
+
+        .help {
+            text-align: left;
+            margin-top: 60px;
+        }
+
+        #gameOver {
+            top: 125px;
+            left: 215px;
+        }
+
+        .btn-game-over {
+            margin-top: 30px;
+        }
+
+        #levelCompleted {
+            top: 125px;
+            left: 180px;
+        }
+
+        .btn-level-completed {
+            margin-top: 30px;
+        }
+    </style>
     <script id="dissolve-vs" type="x-shader/x-fragment">
         attribute vec3 aVertexPosition;
         attribute vec2 aTextureCoord;
@@ -551,7 +592,7 @@
 
                                     cmp.update = function() {
                                         if (levelCompleted || corruptionLevel >= corruptionRequired) {
-                                            cmp.actor.status = actorStatus.DEAD;
+                                            cmp.actor.kill();
                                         }
 
                                         if (cmp.actor.status == actorStatus.DEAD) {
@@ -601,9 +642,9 @@
                                         cmp.getUniform("uAppTime").data = appTime / 1000.0;
 
                                         if (cmp.node.getComponent("behavior").actor.status == actorStatus.DYING) {
-                                            if (time < 1.0) {
-                                                time += deltaTime / 1000.0;
+                                            if (time <= 1.0) {
                                                 cmp.getUniform("uTime").data = time;
+                                                time += deltaTime / 1000.0;
                                             }
                                             else {
                                                 cmp.node.getComponent("behavior").actor.status = actorStatus.DEAD;
@@ -1196,6 +1237,30 @@
                                     (function() {
                                         var cmp = createActorBehavior(actorType.PLAYER, getRandomWaypoint(waypoints));
 
+                                        var superOnAttach = cmp.onAttach;
+                                        cmp.onAttach = function() {
+                                            superOnAttach();
+
+                                            if (!cmp.actor.waypoint.northNeighbor) {
+                                                var factor = 0;
+                                                if (cmp.actor.waypoint.southNeighbor) {
+                                                    factor = 2;
+                                                    cmp.actor.orientation = actorOrientation.SOUTH;
+                                                }
+                                                else if (cmp.actor.waypoint.westNeighbor) {
+                                                    factor = 1;
+                                                    cmp.actor.orientation = actorOrientation.WEST;
+                                                }
+                                                else if (cmp.actor.waypoint.eastNeighbor) {
+                                                    factor = -1;
+                                                    cmp.actor.orientation = actorOrientation.EAST;
+                                                }
+
+                                                cmp.node.local.rotate = quat4.fromAngleAxis(factor * Math.PI / 2, [0, 1, 0]);
+                                                cmp.node.perform(crimild.core.worldStateUpdate());
+                                            }
+                                        };
+
                                         cmp.update = function() {
                                             if (cmp.actor.status == actorStatus.DEAD) {
                                                 showGameOver();
@@ -1415,7 +1480,8 @@
                     crimild.simulation.run({
                         canvas: canvas, 
                         scenes: [scene],
-                    });
+                        grabInput: true,
+                    }).getRenderer().setClearColor(0, 0, 0, 1);
                 }
             });
         }
@@ -1429,31 +1495,44 @@
         </div>
     </div>
 
-    <div id="mainMenu" style="display: none; position: absolute;">
-        <h1>Choose difficulty level</h1>
-        <p>
-            <a class="btn btn-primary btn-large start-game-easy">Easy &raquo;</a>
-            <a class="btn btn-primary btn-large start-game-normal">Normal &raquo;</a>
-            <a class="btn btn-primary btn-large start-game-hard">Hard &raquo;</a>
-            <a class="btn btn-primary btn-large start-game-hardcore">Hardcore &raquo;</a>
-        </p>
-        <div class="help">
-            <h1>How to play</h1>
-            <p>Use the cursor keys to move</p>
-            <p>Hit SPACE to kill processes</p>
-            <p>Run from the antiviruses</p>
+    <div id="mainMenu" class="menu" style="display: none;">
+        <div>
+            <h2>Choose difficulty level</h2>
+            <p>
+                Difficulty affects the number of programs you need to corrupt in order to expose
+                the Kernel, as well as the number of hostile processes dispatched to protect the system
+            </p>
+            <p style="padding-top: 10px;">
+                <a class="btn btn-inverse btn-large start-game-easy">Easy &raquo;</a>
+                <a class="btn btn-inverse btn-large start-game-normal">Normal &raquo;</a>
+                <a class="btn btn-inverse btn-large start-game-hard">Hard &raquo;</a>
+                <a class="btn btn-inverse btn-large start-game-hardcore">Hardcore &raquo;</a>
+            </p>
+            <div class="help">
+                <h2>Tips:</h2>
+                <ul>
+                    <li>Use cursor keys (or WASD) to move</li>
+                    <li>Hit SPACE to consume a program o corrupt the Kernel</li>
+                    <li>If you see an agent... RUN!</li>
+                </ul>
+            </div>
         </div>
     </div>
 
-    <div id="gameOver" style="display: none; position: absolute;">
-        <h1>Game Over</h1>
-        <h2>You have been derezzed</h2>
-        <p><a class="btn btn-primary btn-large" href="game.html">Back to Main Menu &raquo;</a></p>
+    <div id="gameOver" class="menu" style="display: none;">
+        <div>
+            <h1>Game Over</h1>
+            <p>You have been terminated</p>
+            <p><a class="btn btn-inverse btn-large btn-game-over" href="game.html">Main Menu &raquo;</a></p>
+        </div>
     </div>
 
-    <div id="levelCompleted" style="display: none; position: absolute;">
-        <h1>Congratulations</h1>
-        <p><a class="btn btn-primary btn-large" href="game.html">Play again &raquo;</a></p>
+    <div id="levelCompleted" class="menu" style="display: none;">
+        <div>
+            <h1>Congratulations</h1>
+            <p>You have corrupted this system</p>
+            <p><a class="btn btn-inverse btn-large btn-level-completed" href="game.html">Main Menu &raquo;</a></p>
+        </div>
     </div>
 
     <div id="game" style="display: none;">
@@ -1473,4 +1552,4 @@
     </div>
 </body>
 </html>
-</html>
+
