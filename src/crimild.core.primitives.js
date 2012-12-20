@@ -444,7 +444,7 @@ define(["crimild.core"], function(core) {
 		var that = core.primitive(spec);
 
 		var scale = spec.scale || vec3.create([1, 1, 1]);
-		var textureOffset = spec.textureOffset || vec2.create[1, 1];
+		var textureOffset = spec.textureOffset || vec2.create([1, 1]);
 		var textureScale = spec.textureScale || vec2.create([1, 1]);
 
 		that.generate = function() {

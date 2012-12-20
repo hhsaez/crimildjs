@@ -165,7 +165,7 @@ define(["crimild.core", "crimild.rendering"], function(core, rendering) {
 
 				var vertexCount = vertices.length / vertexFormat.getVertexSize();
 
-				that.addNode(core.geometryNode({
+				that.attachNode(core.geometryNode({
 					name: group.name || "unknown",
 					primitives: [
 						core.primitive({
