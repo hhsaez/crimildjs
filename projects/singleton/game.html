@@ -47,7 +47,7 @@
 
         #levelCompleted {
             top: 125px;
-            left: 180px;
+            left: 130px;
         }
 
         .btn-level-completed {
@@ -111,12 +111,37 @@
         var worldMap = [];
         var waypoints = [];
 
+        function querystring(key) {
+            var re=new RegExp('(?:\\?|&)'+key+'=(.*?)(?=&|$)','gi');
+            var r=[], m;
+            while ((m=re.exec(document.location.search)) != null) r.push(m[1]);
+            return r;
+        }
+
+        var level = (function() {
+            var keys = querystring("level");
+            if (keys && keys.length > 0) {
+                return parseInt(keys[0]);
+            }
+
+            return 0;
+        })();
+
+        var baseCorrumption = (function() {
+            var keys = querystring("corruption");
+            if (keys && keys.length > 0) {
+                return parseFloat(keys[0]);
+            }
+
+            return 0.5;
+        })();
+
         var settings = {
             MAP_SIZE_X: 19,
             MAP_SIZE_Z: 21,
             PROGRAM_COUNT: 30,
             ANTIVIRUS_COUNT: 15,
-            CORRUPTION_REQUIRED: 0.5,
+            CORRUPTION_REQUIRED: baseCorrumption,
             KEY_WALK_FORWARD: "W".charCodeAt(0),
             KEY_WALK_FORWARD_ALT: 38,
             KEY_WALK_BACKWARD: "S".charCodeAt(0),
@@ -323,13 +348,24 @@
                     $('#mainMenu').hide();
                     $('#gameOver').hide();
                     $('#levelCompleted').show();
+
+                    $('a.btn-next-level').click(function() {
+                        window.location = "game.html?level=" + (level + 1) + "&corruption=" + settings.CORRUPTION_REQUIRED;
+                    });
                 }
 
                 var assetManager = crimild.utils.assetManager();
                 assetManager.queueImage("assets/texture.png");
                 assetManager.queueFile("assets/world.txt");
                 assetManager.loadAll(function() {
-                    showMainMenu();
+                    if (level > 0) {
+                        startGame();
+                    }
+                    else {
+                        showMainMenu();
+                    }
+
+                    $('#level').html(level + 1);
                 });
 
                 var startGame = function() {
@@ -352,7 +388,7 @@
                     })
 
                     var corruptionLevel = 0.0;
-                    var corruptionRequired = settings.CORRUPTION_REQUIRED;
+                    var corruptionRequired = Math.min(1.0, settings.CORRUPTION_REQUIRED + (level * 0.01));
                     var riskLevel = playerRiskLevel.SAFE;
                     var levelCompleted = false;
 
@@ -1394,6 +1430,7 @@
                                             $('#debug #orientation').html(cmp.actor.orientation);
                                             $('#debug #status').html(cmp.actor.status);
                                             $('#debug #corruption').html(Math.floor(corruptionLevel * 100));
+                                            $('#debug #corruptionRequired').html(Math.floor(corruptionRequired * 100));
                                         };
 
                                         return cmp;
@@ -1529,9 +1566,12 @@
 
     <div id="levelCompleted" class="menu" style="display: none;">
         <div>
-            <h1>Congratulations</h1>
-            <p>You have corrupted this system</p>
-            <p><a class="btn btn-inverse btn-large btn-level-completed" href="game.html">Main Menu &raquo;</a></p>
+            <h1>Mission accomplished!</h1>
+            <p>You have corrupted the system.</p>
+            <p>
+                <a class="btn btn-inverse btn-large btn-next-level">Next &raquo;</a>
+                <a class="btn btn-inverse btn-large btn-main-menu" href="game.html">Main Menu &raquo;</a>
+            </p>
         </div>
     </div>
 
@@ -1541,11 +1581,13 @@
         </canvas>
 
         <div class="hud">
+            <p>Level: <span id="level"></span></p>
             <div id="debug" style="position: absolute; top: 200px; left: 10px; width: 400px; display: none;">
                 <p>Position: <span id="position"></span></p>
                 <p>Orientation: <span id="orientation"></span></p>
                 <p>Status: <span id="status"></span></p>
                 <p>Corruption: <span id="corruption"></span>%</p>
+                <p>Required: <span id="corruptionRequired"></span>%</p>
                 <p>Light: <span id="light"></span></p>
             </div>
         </div>
