@@ -139,6 +139,7 @@
         var settings = {
             MAP_SIZE_X: 19,
             MAP_SIZE_Z: 21,
+            MAP_SIZE_DIAGONAL: 0,
             PROGRAM_COUNT: 30,
             ANTIVIRUS_COUNT: 15,
             CORRUPTION_REQUIRED: baseCorrumption,
@@ -154,6 +155,8 @@
             KEY_STRAFE_RIGHT: 'X'.charCodeAt(0),
             KEY_ATTACK: 32,
         };
+
+        settings.MAP_SIZE_DIAGONAL = Math.sqrt(settings.MAP_SIZE_X * settings.MAP_SIZE_X + settings.MAP_SIZE_Z * settings.MAP_SIZE_Z);
 
         var tiles = {
             WALL: 0,
@@ -191,6 +194,19 @@
             SAFE: 0,
             WARNING: 1,
             FOUND: 2,
+        };
+
+        function loadAudio(src, autoplay, loop) {
+            var audioElement = document.createElement('audio');
+            audioElement.setAttribute('src', src);
+            audioElement.loop = loop;
+            audioElement.addEventListener("loadeddata", function() { 
+                if (autoplay) {
+                    audioElement.play(); 
+                }
+            });
+            audioElement.load();
+            return audioElement;
         };
 
         function createActor(type, waypoint) {
@@ -308,7 +324,7 @@
         }
 
         function initCrimild(canvasId) {
-            require(["crimild"], function(crimild) {
+            require(["crimild", "text!../projects/singleton/dissolve.vert"], function(crimild, dissolve_vs) {
                 var showMainMenu = function() {
                     $('#loading').hide();
                     $('#mainMenu').show();
@@ -603,7 +619,8 @@
                                                 crimild.rendering.effect({
                                                     shaderProgram: crimild.rendering.shaderProgram({
                                                         vertexShader: crimild.rendering.shader({
-                                                            scriptId: "dissolve-vs"
+                                                            //scriptId: "dissolve-vs"
+                                                            content: dissolve_vs
                                                         }),
                                                         fragmentShader: crimild.rendering.shader({
                                                             scriptId: "dissolve-fs"
@@ -737,7 +754,11 @@
                                 (function() {
                                     var cmp = createActorBehavior(actorType.ANTIVIRUS, getAvailableWaypoint());
 
+                                    var audioElement = loadAudio("assets/agent.wav", true, true);
+
                                     cmp.update = function() {
+                                        audioElement.volume = 0;
+
                                         if (levelCompleted) {
                                             cmp.actor.status = actorStatus.DEAD;
                                         }
@@ -768,6 +789,12 @@
                                         var front = cmp.getWaypointAtFront();
                                         if (front && front.actor && front.actor.type == actorType.PLAYER) {
                                             front.actor.kill(cmp.actor);
+                                        }
+
+                                        if (playerActor) {
+                                            var d = vec2.dist(playerActor.position, cmp.actor.position);
+                                            console.log(1.0 - d / settings.MAP_SIZE_DIAGONAL);
+                                            audioElement.volume = Math.min(1.0, 1.0 - d / settings.MAP_SIZE_DIAGONAL);
                                         }
 
                                         if (playerActor && riskLevel != playerRiskLevel.FOUND) {
@@ -1273,6 +1300,8 @@
                                     (function() {
                                         var cmp = createActorBehavior(actorType.PLAYER, getRandomWaypoint(waypoints));
 
+                                        var derezzAudio = loadAudio("assets/derezz.wav", false);
+
                                         var superOnAttach = cmp.onAttach;
                                         cmp.onAttach = function() {
                                             superOnAttach();
@@ -1418,6 +1447,7 @@
                                                     var wp = cmp.getWaypointAtFront();
                                                     if (wp && wp.actor) {
                                                         if (wp.actor.type == actorType.PROGRAM) {
+                                                            derezzAudio.play();
                                                             wp.actor.kill();
                                                         }
                                                     }
