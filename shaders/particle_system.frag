@@ -1,8 +1,8 @@
 precision highp float;
 
 uniform sampler2D uSampler;
+uniform float uLifetime;
 
-varying float vLifetime;
 varying float vTime;
 
 void main(void) {
@@ -12,6 +12,6 @@ void main(void) {
     }
     else {
     	gl_FragColor = vec4(0.75, 0.75, 0.75, 1.0) * texColor;
-    	gl_FragColor.a = 0.5 * (vLifetime - vTime) / vLifetime;
+    	gl_FragColor.a = 0.5 * (uLifetime - vTime) / uLifetime;
     }
 }

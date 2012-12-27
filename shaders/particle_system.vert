@@ -5,16 +5,18 @@ attribute vec3 aTextureCoord;   // tc0 = lifeTime, tc1 = unused
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 uniform float uTime;
+uniform float uLifetime;
 uniform vec3 uGravity;
 
-varying float vLifetime;
 varying float vTime;
 
 void main(void) {
-    vLifetime = aTextureCoord[0];
-    vTime = uTime - vLifetime * floor(uTime / vLifetime);
+    float size = aTextureCoord[0];
+    float offset = aTextureCoord[1];
+    vTime = uTime + offset;
+    vTime = vTime - uLifetime * floor(vTime / uLifetime);
     vec3 position = aVertexPosition + aVertexNormal * vTime + 0.5 * vTime * vTime * uGravity;
 
     gl_Position = uPMatrix * uMVMatrix * vec4(position, 1.0);
-    gl_PointSize = (vLifetime - vTime) * 20.0;
+    gl_PointSize = (uLifetime - vTime) * size;
 }

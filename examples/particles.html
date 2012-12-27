@@ -19,12 +19,13 @@
                         name: "scene",
                         nodes: [
                             crimild.particles.particleSystem({
-                                particleCount: 10000,
-                                duration: 2,
+                                particleCount: 100,
+                                duration: 3,
                                 loop: true,
                                 gravity: [0, -9.8, 0],
                                 velocity: [0, 5, 0],
-                                loop: true,
+                                spread: [1, 0, 0],
+                                particleSize: 20.0,
                                 texture: crimild.rendering.texture({
                                     image: assetManager.getImage("assets/smoke.gif")
                                 }),

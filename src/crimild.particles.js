@@ -13,6 +13,8 @@ define(["crimild.core", "crimild.rendering",
         var _loop = spec.loop || false;
         var _gravity = spec.gravity || vec3.create([0, 0, 0]);
         var _velocity = spec.velocity || vec3.create([1, 1, 1]);
+        var _spread = spec.spread || vec3.create([1, 1, 1]);
+        var _particleSize = spec.particleSize || 20.0;
 
         var that = core.geometryNode(spec);
 
@@ -41,7 +43,7 @@ define(["crimild.core", "crimild.rendering",
                     _gravity = value;
                 }
             }
-        })
+        });
 
         for (var i = 0; i < particleCount; i++) {
             // particle origin (positions)
@@ -50,13 +52,15 @@ define(["crimild.core", "crimild.rendering",
             vertices.push((Math.random() - 0.5));
 
             // particle velocity (normals)
-            vertices.push(_velocity[0] + (2.0 * Math.random() - 1.0));
-            vertices.push(_velocity[1] + (2.0 * Math.random() - 1.0));
-            vertices.push(_velocity[2] + (2.0 * Math.random() - 1.0));
+            vertices.push(_velocity[0] + _spread[0] * (2.0 * Math.random() - 1.0));
+            vertices.push(_velocity[1] + _spread[1] * (2.0 * Math.random() - 1.0));
+            vertices.push(_velocity[2] + _spread[2] * (2.0 * Math.random() - 1.0));
 
             // misc (as texture coords)
-            vertices.push(that.duration * Math.max(0.15, Math.random()));    // lifetime
-            vertices.push(0);                               // unused
+            // first component used for particle size
+            vertices.push(Math.max(_particleSize * 0.25, _particleSize * Math.random()));
+            // second component used for particle time offset
+            vertices.push(that.duration * Math.random());
 
             // particle index
             indices.push(i);
@@ -107,6 +111,11 @@ define(["crimild.core", "crimild.rendering",
                         data: that.gravity,
                         type: rendering.shaderUniform.type.FLOAT,
                         count: 3,
+                    }),
+                    rendering.shaderUniform({
+                        name: "uLifetime",
+                        data: that.duration,
+                        type: rendering.shaderUniform.type.FLOAT,
                     }),
                 ]
             });
