@@ -315,7 +315,10 @@ define(["./crimild.core", "./crimild.rendering", "../lib/webgl-utils"], function
 		}
 		
 		if (!gl) {
-			alert("Could not initialize WebGL, sorry :(");
+			var answer = confirm("Cannot initialize WebGL context. Please make sure your browser supports WebGL and verify that you have the latest drivers for you graphics card.\n\nClick OK for more information.");
+			if (answer) {
+				window.location = "http://www.khronos.org/webgl/wiki/Getting_a_WebGL_Implementation";
+			}
 			return null;
 		}
 
