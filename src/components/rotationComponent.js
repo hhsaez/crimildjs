@@ -36,7 +36,7 @@ define(["../core/nodeComponent", "../traversal/worldStateUpdate"], function(node
 		nodeComponent.set.call(this, spec);
 
 		this._speed = spec.speed || 1.0;
-		this._axis = vec3.create(spec.axis || [0, 1, 0]);
+		this._axis = vec3.normalize(vec3.create(spec.axis || [0, 1, 0]));
 		this._t = 0;
 
 		return this;

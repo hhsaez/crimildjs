@@ -72,8 +72,6 @@ define(["../rendering/primitive", "../rendering/vertexFormat", "../rendering/ver
 
 		primitive.set.call(this, spec);
 
-		console.log(this);
-
 		return this;
 	};
 

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>CrimildJS Example: Textures</title>
+	    <script type="text/javascript" src="../lib/jquery-1.8.2.min.js"></script>
+		<script data-main="../src/crimild" src="../lib/require.js"></script>
+		<link rel="stylesheet" type="text/css" href="css/default.css" />
+		<script type="text/javascript">
+			requirejs([
+					"crimild", 
+					"text!../shaders/texture_lighting.vert", "text!../shaders/texture_lighting.frag",
+					"text!../shaders/simple.vert", "text!../shaders/simple.frag",
+					"image!./assets/crate.gif"
+				], function(
+					crimild, 
+					texture_lighting_vs, texture_lighting_fs,
+					simple_vs, simple_fs,
+					crate_image
+				) {
+
+				var canvas = $("#canvas").get(0);
+				canvas.width = window.innerWidth;
+				canvas.height = window.innerHeight;
+
+				var defineLight = function(color, major, minor, speed, rotate) {
+					return {
+						_prototype: crimild.groupNode,
+						nodes: [
+							{
+								_prototype: crimild.groupNode,
+								nodes: [
+									{
+										_prototype: crimild.geometryNode,
+										primitives: [
+											{
+												_prototype: crimild.spherePrimitive,
+												radius: 0.05
+											}
+										],
+										components: [
+											{
+												_prototype: crimild.effectComponent,
+												effects: [
+													{
+														_prototype: crimild.effect,
+														diffuse: color,
+														shaderProgram: {
+															vertexShader: simple_vs,
+															fragmentShader: simple_fs,
+														}
+													}
+												]
+											},
+										]
+									},
+									{
+										_prototype: crimild.lightNode,
+										light: {
+											color: color
+										}
+									}
+								],
+								components: [
+									{
+										_prototype: crimild.orbitComponent,
+										major: major,
+										minor: minor,
+										speed: speed,
+									},
+								]
+							}
+						],
+						local: {
+							rotate: rotate,
+						},
+					};
+				};
+
+				crimild.run({
+					scene: {
+						_prototype: crimild.groupNode,
+						nodes: [
+							defineLight([1, 0, 0, 1], -3, -3, 0.85, quat4.fromAngleAxis(0.5 * Math.PI, vec3.normalize([0, 1, 1]))),
+							defineLight([0, 1, 0, 1], -3, 3, -0.65, quat4.fromAngleAxis(-0.5 * Math.PI, vec3.normalize([0, 1, 1]))),
+							defineLight([1, 1, 0, 1], 3, -3, 0.95, quat4.fromAngleAxis(0.5 * Math.PI, [1, 0, 0])),
+							defineLight([0, 0, 1, 1], 3, 3, -0.75, quat4.fromAngleAxis(0.5 * Math.PI, [0, 1, 0])),
+							{
+								_prototype: crimild.geometryNode,
+								primitives: [
+									{
+										_prototype: crimild.boxPrimitive,
+									}
+								],
+								components: [
+									{
+										_prototype: crimild.rotationComponent,
+										axis: [1, 0, 1],
+										speed: 0.01
+									},
+									{
+										_prototype: crimild.effectComponent,
+										effects: [
+											{
+												_prototype: crimild.effect,
+												shaderProgram: {
+													vertexShader: texture_lighting_vs,
+													fragmentShader: texture_lighting_fs
+												},
+												textures: [
+													{
+														_prototype: crimild.texture,
+														image: {
+															_prototype: crimild.image,
+															data: crate_image
+														}
+													}
+												]
+											}
+										]
+									}
+								],
+							}
+						],
+						local: {
+							translate: [0, 0, -5]
+						},
+					},
+					renderer: {
+						canvas: canvas,
+						clearColor: [0, 0, 0, 1]
+					}
+				});
+			});
+		</script>
+	</head>
+	<body>
+        <canvas id="canvas">
+            Your browser does not support WebGL
+        </canvas>
+		<div>
+	        <div class="hud">
+	            <p><a href="javascript:window.parent.location = '../index.html';">crimildjs</a> textures &amp; lighting example</p>
+	        </div>
+		</div>
+	</body>
+</html>
+
