@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>CrimildJS Example: Fancy Wireframe</title>
+	    <script type="text/javascript" src="../lib/jquery-1.8.2.min.js"></script>
+		<script data-main="../src/crimild" src="../lib/require.js"></script>
+		<link rel="stylesheet" type="text/css" href="css/default.css" />
+		<script type="text/javascript">
+			requirejs([
+					"crimild", 
+					"text!../shaders/basic.vert", "text!../shaders/basic.frag",
+					"text!../shaders/simple.vert", "text!../shaders/simple.frag"
+				], function(
+					crimild,
+					basic_vs, basic_fs, 
+					simple_vs, simple_fs
+				) {
+
+				var canvas = $("#canvas").get(0);
+				canvas.width = window.innerWidth;
+				canvas.height = window.innerHeight;
+
+				crimild.run({
+					scene: {
+						_prototype: crimild.groupNode,
+						nodes: [
+							{
+								_prototype: crimild.lightNode,
+								local: {
+									translate: [1, 0, 5]
+								}
+							},
+							{
+								_prototype: crimild.geometryNode,
+								name: "treefoil knot",
+								primitives: [
+									{ 
+										_prototype: crimild.treefoilKnotPrimitive,
+										divisions: [60, 15],
+									}
+								],
+								components: [
+									{
+										_prototype: crimild.effectComponent,
+										effects: [
+											{
+												_prototype: crimild.effect,
+												shaderProgram: {
+													vertexShader: basic_vs,
+													fragmentShader: basic_fs,
+												},
+												diffuse: [1, 0.75, 0],
+											}
+										]
+									},
+								]
+							},
+							{
+								_prototype: crimild.geometryNode,
+								name: "treefoil knot wireframe",
+								primitives: [
+									{ 
+										_prototype: crimild.treefoilKnotPrimitive,
+										type: crimild.primitive.types.LINES,
+										divisions: [60, 15],
+									}
+								],
+								components: [
+									{
+										_prototype: crimild.effectComponent,
+										effects: [
+											{
+												_prototype: crimild.effect,
+												shaderProgram: {
+													vertexShader: simple_vs,
+													fragmentShader: simple_fs,
+												},
+												polygonOffsetState: crimild.objectFactory.create(crimild.polygonOffsetState).set({ enabled: true }),
+												diffuse: [1, 1, 1],
+											}
+										]
+									},
+								]
+							},
+						],
+						local: {
+							translate: [0, 0, -2]
+						},
+					},
+					renderer: {
+						canvas: canvas,
+						clearColor: [0, 0, 0, 1]
+					}
+				});
+			})
+		</script>
+	</head>
+	<body>
+        <canvas id="canvas">
+            Your browser does not support WebGL
+        </canvas>
+	</body>
+</html>
+

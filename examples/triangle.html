@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>CrimildJS Example: Triangle</title>
+		<script data-main="../src/crimild" src="../lib/require.js"></script>
+		<link rel="stylesheet" type="text/css" href="css/default.css" />
+		<script type="text/javascript">
+			requirejs(["crimild"], function(crimild) {
+				var canvas = document.getElementById("canvas");
+				canvas.width = window.innerWidth;
+				canvas.height = window.innerHeight;
+
+				crimild.run({
+					scene: {
+						_prototype: crimild.geometryNode,
+						primitives: [
+							{
+								_prototype: crimild.primitive,
+								type: crimild.primitive.types.TRIANGLES,
+								vertexBuffer: {
+									_prototype: crimild.vertexBufferObject,
+									vertexFormat: {
+										positions: 3,
+										colors: 4
+									},
+									vertexCount: 3,
+									data: [
+										-1.0, -1.0, 0.0, 1.0, 0.0, 0.0, 1.0,
+										1.0, -1.0, 0.0, 0.0, 1.0, 0.0, 1.0,
+										0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0,
+									]
+								},
+								indexBuffer: {
+									_prototype: crimild.indexBufferObject,
+									indexCount: 3,
+									data: [0, 1, 2]
+								}
+							}
+						],
+						local: {
+							translate: [0, 0, -5]
+						},
+					},
+					renderer: {
+						canvas: canvas
+					}
+				});
+			})
+		</script>
+	</head>
+	<body>
+        <canvas id="canvas">
+            Your browser does not support WebGL
+        </canvas>
+	</body>
+</html>
+

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>CrimildJS Example: Toon Shading</title>
+	    <script type="text/javascript" src="../lib/jquery-1.8.2.min.js"></script>
+		<script data-main="../src/crimild" src="../lib/require.js"></script>
+		<link rel="stylesheet" type="text/css" href="css/default.css" />
+		<script type="text/javascript">
+			requirejs([
+					"crimild", 
+					"text!../shaders/toon_shading.vert", "text!../shaders/toon_shading.frag"
+				], function(
+					crimild, 
+					toon_shading_vs, toon_shading_fs
+				) {
+
+				var canvas = $("#canvas").get(0);
+				canvas.width = window.innerWidth;
+				canvas.height = window.innerHeight;
+
+				crimild.run({
+					scene: {
+						_prototype: crimild.groupNode,
+						nodes: [
+							{
+								_prototype: crimild.lightNode,
+								local: {
+									translate: [1, 0, 5]
+								}
+							},
+							{
+								_prototype: crimild.geometryNode,
+								name: "treefoil knot",
+								primitives: [
+									{ 
+										_prototype: crimild.treefoilKnotPrimitive,
+										divisions: [60, 15],
+									}
+								],
+								components: [
+									{
+										_prototype: crimild.effectComponent,
+										effects: [
+											{
+												_prototype: crimild.effect,
+												shaderProgram: {
+													vertexShader: toon_shading_vs,
+													fragmentShader: toon_shading_fs,
+												},
+												diffuse: [0.5, 0.5, 1.0],
+											}
+										]
+									},
+									{
+										_prototype: crimild.rotationComponent,
+										axis: [0, 1, 0],
+										speed: 0.25
+									}
+								]
+							},
+						],
+						local: {
+							translate: [0, 0, -3]
+						},
+					},
+					renderer: {
+						canvas: canvas,
+						clearColor: [0, 0, 0, 1]
+					}
+				});
+			})
+		</script>
+	</head>
+	<body>
+        <canvas id="canvas">
+            Your browser does not support WebGL
+        </canvas>
+	</body>
+</html>
+

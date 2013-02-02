@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>CrimildJS Example: Lighting</title>
+	    <script type="text/javascript" src="../lib/jquery-1.8.2.min.js"></script>
+		<script data-main="../src/crimild" src="../lib/require.js"></script>
+		<link rel="stylesheet" type="text/css" href="css/default.css" />
+		<script type="text/javascript">
+			requirejs([
+					"crimild", 
+					"text!../shaders/simple.vert", "text!../shaders/simple.frag",
+					"text!../shaders/lighting.vert", "text!../shaders/lighting.frag"
+				], function(
+					crimild, 
+					simple_vs, simple_fs,
+					lighting_vs, lighting_fs
+				) {
+
+				var canvas = $("#canvas").get(0);
+				canvas.width = window.innerWidth;
+				canvas.height = window.innerHeight;
+
+				var defineLight = function(color, major, minor, speed, rotate) {
+					return {
+						_prototype: crimild.groupNode,
+						nodes: [
+							{
+								_prototype: crimild.groupNode,
+								nodes: [
+									{
+										_prototype: crimild.geometryNode,
+										primitives: [
+											{
+												_prototype: crimild.spherePrimitive,
+												radius: 0.05
+											}
+										],
+										components: [
+											{
+												_prototype: crimild.effectComponent,
+												effects: [
+													{
+														_prototype: crimild.effect,
+														diffuse: color,
+														shaderProgram: {
+															vertexShader: simple_vs,
+															fragmentShader: simple_fs,
+														}
+													}
+												]
+											},
+										]
+									},
+									{
+										_prototype: crimild.lightNode,
+										light: {
+											color: color
+										}
+									}
+								],
+								components: [
+									{
+										_prototype: crimild.orbitComponent,
+										major: major,
+										minor: minor,
+										speed: speed,
+									},
+								]
+							}
+						],
+						local: {
+							rotate: rotate,
+						},
+					};
+				};
+
+				var perPixelLightingUniform = crimild.objectFactory.create(crimild.shaderUniform, {
+                    name: "uUsePerPixelShading",
+                    data: false,
+                    type: crimild.shaderUniform.types.BOOL,
+				});
+
+				$("#lighting").click(function() {
+					perPixelLightingUniform.data = $(this).is(":checked");
+				});
+
+				crimild.run({
+					scene: {
+						_prototype: crimild.groupNode,
+						nodes: [
+							defineLight([1, 0, 0, 1], -1, 1.25, 0.85, quat4.fromAngleAxis(0.5 * Math.PI, vec3.normalize([0, 1, 1]))),
+							defineLight([0, 1, 0, 1], 1, 1.25, -0.65, quat4.fromAngleAxis(-0.5 * Math.PI, vec3.normalize([0, 1, 1]))),
+							defineLight([1, 1, 0, 1], -1.5, 1.25, 0.95, quat4.fromAngleAxis(0.5 * Math.PI, [1, 0, 0])),
+							defineLight([0, 0, 1, 1], 1.25, -1, -0.75, quat4.fromAngleAxis(0.5 * Math.PI, [0, 1, 0])),
+							{
+								_prototype: crimild.geometryNode,
+								name: "treefoil knot",
+								primitives: [
+									{ 
+										_prototype: crimild.treefoilKnotPrimitive,
+										divisions: [60, 15],
+									}
+								],
+								components: [
+									{
+										_prototype: crimild.effectComponent,
+										effects: [
+											{
+												_prototype: crimild.effect,
+												shaderProgram: {
+													vertexShader: lighting_vs,
+													fragmentShader: lighting_fs,
+												}
+											}
+										]
+									},
+									{
+										_prototype: crimild.shaderUniformComponent,
+										uniforms: [
+											perPixelLightingUniform
+										]
+									}
+								]
+							},
+						],
+						local: {
+							translate: [0, 0, -3]
+						},
+					},
+					renderer: {
+						canvas: canvas,
+						clearColor: [0, 0, 0, 1]
+					}
+				});
+			})
+		</script>
+	</head>
+	<body>
+        <canvas id="canvas">
+            Your browser does not support WebGL
+        </canvas>
+		<div>
+	        <div class="hud">
+	            <p><a href="javascript:window.parent.location = '../index.html';">crimildjs</a> lighting example</p>
+	            <p><input type="checkbox" id="lighting" /> use Per-Pixel Shading<br/></p>
+	        </div>
+		</div>
+	</body>
+</html>
+
