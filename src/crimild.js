@@ -82,6 +82,7 @@ define(function(require) {
 		orbitComponent: require("components/orbitComponent"),
 
 		// primitives
+		boxPrimitive: require("primitives/boxPrimitive"),
 		parametricPrimitive: require("primitives/parametricPrimitive"),
 		kleinBottlePrimitive: require("primitives/kleinBottlePrimitive"),
 		conePrimitive: require("primitives/conePrimitive"),

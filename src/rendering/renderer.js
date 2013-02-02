@@ -386,7 +386,7 @@ define([
 		if (aTexture.renderCache) {
     		var uniformLocation = aProgram.renderCache.customUniforms[aTexture.name];
     		if (!uniformLocation) {
-    			uniformLocation = gl.getUniformLocation(aProgram.renderCache, aTexture.name);
+    			uniformLocation = this.gl.getUniformLocation(aProgram.renderCache, aTexture.name);
     			if (uniformLocation) {
         			aProgram.renderCache.customUniforms[aTexture.name] = uniformLocation;
     			}

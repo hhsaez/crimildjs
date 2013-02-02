@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>CrimildJS Example: Textures</title>
+	    <script type="text/javascript" src="../lib/jquery-1.8.2.min.js"></script>
+		<script data-main="../src/crimild" src="../lib/require.js"></script>
+		<link rel="stylesheet" type="text/css" href="css/default.css" />
+		<script type="text/javascript">
+			requirejs([
+					"crimild", 
+					"text!../shaders/single_texture.vert", "text!../shaders/single_texture.frag",
+					"image!./assets/crate.gif"
+				], function(
+					crimild, 
+					single_texture_vs, single_texture_fs,
+					crate_image
+				) {
+
+				var canvas = $("#canvas").get(0);
+				canvas.width = window.innerWidth;
+				canvas.height = window.innerHeight;
+
+				crimild.run({
+					scene: {
+						_prototype: crimild.geometryNode,
+						primitives: [
+							{
+								_prototype: crimild.boxPrimitive,
+							}
+						],
+						local: {
+							translate: [0, 0, -5]
+						},
+						components: [
+							{
+								_prototype: crimild.rotationComponent,
+								axis: [0.5, 0, 0.5],
+								speed: 0.25
+							},
+							{
+								_prototype: crimild.effectComponent,
+								effects: [
+									{
+										_prototype: crimild.effect,
+										shaderProgram: {
+											vertexShader: single_texture_vs,
+											fragmentShader: single_texture_fs
+										},
+										textures: [
+											{
+												_prototype: crimild.texture,
+												image: {
+													_prototype: crimild.image,
+													data: crate_image
+												}
+											}
+										]
+									}
+								]
+							}
+						],
+					},
+					renderer: {
+						canvas: canvas,
+						clearColor: [0, 0, 0, 1]
+					}
+				});
+			});
+		</script>
+	</head>
+	<body>
+        <canvas id="canvas">
+            Your browser does not support WebGL
+        </canvas>
+		<div>
+	        <div class="hud">
+	            <p><a href="javascript:window.parent.location = '../index.html';">crimildjs</a> texturing example</p>
+	        </div>
+		</div>
+	</body>
+</html>
+

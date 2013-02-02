@@ -17,6 +17,7 @@ define(["./renderResource"], function(renderResource) {
 	texture.set = function(spec) {
 		spec = spec || {};
 
+		spec.name = spec.name || "uSampler";
 		renderResource.set.call(this, spec);
 
 		this._image = spec.image;
