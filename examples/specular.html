@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>CrimildJS Example: Specular Mapping</title>
+	    <script type="text/javascript" src="../lib/jquery-1.8.2.min.js"></script>
+		<script data-main="../src/crimild" src="../lib/require.js"></script>
+		<link rel="stylesheet" type="text/css" href="css/default.css" />
+		<script type="text/javascript">
+			requirejs([
+					"crimild", 
+					"image!./assets/earth.jpg",
+					"image!./assets/earth-specular.gif"
+				], function(
+					crimild, 
+					earth_image,
+					earth_specular
+				) {
+
+				var canvas = $("#canvas").get(0);
+				canvas.width = window.innerWidth;
+				canvas.height = window.innerHeight;
+
+				crimild.run({
+					scene: {
+						_prototype: crimild.groupNode,
+						nodes: [
+							{
+								_prototype: crimild.lightNode,
+							},
+							{
+								_prototype: crimild.geometryNode,
+								primitives: [
+									{
+										_prototype: crimild.spherePrimitive,
+									}
+								],
+								local: {
+									translate: [0, 0, -3]
+								},
+								components: [
+									{
+										_prototype: crimild.effectComponent,
+										effects: [
+											{
+												_prototype: crimild.effect,
+												textures: [
+													{
+														_prototype: crimild.texture,
+														image: {
+															_prototype: crimild.image,
+															data: earth_image
+														},
+														flipVertical: true
+													},
+													{
+														_prototype: crimild.texture,
+														name: "uSpecularMapSampler",
+														image: {
+															_prototype: crimild.image,
+															data: earth_specular
+														},
+														flipVertical: true
+													}
+												],
+											}
+										]
+									},
+									{
+										_prototype: crimild.trackpadComponent,
+									},
+								],
+							}
+						]
+					},
+					renderer: {
+						canvas: canvas,
+						clearColor: [0, 0, 0, 1]
+					}
+				});
+			});
+		</script>
+	</head>
+	<body>
+        <canvas id="canvas">
+            Your browser does not support WebGL
+        </canvas>
+		<div>
+	        <div class="hud">
+	            <p><a href="javascript:window.parent.location = '../index.html';">crimildjs</a> specular mapping example</p>
+	        </div>
+		</div>
+	</body>
+</html>
+

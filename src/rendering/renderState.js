@@ -21,7 +21,7 @@ define(function() {
 	renderState.set = function(spec) {
 		spec = spec || {};
 
-		this._enabled = spec.enabled || true;
+		this._enabled = spec.enabled === false ? false : true;
 
 		return this;
 	};

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>CrimildJS Example: Camera</title>
+		<script data-main="../src/crimild" src="../lib/require.js"></script>
+		<link rel="stylesheet" type="text/css" href="css/default.css" />
+		<script type="text/javascript">
+			requirejs(["crimild"], function(crimild) {
+				var canvas = document.getElementById("canvas");
+				canvas.width = window.innerWidth;
+				canvas.height = window.innerHeight;
+
+				crimild.run({
+					scene: {
+						_prototype: crimild.groupNode,
+						nodes: [
+							{
+								_prototype: crimild.cameraNode,
+								aspectRatio: (window.innerWidth / window.innerHeight),
+								local: {
+									translate: [0, 0, 7]
+								}
+							},
+							{
+								_prototype: crimild.groupNode,
+								nodes: [
+									{
+										_prototype: crimild.geometryNode,
+										name: "klein bottle",
+										type: crimild.primitive.types.LINES,
+										primitives: [
+											{ 
+												_prototype: crimild.kleinBottlePrimitive, 
+												type: crimild.primitive.types.LINES,
+												scale: -0.15 
+											}
+										],
+										local: { 
+											translate: [3, 0, 0] 
+										},
+									},
+									{
+										_prototype: crimild.geometryNode,
+										name: "cone",
+										primitives: [
+											{ 
+												_prototype: crimild.conePrimitive,
+												type: crimild.primitive.types.LINES,
+											}
+										],
+										local: { 
+											translate: [0, 0, 3] 
+										},
+									},
+									{
+										_prototype: crimild.geometryNode,
+										name: "sphere",
+										primitives: [
+											{ 
+												_prototype: crimild.spherePrimitive,
+												type: crimild.primitive.types.LINES,
+											}
+										],
+										local: { 
+											translate: [-3, 0, 0] 
+										},
+									},
+									{
+										_prototype: crimild.geometryNode,
+										name: "treefoil knot",
+										primitives: [
+											{ 
+												_prototype: crimild.treefoilKnotPrimitive,
+												type: crimild.primitive.types.LINES,
+											}
+										],
+										local: { 
+											translate: [0, 0, -3] 
+										},
+									},
+								],
+								components: [
+									{ 
+										_prototype: crimild.rotationComponent, 
+										axis: [0, 1, 0], 
+										speed: 0.125 
+									}
+								]
+							}
+						],
+					},
+					renderer: {
+						canvas: canvas
+					}
+				});
+			})
+		</script>
+	</head>
+	<body>
+        <canvas id="canvas">
+            Your browser does not support WebGL
+        </canvas>
+	</body>
+</html>
+

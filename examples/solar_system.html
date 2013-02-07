@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>CrimildJS Example: Solar System</title>
+	    <script type="text/javascript" src="../lib/jquery-1.8.2.min.js"></script>
+		<script data-main="../src/crimild" src="../lib/require.js"></script>
+		<link rel="stylesheet" type="text/css" href="css/default.css" />
+		<script type="text/javascript">
+			requirejs([
+					"crimild", 
+					"text!../../shaders/single_texture.vert",
+					"text!../../shaders/single_texture.frag",
+					"image!./assets/earth.jpg",
+					"image!./assets/sun.gif",
+					"image!./assets/moon.gif",
+					"image!./assets/mars.jpg"
+				], function(
+					crimild, 
+					texture_vs, texture_fs,
+					earth_image,
+					sun_image,
+					moon_image,
+					mars_image
+				) {
+
+				var canvas = $("#canvas").get(0);
+				canvas.width = window.innerWidth;
+				canvas.height = window.innerHeight;
+
+				crimild.run({
+					scene: {
+						_prototype: crimild.groupNode,
+						name: "Solar System",
+						nodes: [
+							{
+								_prototype: crimild.groupNode,
+								name: "Sun",
+								nodes: [
+									{
+										_prototype: crimild.lightNode
+									},
+									{
+										_prototype: crimild.geometryNode,
+										name: "Sun geometry",
+										primitives: [
+											{
+												_prototype: crimild.spherePrimitive,
+												radius: 25
+											}
+										],
+										components: [
+											{
+												_prototype: crimild.rotationComponent,
+												axis: [0, 1, 0],
+												speed: -0.0025
+											},
+											{
+												_prototype: crimild.effectComponent,
+												effects: [
+													{
+														_prototype: crimild.effect,
+														shaderProgram: {
+															vertexShader: texture_vs,
+															fragmentShader: texture_fs,
+														},
+														textures: [
+															{
+																_prototype: crimild.texture,
+																image: {
+																	_prototype: crimild.image,
+																	data: sun_image
+																}
+															}
+														]
+													}
+												]
+											}
+										]
+									},
+									{
+										_prototype: crimild.groupNode,
+										name: "Planets",
+										nodes: [
+											{
+												_prototype: crimild.geometryNode,
+												name: "Mercury",
+												primitives: [
+													{
+														_prototype: crimild.spherePrimitive,
+														radius: 1
+													}
+												],
+												components: [
+													{
+														_prototype: crimild.effectComponent,
+														effects: [
+															{
+																_prototype: crimild.effect,
+																diffuse: [0.5, 0.5, 0.75]
+															}
+														]
+													},
+													{
+														_prototype: crimild.orbitComponent,
+														major: 40,
+														minor: 40,
+														speed: 0.1
+													}
+												],
+											},
+											{
+												_prototype: crimild.geometryNode,
+												name: "Venus",
+												primitives: [
+													{
+														_prototype: crimild.spherePrimitive,
+														radius: 1.5
+													}
+												],
+												components: [
+													{
+														_prototype: crimild.effectComponent,
+														effects: [
+															{
+																_prototype: crimild.effect,
+																diffuse: [1.0, 0.5, 0.5]
+															}
+														]
+													},
+													{
+														_prototype: crimild.orbitComponent,
+														major: -60,
+														minor: 60,
+														speed: -0.05
+													}
+												],
+											},
+											{
+												_prototype: crimild.groupNode,
+												name: "Earth",
+												nodes: [
+													{
+														_prototype: crimild.geometryNode,
+														primitives: [
+															{
+																_prototype: crimild.spherePrimitive,
+																radius: 4,
+															},
+														],
+														components: [
+															{
+																_prototype: crimild.effectComponent,
+																effects: [
+																	{
+																		_prototype: crimild.effect,
+																		textures: [
+																			{
+																				_prototype: crimild.texture,
+																				image: {
+																					_prototype: crimild.image,
+																					data: earth_image
+																				},
+																				flipVertical: true
+																			}
+																		]
+																	}
+																]
+															},
+														],
+													},
+													{
+														_prototype: crimild.geometryNode,
+														name: "Moon",
+														primitives: [
+															{
+																_prototype: crimild.spherePrimitive,
+																radius: 1,
+															},
+														],
+														components: [
+															{
+																_prototype: crimild.effectComponent,
+																effects: [
+																	{
+																		_prototype: crimild.effect,
+																		textures: [
+																			{
+																				_prototype: crimild.texture,
+																				image: {
+																					_prototype: crimild.image,
+																					data: moon_image
+																				},
+																				flipVertical: true
+																			}
+																		]
+																	}
+																]
+															},
+															{
+																_prototype: crimild.orbitComponent,
+																major: 10,
+																minor: 10,
+																speed: 0.7
+															}
+														],
+													},
+												],
+												components: [
+													{
+														_prototype: crimild.orbitComponent,
+														major: 100,
+														minor: 100,
+														speed: 0.025
+													}
+												]
+											},
+											{
+												_prototype: crimild.groupNode,
+												name: "Mars",
+												nodes: [
+													{
+														_prototype: crimild.geometryNode,
+														primitives: [
+															{
+																_prototype: crimild.spherePrimitive,
+																radius: 2,
+															},
+														],
+														components: [
+															{
+																_prototype: crimild.effectComponent,
+																effects: [
+																	{
+																		_prototype: crimild.effect,
+																		textures: [
+																			{
+																				_prototype: crimild.texture,
+																				image: {
+																					_prototype: crimild.image,
+																					data: mars_image
+																				},
+																				flipVertical: true
+																			}
+																		]
+																	}
+																]
+															},
+														],
+													},
+													{
+														_prototype: crimild.geometryNode,
+														name: "Phobox",
+														primitives: [
+															{
+																_prototype: crimild.spherePrimitive,
+																radius: 0.5,
+															},
+														],
+														components: [
+															{
+																_prototype: crimild.effectComponent,
+																effects: [
+																	{
+																		_prototype: crimild.effect,
+																	}
+																]
+															},
+															{
+																_prototype: crimild.orbitComponent,
+																major: 7,
+																minor: 7,
+																speed: 0.5
+															}
+														],
+													},
+													{
+														_prototype: crimild.geometryNode,
+														name: "Deimos",
+														primitives: [
+															{
+																_prototype: crimild.spherePrimitive,
+																radius: 0.5,
+															},
+														],
+														components: [
+															{
+																_prototype: crimild.effectComponent,
+																effects: [
+																	{
+																		_prototype: crimild.effect,
+																	}
+																]
+															},
+															{
+																_prototype: crimild.orbitComponent,
+																major: 5,
+																minor: 5,
+																speed: 0.7
+															}
+														],
+													},
+												],
+												components: [
+													{
+														_prototype: crimild.orbitComponent,
+														major: -140,
+														minor: 140,
+														speed: -0.01
+													}
+												]
+											},
+										],
+									}
+								]
+							}
+						],
+						local: {
+							translate: [0, 0, -250],
+							rotate: quat4.fromAngleAxis(-0.35 * Math.PI, [1, 0, 0]),
+						},
+					},
+					renderer: {
+						canvas: canvas,
+						clearColor: [0, 0, 0, 1]
+					}
+				});
+			});
+		</script>
+	</head>
+	<body>
+        <canvas id="canvas">
+            Your browser does not support WebGL
+        </canvas>
+		<div>
+	        <div class="hud">
+	            <p><a href="javascript:window.parent.location = '../index.html';">crimildjs</a> solar system example</p>
+	        </div>
+		</div>
+	</body>
+</html>
+

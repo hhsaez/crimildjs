@@ -73,7 +73,11 @@ define(["../rendering/primitive", "../rendering/vertexFormat", "../rendering/ver
 		spec = spec || {};
 
 		spec.radius = spec.radius || 1.0;
-		spec.vertexFormat = Object.create(vertexFormat).set(spec.vertexFormat);
+		spec.vertexFormat = Object.create(vertexFormat).set(spec.vertexFormat || {
+			positions: 3,
+			normals: 3,
+			textureCoords: 2
+		});
 		spec.divisions = vec2.create(spec.divisions || [20, 20]);
 		spec.textureOffset = vec2.create(spec.textureOffset || [0, 0]);
 		spec.textureScale = vec2.create(spec.textureScale || [1, 1]);

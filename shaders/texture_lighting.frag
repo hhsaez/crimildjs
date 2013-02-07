@@ -31,6 +31,8 @@ uniform Material uMaterial;
 
 uniform bool uUseTextures;
 uniform sampler2D uSampler;
+uniform bool uUseSpecularMap;
+uniform sampler2D uSpecularMapSampler;
 
 varying vec2 vTextureCoord;
 varying vec4 vPosition;
@@ -64,7 +66,16 @@ void main(void) {
             if (df > 0.0) {
                 // compute specular factor
                 vec3 r = -normalize(reflect(L, vNormal));
-                float sf = pow(max(dot(r, vViewVector), 0.0), uMaterial.Shininess);
+                float sf = 0.0;
+                if (uUseSpecularMap) {
+                    float shininess = texture2D(uSpecularMapSampler, vec2(vTextureCoord.s, vTextureCoord.t)).r * 255.0;
+                    if (shininess < 255.0) {
+                        sf = pow(max(dot(r, vViewVector), 0.0), shininess);
+                    }
+                }
+                else {
+                    sf = pow(max(dot(r, vViewVector), 0.0), uMaterial.Shininess);
+                }
 
                 // add to color
                 result.xyz += (df * uMaterial.Diffuse * baseColor.rgb + sf * uMaterial.Specular) * uLights[i].Color;

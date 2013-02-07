@@ -16,7 +16,7 @@ define(["./namedObject", "./objectFactory"], function(namedObject, objectFactory
 			for (var e in this._elements) {
 				var elem = this._elements[e];
 				if (elem) {
-					callback(elem);
+					callback(elem, parseInt(e));
 				}
 			}
 		}

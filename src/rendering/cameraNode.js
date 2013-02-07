@@ -21,10 +21,10 @@ define(["core/node", "./cameraComponent"], function(node, cameraComponent) {
 		return this;
 	};
 
-	cameraComponent.destroy = function() {
+	cameraNode.destroy = function() {
 		node.destroy.call(this);
 	};
 
-	return this;
+	return cameraNode;
 });
 

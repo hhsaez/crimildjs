@@ -21,7 +21,7 @@ define(["core/nodeComponent", "./camera"], function(nodeComponent, camera) {
 		spec.name = "camera";
 		nodeComponent.set.call(this, spec);
 
-		this._camera = Object.create(camera).set(spec.camera);
+		this._camera = Object.create(camera).set(spec);
 
 		return this;
 	};
@@ -32,6 +32,6 @@ define(["core/nodeComponent", "./camera"], function(nodeComponent, camera) {
 		nodeComponent.destroy.call(this);
 	};
 
-	return camera;
+	return cameraComponent;
 });
 

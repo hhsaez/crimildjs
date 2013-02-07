@@ -1,13 +1,7 @@
 define(["../third-party/gl-matrix"], function(glMatrix) {
 	"use strict";
 
-	var transformation = {
-		_translate: vec3.create([0, 0, 0]),
-		_rotate: quat4.fromAngleAxis(0.0, [0, 1, 0]),
-		_inverseRotate: quat4.fromAngleAxis(0.0, [0, 1, 0]),
-		_scale: 1.0,
-		_identity: true,
-	};
+	var transformation = {};
 
 	Object.defineProperties(transformation, {
 		translate: {
@@ -25,18 +19,8 @@ define(["../third-party/gl-matrix"], function(glMatrix) {
 			},
 			set: function(value) {
 				quat4.set(value, this._rotate);
-				quat4.inverse(this._rotate, this.inverseRotate);
 				this._identity = false;
 			}	
-		},
-		inverseRotate: {
-			get: function() {
-				return this._inverseRotate;
-			},
-			set: function(value) {
-				quat.set(value, this._inverseRotate);
-				this._identity = false;
-			}
 		},
 		scale: {
 			get: function() {
@@ -76,7 +60,8 @@ define(["../third-party/gl-matrix"], function(glMatrix) {
 		}
 
 		vec3.subtract(p, this.translate, dest);
-		quat4.multiplyVec3(this.inverseRotate, dest, dest);
+		this.computeInverseRotate(this._inverseRotate);
+		quat4.multiplyVec3(this._inverseRotate, dest, dest);
 		return dest;
 	};
 
@@ -94,7 +79,8 @@ define(["../third-party/gl-matrix"], function(glMatrix) {
 			dest = vec3.create();
 		}
 
-		quat4.multiplyVec3(this.inverseRotate, v, dest);
+		this.computeInverseRotate(this._inverseRotate);
+		quat4.multiplyVec3(this._inverseRotate, v, dest);
 		return dest;
 	};
 
@@ -103,9 +89,7 @@ define(["../third-party/gl-matrix"], function(glMatrix) {
 	};
 
 	transformation.applyInverseToUnitVector = function(v, dest) {
-		//return this.applyInverseToVector(v, dest);
-		//vec3.set(v, dest);
-		//return dest;
+		return applyInverseToVector(v, dest);
 	};
 
 	transformation.applyToPlane = function(p) {
@@ -114,6 +98,15 @@ define(["../third-party/gl-matrix"], function(glMatrix) {
 
 	transformation.applyInverseToPlane = function(p) {
 
+	};
+
+	transformation.computeInverseRotate = function(dest) {
+		if (!dest) {
+			dest = quat4.create();
+		}
+
+		quat4.inverse(this._rotate, dest);
+		return dest;
 	};
 
 	transformation.computeDirection = function(dest) {
@@ -130,7 +123,8 @@ define(["../third-party/gl-matrix"], function(glMatrix) {
 			dest = vec3.create();
 		}
 
-		quat4.multiplyVec3(this.inverseRotate, [0, 0, -1], dest);
+		this.computeInverseRotate(this._inverseRotate);
+		quat4.multiplyVec3(this._inverseRotate, [0, 0, -1], dest);
 		return dest;
 	};
 
@@ -148,10 +142,8 @@ define(["../third-party/gl-matrix"], function(glMatrix) {
 			dest = vec3.create();
 		}
 
-		// why not using this.inverseRotate instead?
-		var invRotate = quat4.create();
-		quat4.inverse(this._rotate, invRotate);
-		quat4.multiplyVec3(invRotate, [0, 1, 0], dest);
+		this.computeInverseRotate(this._inverseRotate);
+		quat4.multiplyVec3(this._inverseRotate, [0, 1, 0], dest);
 
 		return dest;
 	};
@@ -170,7 +162,9 @@ define(["../third-party/gl-matrix"], function(glMatrix) {
 			dest = vec3.create();
 		}
 
-		quat4.multiplyVec3(this.inverseRotate, [1, 0, 0], dest);
+		this.computeInverseRotate(this._inverseRotate);
+		quat4.multiplyVec3(this._inverseRotate, [1, 0, 0], dest);
+
 		return dest;
 	};
 
@@ -216,6 +210,7 @@ define(["../third-party/gl-matrix"], function(glMatrix) {
 
 		this._translate = vec3.create(spec.translate || [0, 0, 0]);
 		this._rotate = quat4.create(spec.rotate || quat4.fromAngleAxis(0, [0, 1, 0]));
+		this._inverseRotate = quat4.create();
 		this._scale = spec.scale || 1;
 		this._identity = spec.isIdentity ? spec.isIdentity() : false;
 

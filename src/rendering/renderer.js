@@ -5,8 +5,9 @@ define([
 		"./primitive",
 		"./effect",
 		"./shaderUniform",
-		"text!../../shaders/basic.vert",
-		"text!../../shaders/basic.frag",
+		"./shaderProgram",
+		"text!../../shaders/texture_lighting.vert",
+		"text!../../shaders/texture_lighting.frag",
 	], function(
 		objectFactory,
 		framebufferObject,
@@ -14,8 +15,9 @@ define([
 		primitive,
 		effect,
 		shaderUniform,
-		basic_vs,
-		basic_fs
+		shaderProgram,
+		texture_lighting_vs,
+		texture_lighting_fs
 	) {
 
 	"use strict";
@@ -53,6 +55,11 @@ define([
 		defaultEffect: {
 			get: function() {
 				return this._defaultEffect;
+			}
+		},
+		defaultShaderProgram: {
+			get: function() {
+				return this._defaultShaderProgram;
 			}
 		},
 		clearColor: {
@@ -103,8 +110,8 @@ define([
 	};
 
 	renderer.onCameraViewportChange = function() {
-		if (this.currentCamera) {
-			var vp = this.currentCamera.viewport;
+		if (this.camera) {
+			var vp = this.camera.viewport;
 			this.gl.viewport(vp[0] * this.framebuffer.width, vp[1] * this.framebuffer.height, vp[2] * this.framebuffer.width, vp[3] * this.framebuffer.height);
 		}
 		else {
@@ -113,8 +120,8 @@ define([
 	};
 
 	renderer.onCameraFrustumChange = function() {
-		if (this.currentCamera) {
-			this.currentCamera.computeProjectMatrix(this.pMatrix);
+		if (this.camera) {
+			this.camera.computeProjectMatrix(this.pMatrix);
 		}
 		else {
 			mat4.perspective(45, this.framebuffer.width / this.framebuffer.height, 0.1, 1000.0, this.pMatrix);
@@ -122,8 +129,8 @@ define([
 	};
 
 	renderer.onCameraFrameChange = function() {
-		if (this.currentCamera) {
-			this.currentCamera.computeViewMatrix(this.vMatrix);
+		if (this.camera) {
+			this.camera.computeViewMatrix(this.vMatrix);
 		}
 		else {
 			mat4.identity(this.vMatrix);
@@ -316,9 +323,13 @@ define([
         aProgram.renderCache.materialUniform.shininess = this.gl.getUniformLocation(aProgram.renderCache, "uMaterial.Shininess");
 
         aProgram.renderCache.useTexturesUniform = this.gl.getUniformLocation(aProgram.renderCache, "uUseTextures");
+        aProgram.renderCache.useSpecularMapUniform = this.gl.getUniformLocation(aProgram.renderCache, "uUseSpecularMap");
 
         // used for storing custom uniforms locations
         aProgram.renderCache.customUniforms = {};
+
+        // used for storing uniforms for samplers (textures)
+        aProgram.renderCache.samplerUniforms = {};
 
 		aProgram.renderCache.renderer = this;
 	};
@@ -358,20 +369,18 @@ define([
 	};
 
 	renderer.enableLights = function(aProgram, aRenderComponent) {
-		var i = 0;
 		var that = this;
 		this.setUniformBool(aProgram.renderCache.useLightingUniform, aRenderComponent.hasLights());
 		this.setUniformInt(aProgram.renderCache.lightCountUniform, aRenderComponent.getLightCount());
-		aRenderComponent.eachLight(function(aLight) {
-			that.enableLight(i, aLight, aProgram);
-			i++;
+		aRenderComponent.eachLight(function(aLight, index) {
+			that.enableLight(index, aLight, aProgram);
 		});
 	};
 
 	renderer.loadTexture = function(aTexture) {
 		aTexture.renderCache = this.gl.createTexture();
 		this.gl.bindTexture(this.gl.TEXTURE_2D, aTexture.renderCache);
-	    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, false);
+	    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, aTexture.flipVertical);
 	    this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, aTexture.image.data);
 	    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
 	    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
@@ -384,11 +393,11 @@ define([
 		}
 
 		if (aTexture.renderCache) {
-    		var uniformLocation = aProgram.renderCache.customUniforms[aTexture.name];
+    		var uniformLocation = aProgram.renderCache.samplerUniforms[aTexture.name];
     		if (!uniformLocation) {
     			uniformLocation = this.gl.getUniformLocation(aProgram.renderCache, aTexture.name);
     			if (uniformLocation) {
-        			aProgram.renderCache.customUniforms[aTexture.name] = uniformLocation;
+        			aProgram.renderCache.samplerUniforms[aTexture.name] = uniformLocation;
     			}
     		}
 
@@ -396,16 +405,19 @@ define([
 				this.gl.activeTexture(this.gl.TEXTURE0 + index);
             	this.gl.bindTexture(this.gl.TEXTURE_2D, aTexture.renderCache);
 				this.setUniformInt(uniformLocation, index);
+
+				if (aTexture.name === "uSpecularMapSampler") {
+					this.setUniformBool(aProgram.renderCache.useSpecularMapUniform, true);
+				}
 			}
 		}
 	};
 
 	renderer.enableTextures = function(aProgram, anEffect) {
-		var i = 0;
 		var that = this;
 		this.setUniformBool(aProgram.renderCache.useTexturesUniform, anEffect.textures.count() > 0);
-		anEffect.textures.each(function(aTexture) {
-			that.enableTexture(i, aTexture, aProgram);
+		anEffect.textures.each(function(aTexture, index) {
+			that.enableTexture(index, aTexture, aProgram);
 		});
 	};
 
@@ -704,11 +716,16 @@ define([
 		this.onCameraFrustumChange();
 		this.onCameraFrameChange();
 
+		this._defaultShaderProgram = Object.create(shaderProgram).set({
+			vertexShader: texture_lighting_vs,
+			fragmentShader: texture_lighting_fs
+		});
+
 		this._defaultEffect = Object.create(effect).set({
 			shaderProgram: {
-				vertexShader: basic_vs,
-				fragmentShader: basic_fs
-			},
+				vertexShader: texture_lighting_vs,
+				fragmentShader: texture_lighting_fs
+			}
 		});
 
 		this._clearColor = spec.clearColor || [0.5, 0.5, 0.5, 1.0];

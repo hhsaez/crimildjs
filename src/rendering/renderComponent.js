@@ -12,7 +12,7 @@ define(["core/nodeComponent"], function(nodeComponent) {
 			for (var e in this._effects ) {
 				var effect = this._effects[e];
 				if (effect) {
-					callback(effect);
+					callback(effect, parseInt(e));
 				}
 			}
 		}
@@ -31,7 +31,7 @@ define(["core/nodeComponent"], function(nodeComponent) {
 			for (var l in this._lights ) {
 				var light = this._lights[l];
 				if (light) {
-					callback(light);
+					callback(light, parseInt(l));
 				}
 			}
 		}

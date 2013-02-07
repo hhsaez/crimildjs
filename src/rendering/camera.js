@@ -109,16 +109,17 @@ define(["math/transformation"], function(transformation) {
 		this._target = spec.target;
 		this._renderer = null;
 
-		if (!spec.projection) {
+		if (spec.projection) {
 			this._pMatrix = mat4.create(spec.projection);
 		}
 		else {
-			this._pMatrix = mat4.perspective(
+			this._pMatrix = mat4.create();
+			mat4.perspective(
 				spec.fov || 45, 
-				spec.aspectRatio || (4.0 / 3.0), 
+				spec.aspectRatio || (16.0 / 9.0), 
 				spec.near || 0.1, 
 				spec.far || 1000.0, 
-				_pMatrix);
+				this._pMatrix);
 		}
 
 		return this;

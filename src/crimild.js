@@ -80,6 +80,7 @@ define(function(require) {
 		// components
 		rotationComponent: require("components/rotationComponent"),
 		orbitComponent: require("components/orbitComponent"),
+		trackpadComponent: require("components/trackpadComponent"),
 
 		// primitives
 		boxPrimitive: require("primitives/boxPrimitive"),
@@ -91,6 +92,7 @@ define(function(require) {
 
 		// simulation
 		simulator: require("simulation/simulator"),
+		input: require("simulation/input"),
 
 		// initialization
 		run: function(spec) {

@@ -102,7 +102,12 @@ define([
 
 		namedObject.set.call(this, spec);
 
-		this._shaderProgram = Object.create(shaderProgram).set(spec.shaderProgram);
+		if (spec.shaderProgram) {
+			this._shaderProgram = Object.create(shaderProgram).set(spec.shaderProgram);	
+		}
+		else {
+			this._shaderProgram = null;
+		}
 
 		this._ambient = vec3.create(spec.ambient || [0.2, 0.2, 0.2]);
 		this._diffuse = vec3.create(spec.diffuse || [0.8, 0.8, 0.8]);

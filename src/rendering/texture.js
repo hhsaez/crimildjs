@@ -11,6 +11,14 @@ define(["./renderResource"], function(renderResource) {
 			set: function(value) {
 				this._image = value;
 			}
+		},
+		flipVertical: {
+			get: function() {
+				return this._flipVertical;
+			},
+			set: function(value) {
+				this._flipVertical = value;
+			}
 		}
 	});
 
@@ -21,6 +29,7 @@ define(["./renderResource"], function(renderResource) {
 		renderResource.set.call(this, spec);
 
 		this._image = spec.image;
+		this._flipVertical = spec.flipVertical;
 
 		return this;
 	};

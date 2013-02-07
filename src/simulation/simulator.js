@@ -1,5 +1,19 @@
-define(["third-party/webgl-utils", "./updateTask", "./renderTask", "foundation/objectFactory", "rendering/renderer"], 
-	function(webgl, updateTask, renderTask, objectFactory, renderer) {
+define([
+		"third-party/webgl-utils", 
+		"./updateTask", 
+		"./renderTask", 
+		"./input",
+		"foundation/objectFactory", 
+		"rendering/renderer",
+	], 
+	function(
+		webgl, 
+		updateTask, 
+		renderTask, 
+		input,
+		objectFactory, 
+		renderer
+	) {
 
 	"use strict";
 
@@ -15,7 +29,12 @@ define(["third-party/webgl-utils", "./updateTask", "./renderTask", "foundation/o
 			get: function() {
 				return this._renderer;
 			}
-		}
+		},
+		input: {
+			get: function() {
+				return this._input;
+			}
+		},
 	});
 
 	simulator.startTask = function(aTask) {
@@ -52,6 +71,11 @@ define(["third-party/webgl-utils", "./updateTask", "./renderTask", "foundation/o
 		this._tasks = [];
 		this.startTask(Object.create(updateTask).set());
 		this.startTask(Object.create(renderTask).set());
+
+		this._input = input;
+		this.input.set({
+			grabInput: spec.grabInput
+		});
 
 		// start the update cycle
 		this.update();

@@ -14,7 +14,7 @@ define(["./renderState"], function(renderState) {
     	ONE_MINUS_DST_ALPHA: 0x0305,
 	};
 
-	alphaState.srcBlendFuncTypes = {
+	alphaState.dstBlendFuncTypes = {
 		ZERO: 0,
     	ONE: 1,
     	SRC_COLOR: 0x0300,
