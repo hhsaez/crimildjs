@@ -13,6 +13,7 @@ define(["./task", "rendering/visibilitySet", "traversal/computeVisibilitySet", "
 	};
 
 	renderTask.onUpdate = function() {
+		this.simulator.renderer.beginRender();
 		this.simulator.renderer.clearBuffers();
 
 		var visibleObjects = Object.create(visibilitySet).set();
@@ -32,6 +33,8 @@ define(["./task", "rendering/visibilitySet", "traversal/computeVisibilitySet", "
 			}));
 			this.simulator.renderer.renderVisibilitySet(visibleObjects);
 		}
+
+		this.simulator.renderer.endRender();
 	};
 
 	return renderTask;

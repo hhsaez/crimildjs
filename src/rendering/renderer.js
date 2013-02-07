@@ -1,23 +1,39 @@
 define([
 		"foundation/objectFactory",
+		"math/utility",
 		"./frameBufferObject",
 		"./renderResourceCatalog",
 		"./primitive",
 		"./effect",
 		"./shaderUniform",
 		"./shaderProgram",
+		"./geometryNode",
+		"./vertexBufferObject",
+		"./vertexFormat",
+		"./indexBufferObject",
+		"primitives/planePrimitive",
 		"text!../../shaders/texture_lighting.vert",
 		"text!../../shaders/texture_lighting.frag",
+		"text!../../shaders/screen.vert",
+		"text!../../shaders/screen.frag",
 	], function(
 		objectFactory,
-		framebufferObject,
+		mathUtils,
+		frameBufferObject,
 		renderResourceCatalog,
 		primitive,
 		effect,
 		shaderUniform,
 		shaderProgram,
+		geometryNode,
+		vertexBufferObject,
+		vertexFormat,
+		indexBufferObject,
+		planePrimitive,
 		texture_lighting_vs,
-		texture_lighting_fs
+		texture_lighting_fs,
+		screen_vs,
+		screen_fs
 	) {
 
 	"use strict";
@@ -35,9 +51,14 @@ define([
 				return this._gl;
 			}
 		},
-		framebuffer: {
+		defaultFrameBuffer: {
 			get: function() {
-				return this._framebuffer;
+				return this._defaultFrameBuffer;
+			}
+		},
+		screenPrimitive: {
+			get: function() {
+				return this._screenPrimitive;
 			}
 		},
 		camera: {
@@ -55,6 +76,11 @@ define([
 		defaultEffect: {
 			get: function() {
 				return this._defaultEffect;
+			}
+		},
+		defaultScreenEffect: {
+			get: function() {
+				return this._defaultScreenEffect;
 			}
 		},
 		defaultShaderProgram: {
@@ -112,10 +138,10 @@ define([
 	renderer.onCameraViewportChange = function() {
 		if (this.camera) {
 			var vp = this.camera.viewport;
-			this.gl.viewport(vp[0] * this.framebuffer.width, vp[1] * this.framebuffer.height, vp[2] * this.framebuffer.width, vp[3] * this.framebuffer.height);
+			this.gl.viewport(vp[0] * this.defaultFrameBuffer.width, vp[1] * this.defaultFrameBuffer.height, vp[2] * this.defaultFrameBuffer.width, vp[3] * this.defaultFrameBuffer.height);
 		}
 		else {
-			this.gl.viewport(0, 0, this.framebuffer.width, this.framebuffer.height);
+			this.gl.viewport(0, 0, this.defaultFrameBuffer.width, this.defaultFrameBuffer.height);
 		}
 	};
 
@@ -124,7 +150,7 @@ define([
 			this.camera.computeProjectMatrix(this.pMatrix);
 		}
 		else {
-			mat4.perspective(45, this.framebuffer.width / this.framebuffer.height, 0.1, 1000.0, this.pMatrix);
+			mat4.perspective(45, this.canvas.width / this.canvas.height, 0.1, 1000.0, this.pMatrix);
 		}
 	};
 
@@ -323,7 +349,6 @@ define([
         aProgram.renderCache.materialUniform.shininess = this.gl.getUniformLocation(aProgram.renderCache, "uMaterial.Shininess");
 
         aProgram.renderCache.useTexturesUniform = this.gl.getUniformLocation(aProgram.renderCache, "uUseTextures");
-        aProgram.renderCache.useSpecularMapUniform = this.gl.getUniformLocation(aProgram.renderCache, "uUseSpecularMap");
 
         // used for storing custom uniforms locations
         aProgram.renderCache.customUniforms = {};
@@ -334,7 +359,7 @@ define([
 		aProgram.renderCache.renderer = this;
 	};
 
-	renderer.enableProgram = function(aProgram, aRenderComponent) {
+	renderer.enableProgram = function(aProgram) {
 		if (!aProgram.renderCache) {
 			this.loadProgram(aProgram);
 		}
@@ -343,16 +368,18 @@ define([
 
 		// set matrices
 		this.setMatrixUniforms(aProgram);
+	};
 
+	renderer.disableProgram = function(aProgram) {
+		this.gl.useProgram(null);
+	};
+
+	renderer.enableUniforms = function(aProgram, aRenderComponent) {
 		// set any custom uniform
 		var that = this;
 		aRenderComponent.eachUniform(function(aUniform) {
 			that.setCustomUniform(aUniform, aProgram);
 		});
-	};
-
-	renderer.disableProgram = function(aProgram) {
-		this.gl.useProgram(null);
 	};
 
 	renderer.enableLight = function(index, aLight, aProgram) {
@@ -405,10 +432,6 @@ define([
 				this.gl.activeTexture(this.gl.TEXTURE0 + index);
             	this.gl.bindTexture(this.gl.TEXTURE_2D, aTexture.renderCache);
 				this.setUniformInt(uniformLocation, index);
-
-				if (aTexture.name === "uSpecularMapSampler") {
-					this.setUniformBool(aProgram.renderCache.useSpecularMapUniform, true);
-				}
 			}
 		}
 	};
@@ -662,12 +685,80 @@ define([
 			aProgram = this.defaultShaderProgram;
 		}
 
-		this.enableProgram(aProgram, aRenderComponent);
+		this.enableProgram(aProgram);
+		this.enableUniforms(aProgram, aRenderComponent);
 		this.enableLights(aProgram, aRenderComponent);
 		this.enableTextures(aProgram, anEffect);
 		this.enableMaterialProperties(aProgram, anEffect);
 		this.enableRenderStates(aProgram, anEffect);
 		this.renderPrimitive(aProgram, aPrimitive);
+	};
+
+	renderer.applyScreenEffect = function(anEffect) {
+		var aProgram = anEffect.shaderProgram;
+		var that = this;
+		var i = 0;
+
+		if (!aProgram) {
+			return;
+		}
+
+		this.enableProgram(aProgram);
+		this.enableTextures(aProgram, anEffect);
+		this.enableMaterialProperties(aProgram, anEffect);
+		this.enableRenderStates(aProgram, anEffect);
+		this.renderPrimitive(aProgram, this.screenPrimitive);
+	};
+
+	renderer.loadFrameBuffer = function(aFrameBuffer) {
+		aFrameBuffer.renderCache = this.gl.createFramebuffer();
+		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, aFrameBuffer.renderCache);
+
+		aFrameBuffer.texture.renderCache = this.gl.createTexture();
+		this.gl.bindTexture(this.gl.TEXTURE_2D, aFrameBuffer.texture.renderCache);
+		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+		this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+
+		this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, aFrameBuffer.width, aFrameBuffer.height, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, null);
+
+		var renderbuffer = this.gl.createRenderbuffer();
+		this.gl.bindRenderbuffer(this.gl.RENDERBUFFER, renderbuffer);
+		this.gl.renderbufferStorage(this.gl.RENDERBUFFER, this.gl.DEPTH_COMPONENT16, aFrameBuffer.width, aFrameBuffer.height);
+
+		this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_2D, aFrameBuffer.texture.renderCache, 0);
+		this.gl.framebufferRenderbuffer(this.gl.FRAMEBUFFER, this.gl.DEPTH_ATTACHMENT, this.gl.RENDERBUFFER, renderbuffer);
+
+		this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+		this.gl.bindRenderbuffer(this.gl.RENDERBUFFER, null);
+		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+	};
+
+	renderer.unloadFrameBuffer = function(aFrameBuffer) {
+
+	};
+
+	renderer.enableFrameBuffer = function(aFrameBuffer) {
+		if (!aFrameBuffer.renderCache) {
+			this.loadFrameBuffer(aFrameBuffer);
+		}
+
+		if (aFrameBuffer.renderCache) {
+    		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, aFrameBuffer.renderCache);
+		}
+	};
+
+	renderer.disableFrameBuffer = function(aFrameBuffer) {
+		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+	};
+
+	renderer.beginRender = function() {
+		this.enableFrameBuffer(this.defaultFrameBuffer);
+	};
+
+	renderer.endRender = function() {
+		this.disableFrameBuffer(this.defaultFrameBuffer);
+		this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+		this.applyScreenEffect(this.defaultScreenEffect);
 	};
 
 	/**
@@ -704,27 +795,66 @@ define([
 		this._mMatrix = mat4.identity();
 		this._pMatrix = mat4.identity();
 
-		this._framebuffer = Object.create(framebufferObject).set(spec.framebuffer || { width: canvas.width, height: canvas.height });
+		this._defaultFrameBuffer = objectFactory.create(frameBufferObject, {
+			width: mathUtils.pow2roundUp(this.canvas.width, 2048),
+			height: mathUtils.pow2roundUp(this.canvas.height, 1024),
+			clearColor: spec.clearColor,
+		});
 
-		this._textureCatalog = Object.create(renderResourceCatalog).set({});
-		this._vertexBufferCatalog = Object.create(renderResourceCatalog).set({});
-		this._indexBufferCatalog = Object.create(renderResourceCatalog).set({});
-		this._shaderProgramCatalog = Object.create(renderResourceCatalog).set({});
+		this._textureCatalog = objectFactory.create(renderResourceCatalog);
+		this._vertexBufferCatalog = objectFactory.create(renderResourceCatalog);
+		this._indexBufferCatalog = objectFactory.create(renderResourceCatalog);
+		this._shaderProgramCatalog = objectFactory.create(renderResourceCatalog);
 
 		this._camera = null;
 		this.onCameraViewportChange();
 		this.onCameraFrustumChange();
 		this.onCameraFrameChange();
 
-		this._defaultShaderProgram = Object.create(shaderProgram).set({
+		this._defaultShaderProgram = objectFactory.create(shaderProgram, {
 			vertexShader: texture_lighting_vs,
 			fragmentShader: texture_lighting_fs
 		});
 
-		this._defaultEffect = Object.create(effect).set({
+		this._defaultEffect = objectFactory.create(effect, {
 			shaderProgram: {
 				vertexShader: texture_lighting_vs,
 				fragmentShader: texture_lighting_fs
+			}
+		});
+
+		this._defaultScreenEffect = objectFactory.create(effect, {
+			shaderProgram: {
+				vertexShader: screen_vs,
+				fragmentShader: screen_fs,
+			},
+			textures: [
+				this.defaultFrameBuffer.texture,
+			]
+		});
+
+		this._screenPrimitive = objectFactory.inflate({
+			_prototype: primitive,
+			type: primitive.types.TRIANGLES,
+			vertexBuffer: {
+				_prototype: vertexBufferObject,
+				vertexFormat: {
+					_prototype: vertexFormat,
+					positions: 3,
+					textureCoords: 2
+				},
+				vertexCount: 4,
+				data: new Float32Array([
+					-1.0, 1.0, 0.0,		0.0, 1.0,
+					-1.0, -1.0, 0.0,	0.0, 0.0,
+					1.0, -1.0, 0.0, 	1.0, 0.0,
+					1.0, 1.0, 0.0,		1.0, 1.0,
+				])
+			},
+			indexBuffer: {
+				_prototype: indexBufferObject,
+				indexCount: 6,
+				data: new Uint16Array([0, 1, 2, 0, 2, 3])
 			}
 		});
 

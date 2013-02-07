@@ -89,6 +89,7 @@ define(function(require) {
 		conePrimitive: require("primitives/conePrimitive"),
 		treefoilKnotPrimitive: require("primitives/treefoilKnotPrimitive"),
 		spherePrimitive: require("primitives/spherePrimitive"),
+		planePrimitive: require("primitives/planePrimitive"),
 
 		// simulation
 		simulator: require("simulation/simulator"),

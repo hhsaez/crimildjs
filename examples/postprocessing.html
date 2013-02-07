@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>CrimildJS Example: Post-Processing</title>
+	    <script type="text/javascript" src="../lib/jquery-1.8.2.min.js"></script>
+		<script data-main="../src/crimild" src="../lib/require.js"></script>
+		<link rel="stylesheet" type="text/css" href="css/default.css" />
+		<script type="text/javascript">
+			requirejs([
+					"crimild", 
+					"image!./assets/earth.jpg",
+					"text!../shaders/old_film.vert", "text!../shaders/old_film.frag",
+				], function(
+					crimild, 
+					color_map,
+					old_film_vs, old_film_fs
+				) {
+
+				var canvas = $("#canvas").get(0);
+				canvas.width = window.innerWidth;
+				canvas.height = window.innerHeight;
+
+				var useSepiaToningUniform = crimild.objectFactory.create(crimild.shaderUniform, {
+                    name: "uUseSepiaToning",
+                    data: true,
+                    type: crimild.shaderUniform.types.BOOL,
+				});
+
+				$("#uUseSepiaToning").click(function() {
+					useSepiaToningUniform.data = $(this).is(":checked");
+				});
+
+				var useNoiseUniform = crimild.objectFactory.create(crimild.shaderUniform, {
+                    name: "uUseNoise",
+                    data: true,
+                    type: crimild.shaderUniform.types.BOOL,
+				});
+
+				$("#uUseNoise").click(function() {
+					useNoiseUniform.data = $(this).is(":checked");
+				});
+
+				var useScratchingUniform = crimild.objectFactory.create(crimild.shaderUniform, {
+                    name: "uUseScratching",
+                    data: true,
+                    type: crimild.shaderUniform.types.BOOL,
+				});
+
+				$("#uUseScratching").click(function() {
+					useScratchingUniform.data = $(this).is(":checked");
+				});
+
+				var useVignettingUniform = crimild.objectFactory.create(crimild.shaderUniform, {
+                    name: "uUseVignetting",
+                    data: true,
+                    type: crimild.shaderUniform.types.BOOL,
+				});
+
+				$("#uUseVignetting").click(function() {
+					useVignettingUniform.data = $(this).is(":checked");
+				});
+
+				crimild.run({
+					scene: {
+						_prototype: crimild.groupNode,
+						nodes: [
+							{
+								_prototype: crimild.geometryNode,
+								primitives: [
+									{
+										_prototype: crimild.spherePrimitive,
+									}
+								],
+								components: [
+									{
+										_prototype: crimild.effectComponent,
+										effects: [
+											{
+												_prototype: crimild.effect,
+												textures: [
+													{
+														_prototype: crimild.texture,
+														image: {
+															_prototype: crimild.image,
+															data: color_map,
+														},
+														flipVertical: true
+													},
+												],
+											}
+										]
+									},
+									{
+										_prototype: crimild.trackpadComponent,
+									},
+								],
+							},
+							{
+								_prototype: crimild.cameraNode,
+								aspectRatio: (window.innerWidth / window.innerHeight),
+								local: {
+									translate: [0, 0, 3]
+								},
+								effects: [
+									{
+										_prototype: crimild.effect,
+										shaderProgram: {
+											vertexShader: old_film_vs,
+											fragmentShader: old_film_fs,
+											uniforms: [
+												useSepiaToningUniform,
+												useNoiseUniform,
+												useScratchingUniform,
+												useVignettingUniform
+											],
+										}
+									}
+								],
+							}
+						]
+					},
+					renderer: {
+						canvas: canvas,
+						clearColor: [0, 0, 0, 1]
+					}
+				});
+			});
+		</script>
+	</head>
+	<body>
+        <canvas id="canvas">
+            Your browser does not support WebGL
+        </canvas>
+		<div>
+	        <div class="hud">
+	            <p><a href="javascript:window.parent.location = '../index.html';">crimildjs</a> post-processing example</p>
+	            <p><input type="checkbox" id="uUseSepiaToning" checked />Sepia Toning<br/></p>
+	            <p><input type="checkbox" id="uUseNoise" checked />Noise<br/></p>
+	            <p><input type="checkbox" id="uUseScratching" checked />Scratching<br/></p>
+	            <p><input type="checkbox" id="uUseVignetting" checked />Vignetting<br/></p>
+	        </div>
+		</div>
+	</body>
+</html>
+

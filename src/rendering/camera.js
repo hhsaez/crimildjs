@@ -1,4 +1,4 @@
-define(["math/transformation"], function(transformation) {
+define(["math/transformation", "foundation/collection"], function(transformation, collection) {
 	"use strict";
 
 	var camera = {};
@@ -34,6 +34,11 @@ define(["math/transformation"], function(transformation) {
 			},
 			set: function(value) {
 				this._target = value;
+			}
+		},
+		effects: {
+			get: function() {
+				return this._effects;
 			}
 		},
 	});
@@ -121,6 +126,8 @@ define(["math/transformation"], function(transformation) {
 				spec.far || 1000.0, 
 				this._pMatrix);
 		}
+
+		this._effects = Object.create(collection).set(spec.effects);
 
 		return this;
 	};

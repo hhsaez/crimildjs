@@ -60,5 +60,24 @@ define(["../third-party/gl-matrix"], function(glMatrix) {
 			}
 		},
 
+		pow2roundUp: function(x, upperBound) {
+			if (x < 0) {
+				return 0;
+			}
+
+			--x;
+			x |= x >> 1;
+			x |= x >> 2;
+			x |= x >> 4;
+			x |= x >> 8;
+			x |= x >> 16;
+			
+			if (upperBound) {
+				return Math.min(upperBound, x + 1);
+			}
+			
+			return x + 1;
+		},
 	}	
 });
+
