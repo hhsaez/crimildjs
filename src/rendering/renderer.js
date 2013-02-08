@@ -704,7 +704,15 @@ define([
 		}
 
 		this.enableProgram(aProgram);
-		this.enableTextures(aProgram, anEffect);
+
+		var that = this;
+		this.enableTexture(0, this.defaultFrameBuffer.texture, aProgram);
+		var i = 1;
+		anEffect.textures.each(function(aTexture, index) {
+			that.enableTexture(i, aTexture, aProgram);
+			i++;
+		});
+
 		this.enableMaterialProperties(aProgram, anEffect);
 		this.enableRenderStates(aProgram, anEffect);
 		this.renderPrimitive(aProgram, this.screenPrimitive);
@@ -758,7 +766,16 @@ define([
 	renderer.endRender = function() {
 		this.disableFrameBuffer(this.defaultFrameBuffer);
 		this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-		this.applyScreenEffect(this.defaultScreenEffect);
+
+		if (this.camera && this.camera.effects.count() > 0) {
+			var that = this;
+			this.camera.effects.each(function(anEffect, index) {
+				that.applyScreenEffect(anEffect);
+			})
+		}
+		else {
+			this.applyScreenEffect(this.defaultScreenEffect);
+		}
 	};
 
 	/**
@@ -828,9 +845,6 @@ define([
 				vertexShader: screen_vs,
 				fragmentShader: screen_fs,
 			},
-			textures: [
-				this.defaultFrameBuffer.texture,
-			]
 		});
 
 		this._screenPrimitive = objectFactory.inflate({

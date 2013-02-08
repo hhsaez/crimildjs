@@ -127,7 +127,9 @@ define(["math/transformation", "foundation/collection"], function(transformation
 				this._pMatrix);
 		}
 
-		this._effects = Object.create(collection).set(spec.effects);
+		this._effects = Object.create(collection).set({
+			elements: spec.effects
+		});
 
 		return this;
 	};
