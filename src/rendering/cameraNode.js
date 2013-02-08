@@ -1,9 +1,9 @@
 define(["math/transformation", "foundation/collection", "core/node"], function(transformation, collection, node) {
 	"use strict";
 
-	var camera = Object.create(node);
+	var cameraNode = Object.create(node);
 
-	Object.defineProperties(camera, {
+	Object.defineProperties(cameraNode, {
 		renderer: {
 			get: function() {
 				return this._renderer;
@@ -30,7 +30,7 @@ define(["math/transformation", "foundation/collection", "core/node"], function(t
 		},
 	});
 
-	camera.accept = function(aVisitor) {
+	cameraNode.accept = function(aVisitor) {
 		if (aVisitor.visitCamera) {
 			aVisitor.visitCamera(this);
 		}
@@ -39,7 +39,7 @@ define(["math/transformation", "foundation/collection", "core/node"], function(t
 		}
 	};
 
-	camera.computeViewMatrix = function(dest) {
+	cameraNode.computeViewMatrix = function(dest) {
 		if (!dest) {
 			dest = mat4.create();
 		}
@@ -49,7 +49,7 @@ define(["math/transformation", "foundation/collection", "core/node"], function(t
 		return dest;
 	};
 
-	camera.computeProjectMatrix = function(dest) {
+	cameraNode.computeProjectMatrix = function(dest) {
 		if (!dest) {
 			dest = mat4.create();
 		}
@@ -58,7 +58,7 @@ define(["math/transformation", "foundation/collection", "core/node"], function(t
 		return dest;
 	};
 
-	camera.unproject = function(x, y, z, result) {
+	cameraNode.unproject = function(x, y, z, result) {
 		var wx = (2 * (x - this._viewport[0]) / this._viewport[2]) - 1;
 		var wy = (2 * (y - this._viewport[1]) / this._viewport[3]) - 1;
 		var wz = 2 * z - 1;
@@ -81,7 +81,7 @@ define(["math/transformation", "foundation/collection", "core/node"], function(t
 		return true;
 	};
 
-	camera.getPickRay = function(x, y, width, height, origin, direction) {
+	cameraNode.getPickRay = function(x, y, width, height, origin, direction) {
 		var p0 = vec3.create();
 		var p1 = vec3.create();
 
@@ -100,7 +100,7 @@ define(["math/transformation", "foundation/collection", "core/node"], function(t
         return true;
 	};		
 
-	camera.set = function(spec) {
+	cameraNode.set = function(spec) {
 		spec = spec || {};
 
 		node.set.call(this, spec);
@@ -125,10 +125,10 @@ define(["math/transformation", "foundation/collection", "core/node"], function(t
 		return this;
 	};
 
-	camera.destroy = function() {
+	cameraNode.destroy = function() {
 		node.destroy.call(this);
 	};
 
-	return camera;
+	return cameraNode;
 });
 

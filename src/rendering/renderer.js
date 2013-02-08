@@ -694,7 +694,7 @@ define([
 		this.renderPrimitive(aProgram, aPrimitive);
 	};
 
-	renderer.applyScreenEffect = function(anEffect) {
+	renderer.applyScreenEffect = function(anEffect, uniforms) {
 		var aProgram = anEffect.shaderProgram;
 		var that = this;
 		var i = 0;
@@ -704,6 +704,9 @@ define([
 		}
 
 		this.enableProgram(aProgram);
+		if (uniforms) {
+			this.enableUniforms(aProgram, uniforms);
+		}
 
 		var that = this;
 		this.enableTexture(0, this.defaultFrameBuffer.texture, aProgram);
@@ -770,9 +773,10 @@ define([
 		if (this.camera) {
 			var postProcessingEffects = this.camera.getComponent("effects");
 			if (postProcessingEffects) {
+				var uniforms = this.camera.getComponent("uniforms");
 				var that = this;
 				postProcessingEffects.effects.each(function(anEffect, index) {
-					that.applyScreenEffect(anEffect);
+					that.applyScreenEffect(anEffect, uniforms);
 				});
 			}
 			else {

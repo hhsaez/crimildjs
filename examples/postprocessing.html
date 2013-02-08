@@ -20,44 +20,44 @@
 				canvas.width = window.innerWidth;
 				canvas.height = window.innerHeight;
 
-				var useSepiaToningUniform = crimild.objectFactory.create(crimild.shaderUniform, {
-                    name: "uUseSepiaToning",
-                    data: true,
-                    type: crimild.shaderUniform.types.BOOL,
+				var sepiaToningCoeffUniform = crimild.objectFactory.create(crimild.shaderUniform, {
+                    name: "uSepiaCoeff",
+                    data: 0.5,
+                    type: crimild.shaderUniform.types.FLOAT,
 				});
 
-				$("#uUseSepiaToning").click(function() {
-					useSepiaToningUniform.data = $(this).is(":checked");
+				$("#uSepiaCoeff").click(function() {
+					sepiaToningCoeffUniform.data = $(this).is(":checked") ? 0.5 : 0.0;
 				});
 
-				var useNoiseUniform = crimild.objectFactory.create(crimild.shaderUniform, {
-                    name: "uUseNoise",
-                    data: true,
-                    type: crimild.shaderUniform.types.BOOL,
+				var noiseCoeffUniform = crimild.objectFactory.create(crimild.shaderUniform, {
+                    name: "uNoiseCoeff",
+                    data: 0.25,
+                    type: crimild.shaderUniform.types.FLOAT,
 				});
 
-				$("#uUseNoise").click(function() {
-					useNoiseUniform.data = $(this).is(":checked");
+				$("#uNoiseCoeff").click(function() {
+					noiseCoeffUniform.data = $(this).is(":checked") ? 0.25 : 0.0;
 				});
 
-				var useScratchingUniform = crimild.objectFactory.create(crimild.shaderUniform, {
-                    name: "uUseScratching",
-                    data: true,
-                    type: crimild.shaderUniform.types.BOOL,
+				var scratchCoeffUniform = crimild.objectFactory.create(crimild.shaderUniform, {
+                    name: "uScratchCoeff",
+                    data: 1.0,
+                    type: crimild.shaderUniform.types.FLOAT,
 				});
 
-				$("#uUseScratching").click(function() {
-					useScratchingUniform.data = $(this).is(":checked");
+				$("#uScratchCoeff").click(function() {
+					scratchCoeffUniform.data = $(this).is(":checked") ? 1.0 : 0.0;
 				});
 
-				var useVignettingUniform = crimild.objectFactory.create(crimild.shaderUniform, {
-                    name: "uUseVignetting",
-                    data: true,
-                    type: crimild.shaderUniform.types.BOOL,
+				var innerVignettingUniform = crimild.objectFactory.create(crimild.shaderUniform, {
+                    name: "uInnerVignetting",
+                    data: 0.0,
+                    type: crimild.shaderUniform.types.FLOAT,
 				});
 
-				$("#uUseVignetting").click(function() {
-					useVignettingUniform.data = $(this).is(":checked");
+				$("#uInnerVignetting").click(function() {
+					innerVignettingUniform.data = $(this).is(":checked") ? 0.0 : 1.5;
 				});
 
 				crimild.run({
@@ -96,7 +96,7 @@
 								],
 							},
 							{
-								_prototype: crimild.camera,
+								_prototype: crimild.cameraNode,
 								aspectRatio: (window.innerWidth / window.innerHeight),
 								local: {
 									translate: [0, 0, 3]
@@ -117,10 +117,10 @@
 									{
 										_prototype: crimild.shaderUniformComponent,
 										uniforms: [
-											useSepiaToningUniform,
-											useNoiseUniform,
-											useScratchingUniform,
-											useVignettingUniform
+											sepiaToningCoeffUniform,
+											noiseCoeffUniform,
+											scratchCoeffUniform,
+											innerVignettingUniform
 										]
 									}
 								]
@@ -142,10 +142,10 @@
 	        <div class="hud">
 	            <p><a href="javascript:window.parent.location = '../index.html';">crimildjs</a> post-processing example</p>
 	            <p>
-	            	<div><input type="checkbox" id="uUseSepiaToning" checked />Sepia Toning<br/></div>
-	            	<div><input type="checkbox" id="uUseNoise" checked />Noise<br/></div>
-	            	<div><input type="checkbox" id="uUseScratching" checked />Scratching<br/></div>
-	            	<div><input type="checkbox" id="uUseVignetting" checked />Vignetting<br/></div>
+	            	<div><input type="checkbox" id="uSepiaCoeff" checked />Sepia Toning<br/></div>
+	            	<div><input type="checkbox" id="uNoiseCoeff" checked />Noise<br/></div>
+	            	<div><input type="checkbox" id="uScratchCoeff" checked />Scratching<br/></div>
+	            	<div><input type="checkbox" id="uInnerVignetting" checked />Vignetting<br/></div>
 	        	</p>
 	        </div>
 		</div>

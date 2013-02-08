@@ -47,7 +47,7 @@ define(function(require) {
 
 		// rendering
 		alphaState: require("rendering/alphaState"),
-		camera: require("rendering/camera"),
+		cameraNode: require("rendering/cameraNode"),
 		cullState: require("rendering/cullState"),
 		depthState: require("rendering/depthState"),
 		effect: require("rendering/effect"),

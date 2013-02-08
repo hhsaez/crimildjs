@@ -1,12 +1,12 @@
 precision highp float;
 
-//uniform float uSepiaValue;
-//uniform float uNoiseValue;
+uniform float uSepiaCoeff;
+uniform float uNoiseCoeff;
 //uniform float uRandomValue;
-//uniform float uScratchValue;
+uniform float uScratchCoeff;
 //uniform float uTimeLapse;
 //uniform float uOuterVignetting;
-//uniform float uInnerVignetting;
+uniform float uInnerVignetting;
 
 uniform bool uUseTextures;
 uniform sampler2D uSampler;
@@ -72,8 +72,7 @@ void main(void) {
 
     vec4 result = baseColor;
 
-    float uSepiaValue = 0.5;
-    if (uSepiaValue > 0.0) {
+    if (uSepiaCoeff > 0.0) {
         float gray = (result.r + result.g + result.b) / 3.0;
         vec3 grayscale = vec3(gray, gray, gray);
         vec4 sepia = vec4(0.4392156863, 0.2588235294, 0.07843137255, 1.0);
@@ -81,20 +80,18 @@ void main(void) {
                       (gray < 0.5 ? 2.0 * sepia.g * grayscale.y : 1.0 - 2.0 * (1.0 - grayscale.y) * (1.0 - sepia.g)),
                       (gray < 0.5 ? 2.0 * sepia.b * grayscale.z : 1.0 - 2.0 * (1.0 - grayscale.z) * (1.0 - sepia.b)),
                       1.0);
-        result.rgb = grayscale + uSepiaValue * (result.rgb - grayscale);
+        result.rgb = grayscale + uSepiaCoeff * (result.rgb - grayscale);
     }
 
-    float uNoiseValue = 0.15;
     float uRandomValue = 0.5;
-    if (uNoiseValue > 0.0) {
+    if (uNoiseCoeff > 0.0) {
         float noise = snoise(vTextureCoord * vec2(1024.0 + uRandomValue * 512.0, 1024.0 + uRandomValue * 512.0)) * 0.5;
-        result += noise * uNoiseValue;
+        result += noise * uNoiseCoeff;
     }
 
-    float uScratchValue = 1.0;
     float uTimeLapse = 0.0;
-    if (uScratchValue > uRandomValue) {
-        float dist = 1.0 / uScratchValue;
+    if (uScratchCoeff > uRandomValue) {
+        float dist = 1.0 / uScratchCoeff;
         float d = distance(vTextureCoord, vec2(uRandomValue * dist, uRandomValue * dist));
         if (d < 0.4) {
             float xPeriod = 8.0;
@@ -109,8 +106,7 @@ void main(void) {
         }
     }
 
-    float uOuterVignetting = 1.0;
-    float uInnerVignetting = 0.0;
+    float uOuterVignetting = 1.5;
     float d = distance(vec2(0.5, 0.5), vTextureCoord) * 1.414213;
     float vignetting = clamp((uOuterVignetting - d) / (uOuterVignetting - uInnerVignetting), 0.0, 1.0);
     result.xyz *= vignetting;
