@@ -11,11 +11,8 @@ define(["core/nodeVisitor"], function(nodeVisitor) {
 		}
 	});
 
-	fetchCameras.visitNode = function(aNode) {
-		var cameraComponent = aNode.getComponent("camera");
-		if (cameraComponent && cameraComponent.camera) {
-			this._result.push(cameraComponent.camera);
-		}
+	fetchCameras.visitCamera = function(aCamera) {
+		this._result.push(aCamera);
 	};
 
 	fetchCameras.set = function(spec) {

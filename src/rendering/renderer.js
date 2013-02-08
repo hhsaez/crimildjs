@@ -767,11 +767,17 @@ define([
 		this.disableFrameBuffer(this.defaultFrameBuffer);
 		this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
 
-		if (this.camera && this.camera.effects.count() > 0) {
-			var that = this;
-			this.camera.effects.each(function(anEffect, index) {
-				that.applyScreenEffect(anEffect);
-			})
+		if (this.camera) {
+			var postProcessingEffects = this.camera.getComponent("effects");
+			if (postProcessingEffects) {
+				var that = this;
+				postProcessingEffects.effects.each(function(anEffect, index) {
+					that.applyScreenEffect(anEffect);
+				});
+			}
+			else {
+				this.applyScreenEffect(this.defaultScreenEffect);	
+			}
 		}
 		else {
 			this.applyScreenEffect(this.defaultScreenEffect);

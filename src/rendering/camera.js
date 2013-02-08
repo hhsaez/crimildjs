@@ -1,7 +1,7 @@
-define(["math/transformation", "foundation/collection"], function(transformation, collection) {
+define(["math/transformation", "foundation/collection", "core/node"], function(transformation, collection, node) {
 	"use strict";
 
-	var camera = {};
+	var camera = Object.create(node);
 
 	Object.defineProperties(camera, {
 		renderer: {
@@ -20,14 +20,6 @@ define(["math/transformation", "foundation/collection"], function(transformation
 				vec4.set(value, this._viewport);
 			}
 		},
-		transformation: {
-			get: function() {
-				return this._transformation;
-			},
-			set: function(value) {
-				this._transformation.set(value);
-			}
-		},
 		target: {
 			get: function() {
 				return this._target;
@@ -36,19 +28,23 @@ define(["math/transformation", "foundation/collection"], function(transformation
 				this._target = value;
 			}
 		},
-		effects: {
-			get: function() {
-				return this._effects;
-			}
-		},
 	});
+
+	camera.accept = function(aVisitor) {
+		if (aVisitor.visitCamera) {
+			aVisitor.visitCamera(this);
+		}
+		else {
+			aVisitor.visitNode(this);
+		}
+	};
 
 	camera.computeViewMatrix = function(dest) {
 		if (!dest) {
 			dest = mat4.create();
 		}
 
-		this._transformation.toMat4(dest);
+		this.world.toMat4(dest);
 		mat4.inverse(dest);
 		return dest;
 	};
@@ -99,7 +95,7 @@ define(["math/transformation", "foundation/collection"], function(transformation
 
        	vec3.subtract(p1, p0, direction);
         vec3.normalize(direction);
-        vec3.set(this.transformation.translate, origin);
+        vec3.set(this.world.translate, origin);
 
         return true;
 	};		
@@ -107,9 +103,8 @@ define(["math/transformation", "foundation/collection"], function(transformation
 	camera.set = function(spec) {
 		spec = spec || {};
 
-		this._transformation = Object.create(transformation).set({
-			transformation: spec.transformation
-		});
+		node.set.call(this, spec);
+
 		this._viewport = vec4.create(spec.viewport || [0, 0, 1, 1]);
 		this._target = spec.target;
 		this._renderer = null;
@@ -127,15 +122,11 @@ define(["math/transformation", "foundation/collection"], function(transformation
 				this._pMatrix);
 		}
 
-		this._effects = Object.create(collection).set({
-			elements: spec.effects
-		});
-
 		return this;
 	};
 
 	camera.destroy = function() {
-		this.transformation.destroy;
+		node.destroy.call(this);
 	};
 
 	return camera;

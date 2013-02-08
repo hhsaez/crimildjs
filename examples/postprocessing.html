@@ -96,26 +96,34 @@
 								],
 							},
 							{
-								_prototype: crimild.cameraNode,
+								_prototype: crimild.camera,
 								aspectRatio: (window.innerWidth / window.innerHeight),
 								local: {
 									translate: [0, 0, 3]
 								},
-								effects: [
+								components: [
 									{
-										_prototype: crimild.effect,
-										shaderProgram: {
-											vertexShader: old_film_vs,
-											fragmentShader: old_film_fs,
-											uniforms: [
-												useSepiaToningUniform,
-												useNoiseUniform,
-												useScratchingUniform,
-												useVignettingUniform
-											],
-										}
+										_prototype: crimild.effectComponent,
+										effects: [
+											{
+												_prototype: crimild.effect,
+												shaderProgram: {
+													vertexShader: old_film_vs,
+													fragmentShader: old_film_fs,
+												}
+											}
+										]
+									},
+									{
+										_prototype: crimild.shaderUniformComponent,
+										uniforms: [
+											useSepiaToningUniform,
+											useNoiseUniform,
+											useScratchingUniform,
+											useVignettingUniform
+										]
 									}
-								],
+								]
 							}
 						]
 					},
