@@ -40,116 +40,134 @@ define(["crimild"], function(crimild) {
 			faces: [],
 		};
 		this._groups = [this._currentGroup];
+		this._materials = {};
 
 		var that = this;
 		req(["text!" + fileName], function(file) {
 			var lines = file.split("\n");
 
-			that.processLine(lines, 0);
+			that.processLines(lines, 0);
 		});
 	}
 
-	obj.processLine = function(lines, index) {
-		if (index === lines.length) {
-			this.generateScene();
-			return;
-		}
-
-		var vals = lines[index].trim().replace(/^\s+/, "").split(/\s+/);
-		if (vals.length > 0 && vals[0] != "#") {
-			if (vals[0] === "v") {
-				this._positions.push(parseFloat(vals[1]));
-				this._positions.push(parseFloat(vals[2]));
-				this._positions.push(parseFloat(vals[3]));
-			}
-			else if (vals[0] === "vn") {
-				this._hasNormals = true;
-				this._normals.push(parseFloat(vals[1]));
-				this._normals.push(parseFloat(vals[2]));
-				this._normals.push(parseFloat(vals[3]));
-			}
-			else if (vals[0] === "vt") {
-				this._hasTextureCoords = true;
-				this._textureCoords.push(parseFloat(vals[1]));
-				this._textureCoords.push(parseFloat(vals[2]));
-			}
-			else if (vals[0] === "f") {
-				var faceCount = vals.length - 1;
-				if (faceCount === 3) {
-					// triangle
-					this._currentGroup.faces.push(vals[1]);
-					this._currentGroup.faces.push(vals[2]);
-					this._currentGroup.faces.push(vals[3]);							
+	obj.processLines = function(lines, start) {
+		for (var i = start; i < lines.length; i++) {
+			var vals = lines[i].trim().replace(/^\s+/, "").split(/\s+/);
+			if (vals.length > 0 && vals[0] != "#") {
+				if (vals[0] === "v") {
+					this._positions.push(parseFloat(vals[1]));
+					this._positions.push(parseFloat(vals[2]));
+					this._positions.push(parseFloat(vals[3]));
 				}
-				else if (faceCount === 4) {
-					// quad 
-					this._currentGroup.faces.push(vals[1]);
-					this._currentGroup.faces.push(vals[2]);
-					this._currentGroup.faces.push(vals[3]);
-					this._currentGroup.faces.push(vals[1]);
-					this._currentGroup.faces.push(vals[3]);
-					this._currentGroup.faces.push(vals[4]);
+				else if (vals[0] === "vn") {
+					this._hasNormals = true;
+					this._normals.push(parseFloat(vals[1]));
+					this._normals.push(parseFloat(vals[2]));
+					this._normals.push(parseFloat(vals[3]));
 				}
-			}
-			else if (vals[0] === "g") {
-				// unsuported
-			}
-			else if (vals[0] === "o") {
-				// unsupported
-			}
-			else if (vals[0] === "mtllib") {
-				var that = this;
-				this._require(["text!" + this._filePath + vals[1]], function(mtllib) {
-					that.processMaterials(mtllib, function() {
-						that.processLine(lines, index + 1);
+				else if (vals[0] === "vt") {
+					this._hasTextureCoords = true;
+					this._textureCoords.push(parseFloat(vals[1]));
+					this._textureCoords.push(parseFloat(vals[2]));
+				}
+				else if (vals[0] === "f") {
+					var faceCount = vals.length - 1;
+					if (faceCount === 3) {
+						// triangle
+						this._currentGroup.faces.push(vals[1]);
+						this._currentGroup.faces.push(vals[2]);
+						this._currentGroup.faces.push(vals[3]);							
+					}
+					else if (faceCount === 4) {
+						// quad 
+						this._currentGroup.faces.push(vals[1]);
+						this._currentGroup.faces.push(vals[2]);
+						this._currentGroup.faces.push(vals[3]);
+						this._currentGroup.faces.push(vals[1]);
+						this._currentGroup.faces.push(vals[3]);
+						this._currentGroup.faces.push(vals[4]);
+					}
+				}
+				else if (vals[0] === "g") {
+					// unsuported
+				}
+				else if (vals[0] === "o") {
+					// unsupported
+				}
+				else if (vals[0] === "mtllib") {
+					// pause the line processing until the materials have been read
+					var that = this;
+					this._require(["text!" + this._filePath + vals[1]], function(mtllib) {
+						that.processMaterials(mtllib, function() {
+							that.processLines(lines, i + 1);
+						});
 					});
-				});
-				return;
-			}
-			else if (vals[0] === "usemtl") {
-				// create a new group that will use the new material
-				// this will end up generating a new GeometryNode with 
-				// a different material attached to it
-				this._currentGroup = {
-					name: vals[1],
-					materialName: vals[1],
-					faces: []
-				};
-				this._groups.push(this._currentGroup);
+					return;
+				}
+				else if (vals[0] === "usemtl") {
+					// create a new group that will use the new material
+					// this will end up generating a new GeometryNode with 
+					// a different material attached to it
+					this._currentGroup = {
+						name: vals[1],
+						materialName: vals[1],
+						faces: []
+					};
+					this._groups.push(this._currentGroup);
+				}
 			}
 		}
 
-		this.processLine(lines, index + 1);
+		this.generateScene();
 	};
 
 	obj.processMaterials = function(materialFile, callback) {
 		this._materials = {};
+		this._currentMaterial = {};
 
 		var lines = materialFile.split("\n");
-		var currentMaterial = {};
+		this.processMaterialLines(lines, 0, callback);
+	};
 
-		for (var l in lines) {
-			var vals = lines[l].trim().replace(/^\s+/, "").split(/\s+/);
+	obj.processMaterialLines = function(lines, start, callback) {
+		for (var i = start; i < lines.length; i++) {
+			var vals = lines[i].trim().replace(/^\s+/, "").split(/\s+/);
 			if (vals[0] === "newmtl") {
-				currentMaterial = {
+				this._currentMaterial = {
 					name: vals[1]
 				};
-				this._materials[currentMaterial.name] = currentMaterial;
+				this._materials[this._currentMaterial.name] = this._currentMaterial;
 			}
 			else if (vals[0] === "Ka") {
-				currentMaterial.ambient = [parseFloat(vals[1]), parseFloat(vals[2]), parseFloat(vals[3])]
+				this._currentMaterial.ambient = [parseFloat(vals[1]), parseFloat(vals[2]), parseFloat(vals[3])]
 			}
 			else if (vals[0] === "Kd") {
-				currentMaterial.diffuse = [parseFloat(vals[1]), parseFloat(vals[2]), parseFloat(vals[3])]
+				this._currentMaterial.diffuse = [parseFloat(vals[1]), parseFloat(vals[2]), parseFloat(vals[3])]
 			}
 			else if (vals[0] === "Ks") {
-				currentMaterial.specular = [parseFloat(vals[1]), parseFloat(vals[2]), parseFloat(vals[3])]
+				this._currentMaterial.specular = [parseFloat(vals[1]), parseFloat(vals[2]), parseFloat(vals[3])]
 			}
 			else if (vals[0] === "map_Kd") {
-				currentMaterial.diffuseMapName = vals[1];
+				// pause the line processing until the map has been read
+				if (vals[1]) {
+					var that = this;
+					this._require(["image!" + this._filePath + vals[1]], function(map) {
+						that._currentMaterial.diffuseMap = map;
+						that.processMaterialLines(lines, i + 1, callback);
+					});
+					return;
+				}
 			}
 			else if (vals[0] === "map_kS") {
-				currentMaterial.specularMapName = vals[1];
+				// pause the line processing until the map has been read
+				if (vals[1]) {
+					var that = this;
+					this._require(["image!" + this._filePath + vals[1]], function(map) {
+						that._currentMaterial.specularMap = map;
+						that.processMaterialLines(lines, i + 1, callback);
+					});
+					return;
+				}
 			}
 		}
 
@@ -220,6 +238,37 @@ define(["crimild"], function(crimild) {
 
 			var material = this._materials[group.materialName];
 			if (material) {
+				var textures = [];
+				var uniforms = [];
+				if (material.diffuseMap) {
+					textures.push(crimild.objectFactory.inflate({
+						_prototype: crimild.texture,
+						name: "uSampler",
+						image: {
+							_prototype: crimild.image,
+							data: material.diffuseMap
+						},
+						flipVertical: true
+					}));
+				}
+
+				if (material.specularMap) {
+					textures.push(crimild.objectFactory.inflate({
+						_prototype: crimild.texture,
+						name: "uSpecularMapSampler",
+						image: {
+							_prototype: crimild.image,
+							data: material.specularMap
+						},
+					}));
+					uniforms.push({
+						_prototype: crimild.shaderUniform,
+	                    name: "uUseSpecularMap",
+	                    data: true,
+	                    type: crimild.shaderUniform.types.BOOL,
+					});
+				}
+
 				geometry.attachComponent(crimild.objectFactory.inflate({
 					_prototype: crimild.effectComponent,
 					effects: [
@@ -228,6 +277,8 @@ define(["crimild"], function(crimild) {
 							diffuse: material.diffuse,
 							ambient: material.ambient,
 							specular: material.specular,
+							textures: textures,
+							uniforms: uniforms,
 						}
 					]
 				}));
