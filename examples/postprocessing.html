@@ -2,9 +2,11 @@
 <html>
 	<head>
 		<title>CrimildJS Example: Post-Processing</title>
-	    <script type="text/javascript" src="../lib/jquery-1.8.2.min.js"></script>
+	    <script type="text/javascript" src="../lib/jquery-1.9.0.js"></script>
+	    <script type="text/javascript" src="../lib/jquery-ui-1.10.0.custom.min.js"></script>
 		<script data-main="../src/crimild" src="../lib/require.js"></script>
-		<link rel="stylesheet" type="text/css" href="css/default.css" />
+		<link rel="stylesheet" type="text/css" href="../css/smoothness/jquery-ui-1.10.0.custom.min.css">
+		<link rel="stylesheet" type="text/css" href="../css/example.css" />
 		<script type="text/javascript">
 			requirejs([
 					"crimild", 
@@ -19,46 +21,6 @@
 				var canvas = $("#canvas").get(0);
 				canvas.width = window.innerWidth;
 				canvas.height = window.innerHeight;
-
-				var sepiaToningCoeffUniform = crimild.objectFactory.create(crimild.shaderUniform, {
-                    name: "uSepiaCoeff",
-                    data: 0.5,
-                    type: crimild.shaderUniform.types.FLOAT,
-				});
-
-				$("#uSepiaCoeff").click(function() {
-					sepiaToningCoeffUniform.data = $(this).is(":checked") ? 0.5 : 0.0;
-				});
-
-				var noiseCoeffUniform = crimild.objectFactory.create(crimild.shaderUniform, {
-                    name: "uNoiseCoeff",
-                    data: 0.25,
-                    type: crimild.shaderUniform.types.FLOAT,
-				});
-
-				$("#uNoiseCoeff").click(function() {
-					noiseCoeffUniform.data = $(this).is(":checked") ? 0.25 : 0.0;
-				});
-
-				var scratchCoeffUniform = crimild.objectFactory.create(crimild.shaderUniform, {
-                    name: "uScratchCoeff",
-                    data: 1.0,
-                    type: crimild.shaderUniform.types.FLOAT,
-				});
-
-				$("#uScratchCoeff").click(function() {
-					scratchCoeffUniform.data = $(this).is(":checked") ? 1.0 : 0.0;
-				});
-
-				var innerVignettingUniform = crimild.objectFactory.create(crimild.shaderUniform, {
-                    name: "uInnerVignetting",
-                    data: 0.0,
-                    type: crimild.shaderUniform.types.FLOAT,
-				});
-
-				$("#uInnerVignetting").click(function() {
-					innerVignettingUniform.data = $(this).is(":checked") ? 0.0 : 1.5;
-				});
 
 				crimild.run({
 					scene: {
@@ -110,17 +72,26 @@
 												shaderProgram: {
 													vertexShader: old_film_vs,
 													fragmentShader: old_film_fs,
+												},
+												uniforms: [
+													{ name: "uSepiaCoeff", data: 0.5, },
+													{ name: "uNoiseCoeff", data: 0.25, },
+													{ name: "uScratchCoeff", data: 1.0, },
+													{ name: "uInnerVignetting", data: 0.0, },
+													{ name: "uOuterVignetting", data: 1.5, },
+													{ name: "uRandomCoeff", data: 0.0, },
+													{ name: "uTime", data: 0.0 },
+												],
+												update: function(time) {
+													this.getUniform("uSepiaCoeff").data = $("#sepia").val();
+													this.getUniform("uNoiseCoeff").data = $("#noise").val();
+													this.getUniform("uScratchCoeff").data = $("#scratching").val();
+													this.getUniform("uInnerVignetting").data = $("#innerVignetting").val();
+													this.getUniform("uOuterVignetting").data = $("#outerVignetting").val();
+													this.getUniform("uRandomCoeff").data = Math.random() * 1000.0;
+													this.getUniform("uTime").data = time.deltaTime;
 												}
 											}
-										]
-									},
-									{
-										_prototype: crimild.shaderUniformComponent,
-										uniforms: [
-											sepiaToningCoeffUniform,
-											noiseCoeffUniform,
-											scratchCoeffUniform,
-											innerVignettingUniform
 										]
 									}
 								]
@@ -132,6 +103,28 @@
 					}
 				});
 			});
+
+			function createSlider(id, min, max, value, normalize, orientation) {
+    			$("#slider-" + id).slider({
+    				orientation: orientation || "horizontal",
+      				range: "max",
+      				min: min,
+      				max: max,
+      				value: value,
+      				slide: function(event, ui) {
+        				$("#" + id).val(ui.value / (normalize ? max : 1.0));
+      				}
+    			});
+    			$("#" + id).val($("#slider-" + id).slider("value") / (normalize ? max : 1.0)).hide();
+			}
+
+			$(function() {
+				createSlider("sepia", 0, 100, 50, true);
+				createSlider("noise", 0, 200, 50, true);
+				createSlider("scratching", 0, 300, 100);
+				createSlider("innerVignetting", 0, 200, 50, true);
+				createSlider("outerVignetting", 100, 200, 200, true);
+  			});
 		</script>
 	</head>
 	<body>
@@ -141,12 +134,28 @@
 		<div>
 	        <div class="hud">
 	            <p><a href="javascript:window.parent.location = '../index.html';">crimildjs</a> post-processing example</p>
-	            <p>
-	            	<div><input type="checkbox" id="uSepiaCoeff" checked />Sepia Toning<br/></div>
-	            	<div><input type="checkbox" id="uNoiseCoeff" checked />Noise<br/></div>
-	            	<div><input type="checkbox" id="uScratchCoeff" checked />Scratching<br/></div>
-	            	<div><input type="checkbox" id="uInnerVignetting" checked />Vignetting<br/></div>
-	        	</p>
+	            <div class="options">
+	            	<div class="option">
+	            		<input type="text" id="sepia" />
+	            		<div id="slider-sepia"></div>
+	            	</div>
+	            	<div class="option">
+	            		<input type="text" id="noise" />
+	            		<div id="slider-noise"></div>
+	            	</div>
+	            	<div class="option">
+	            		<input type="text" id="scratching" />
+	            		<div id="slider-scratching"></div>
+	            	</div>
+	            	<div class="option">
+	            		<input type="text" id="innerVignetting" />
+	            		<div id="slider-innerVignetting"></div>
+	            	</div>
+	            	<div class="option">
+	            		<input type="text" id="outerVignetting" />
+	            		<div id="slider-outerVignetting"></div>
+	            	</div>
+	            </div>
 	        </div>
 		</div>
 	</body>

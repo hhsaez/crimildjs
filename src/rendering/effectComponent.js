@@ -11,6 +11,12 @@ define(["core/nodeComponent", "foundation/collection"], function(nodeComponent, 
 		}
 	});
 
+	effectComponent.update = function(time) {
+		this.effects.each(function(anEffect) {
+			anEffect.update(time);
+		});
+	};
+
 	effectComponent.set = function(spec) {
 		spec = spec || {};
 

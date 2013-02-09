@@ -704,9 +704,7 @@ define([
 		}
 
 		this.enableProgram(aProgram);
-		if (uniforms) {
-			this.enableUniforms(aProgram, uniforms);
-		}
+		this.enableUniforms(aProgram, anEffect);
 
 		var that = this;
 		this.enableTexture(0, this.defaultFrameBuffer.texture, aProgram);

@@ -44,7 +44,7 @@ define(["./renderResource"], function(renderResource) {
 
 		renderResource.set.call(this, spec);
 
-		this._type = spec.type || shaderUniform.types.UNKNOWN;
+		this._type = spec.type || shaderUniform.types.FLOAT;
 		this._data = spec.data;
 		this._count = spec.count || 1;
 

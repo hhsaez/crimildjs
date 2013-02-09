@@ -1,4 +1,5 @@
 define([
+		"foundation/objectFactory", 
 		"foundation/namedObject", 
 		"foundation/collection",
 		"./alphaState",
@@ -6,14 +7,17 @@ define([
 		"./cullState",
 		"./polygonOffsetState",
 		"./shaderProgram",
+		"./shaderUniform",
 	], function(
+		objectFactory,
 		namedObject, 
 		collection,
 		alphaState,
 		depthState,
 		cullState,
 		polygonOffsetState,
-		shaderProgram
+		shaderProgram,
+		shaderUniform
 	) {
 
 	"use strict";
@@ -97,6 +101,26 @@ define([
 		},
 	});
 
+	effect.addUniform = function(uniform) {
+		if (uniform.name) {
+			this._uniforms[uniform.name] = uniform;
+		}
+	};
+
+	effect.getUniform = function(name) {
+		return this._uniforms[name];
+	};
+
+	effect.eachUniform = function(callback) {
+		for (var i in this._uniforms) {
+			callback(this._uniforms[i]);
+		}
+	};
+
+	effect.update = function() {
+
+	};
+
 	effect.set = function(spec) {
 		spec = spec || {};
 
@@ -123,6 +147,15 @@ define([
 			destroyElementsOnClear: false,
 			elements: spec.textures
 		});
+
+		this._uniforms = {};
+		for (var u in spec.uniforms) {
+			this.addUniform(objectFactory.create(shaderUniform, spec.uniforms[u]));
+		}
+
+		if (spec.update) {
+			this.update = spec.update;
+		}
 
 		return this;
 	};

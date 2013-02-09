@@ -65,7 +65,7 @@ define([], function() {
 			input._currentState[ev.keyCode] = false;
 		};
 
-		document.onmousedown = function(ev) {
+		spec.canvas.onmousedown = function(ev) {
 			input._mouseButtonDown = true;
 		};
 

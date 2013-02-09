@@ -74,6 +74,7 @@ define([
 
 		this._input = input;
 		this.input.set({
+			canvas: this.renderer.canvas,
 			grabInput: spec.grabInput
 		});
 

@@ -2,10 +2,10 @@ precision highp float;
 
 uniform float uSepiaCoeff;
 uniform float uNoiseCoeff;
-//uniform float uRandomValue;
+uniform float uRandomCoeff;
 uniform float uScratchCoeff;
-//uniform float uTimeLapse;
-//uniform float uOuterVignetting;
+uniform float uTime;
+uniform float uOuterVignetting;
 uniform float uInnerVignetting;
 
 uniform bool uUseTextures;
@@ -83,21 +83,19 @@ void main(void) {
         result.rgb = grayscale + uSepiaCoeff * (result.rgb - grayscale);
     }
 
-    float uRandomValue = 0.5;
     if (uNoiseCoeff > 0.0) {
-        float noise = snoise(vTextureCoord * vec2(1024.0 + uRandomValue * 512.0, 1024.0 + uRandomValue * 512.0)) * 0.5;
+        float noise = snoise(vTextureCoord * vec2(1024.0 + uRandomCoeff * 512.0, 1024.0 + uRandomCoeff * 512.0)) * 0.5;
         result += noise * uNoiseCoeff;
     }
 
-    float uTimeLapse = 0.0;
-    if (uScratchCoeff > uRandomValue) {
+    if (uScratchCoeff > uRandomCoeff) {
         float dist = 1.0 / uScratchCoeff;
-        float d = distance(vTextureCoord, vec2(uRandomValue * dist, uRandomValue * dist));
+        float d = distance(vTextureCoord, vec2(uRandomCoeff * dist, uRandomCoeff * dist));
         if (d < 0.4) {
             float xPeriod = 8.0;
             float yPeriod = 1.0;
             float pi = 3.141592;
-            float phase = uTimeLapse;
+            float phase = uTime;
             float turbulence = snoise(vTextureCoord * 2.5);
             float vScratch = 0.5 + (sin(((vTextureCoord.x * xPeriod + vTextureCoord.y * yPeriod + turbulence)) * pi + phase) * 0.5);
             vScratch = clamp((vScratch * 3000.0) + 0.35, 0.0, 1.0);
@@ -106,7 +104,6 @@ void main(void) {
         }
     }
 
-    float uOuterVignetting = 1.5;
     float d = distance(vec2(0.5, 0.5), vTextureCoord) * 1.414213;
     float vignetting = clamp((uOuterVignetting - d) / (uOuterVignetting - uInnerVignetting), 0.0, 1.0);
     result.xyz *= vignetting;
