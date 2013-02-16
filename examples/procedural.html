@@ -3,8 +3,10 @@
 	<head>
 		<title>CrimildJS Example: Procedural Textures</title>
 	    <script type="text/javascript" src="../lib/jquery-1.9.0.js"></script>
+	    <script type="text/javascript" src="../lib/jquery-ui-1.10.0.custom.min.js"></script>
 		<script data-main="../src/crimild" src="../lib/require.js"></script>
-		<link rel="stylesheet" type="text/css" href="css/default.css" />
+		<link rel="stylesheet" type="text/css" href="../css/smoothness/jquery-ui-1.10.0.custom.min.css">
+		<link rel="stylesheet" type="text/css" href="../css/example.css" />
 		<script type="text/javascript">
 			requirejs([
 					"crimild", 
@@ -24,12 +26,6 @@
 					scene: {
 						_prototype: crimild.groupNode,
 						nodes: [
-							{
-								_prototype: crimild.lightNode,
-								local: {
-									translate: [0, 0, 1]
-								}
-							},
 							{
 								_prototype: crimild.geometryNode,
 								primitives: [
@@ -53,6 +49,14 @@
 												cullState: {
 													enabled: false
 												},
+												uniforms: [
+													{ name: "uBrickSize", data: 1.0, },
+													{ name: "uBrickPct", data: 1.0, },
+												],
+												update: function(time) {
+													this.getUniform("uBrickSize").data = $("#size").val();
+													this.getUniform("uBrickPct").data = $("#pct").val();
+												}
 											}
 										]
 									},
@@ -69,6 +73,26 @@
 					}
 				});
 			});
+
+			function createSlider(id, min, max, value, normalize, orientation) {
+    			$("#slider-" + id).slider({
+    				orientation: orientation || "horizontal",
+      				range: "max",
+      				min: min,
+      				max: max,
+      				value: value,
+      				slide: function(event, ui) {
+      					console.log(ui.value, ui.value / max);
+        				$("#" + id).val(ui.value / (normalize ? max : 1.0));
+      				}
+    			});
+    			$("#" + id).val($("#slider-" + id).slider("value") / (normalize ? max : 1.0)).hide();
+			}
+
+			$(function() {
+				createSlider("size", 10, 100, 50, true);
+				createSlider("pct", 0.1, 100, 100, true);
+  			});
 		</script>
 	</head>
 	<body>
@@ -78,6 +102,16 @@
 		<div>
 	        <div class="hud">
 	            <p><a href="javascript:window.parent.location = '../index.html';">crimildjs</a> procedural textures example</p>
+	            <div class="options">
+	            	<div class="option">
+	            		<input type="text" id="size" />
+	            		<div id="slider-size"></div>
+	            	</div>
+	            	<div class="option">
+	            		<input type="text" id="pct" />
+	            		<div id="slider-pct"></div>
+	            	</div>
+	            </div>
 	        </div>
 		</div>
 	</body>

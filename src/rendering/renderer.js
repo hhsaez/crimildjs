@@ -687,6 +687,7 @@ define([
 
 		this.enableProgram(aProgram);
 		this.enableUniforms(aProgram, aRenderComponent);
+		this.enableUniforms(aProgram, anEffect);
 		this.enableLights(aProgram, aRenderComponent);
 		this.enableTextures(aProgram, anEffect);
 		this.enableMaterialProperties(aProgram, anEffect);
