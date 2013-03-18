@@ -801,7 +801,10 @@ define([
 		}
 
 		try {
-			this._gl = this.canvas.getContext(spec.context || "experimental-webgl");
+			this._gl = this.canvas.getContext("experimental-webgl");
+			if (!this._gl) {
+				this._gl = this.canvas.getContext("webgl");
+			}
 		}
 		catch(e) {
 			var answer = confirm("Cannot initialize WebGL context. Please make sure your browser supports WebGL and verify that you have the latest drivers for you graphics card.\n\nClick OK for more information.");
