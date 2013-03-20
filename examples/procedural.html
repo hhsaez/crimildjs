@@ -82,7 +82,6 @@
       				max: max,
       				value: value,
       				slide: function(event, ui) {
-      					console.log(ui.value, ui.value / max);
         				$("#" + id).val(ui.value / (normalize ? max : 1.0));
       				}
     			});

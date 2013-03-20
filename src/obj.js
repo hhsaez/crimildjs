@@ -260,6 +260,7 @@ define(["crimild"], function(crimild) {
 							_prototype: crimild.image,
 							data: material.specularMap
 						},
+						flipVertical: true
 					}));
 					uniforms.push({
 						_prototype: crimild.shaderUniform,
