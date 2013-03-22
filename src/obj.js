@@ -139,13 +139,31 @@ define(["crimild"], function(crimild) {
 				this._materials[this._currentMaterial.name] = this._currentMaterial;
 			}
 			else if (vals[0] === "Ka") {
-				this._currentMaterial.ambient = [parseFloat(vals[1]), parseFloat(vals[2]), parseFloat(vals[3])]
+				var r = parseFloat(vals[1]);
+				var g = parseFloat(vals[2]);
+				var b = parseFloat(vals[2]);
+				if (r > 0 || g > 0 || b > 0) {
+					this._currentMaterial.ambient = [r, g, b];
+				}
 			}
 			else if (vals[0] === "Kd") {
-				this._currentMaterial.diffuse = [parseFloat(vals[1]), parseFloat(vals[2]), parseFloat(vals[3])]
+				var r = parseFloat(vals[1]);
+				var g = parseFloat(vals[2]);
+				var b = parseFloat(vals[2]);
+				if (r > 0 || g > 0 || b > 0) {
+					this._currentMaterial.diffuse = [r, g, b];
+				}
 			}
 			else if (vals[0] === "Ks") {
-				this._currentMaterial.specular = [parseFloat(vals[1]), parseFloat(vals[2]), parseFloat(vals[3])]
+				var r = parseFloat(vals[1]);
+				var g = parseFloat(vals[2]);
+				var b = parseFloat(vals[2]);
+				if (r > 0 || g > 0 || b > 0) {
+					this._currentMaterial.specular = [r, g, b];
+				}
+			}
+			else if (vals[0] === "Ns") {
+				this._currentMaterial.shininess = parseFloat(vals[1])
 			}
 			else if (vals[0] === "map_Kd") {
 				// pause the line processing until the map has been read
@@ -164,6 +182,17 @@ define(["crimild"], function(crimild) {
 					var that = this;
 					this._require(["image!" + this._filePath + vals[1]], function(map) {
 						that._currentMaterial.specularMap = map;
+						that.processMaterialLines(lines, i + 1, callback);
+					});
+					return;
+				}
+			}
+			else if (vals[0] === "map_bump") {
+				// pause the line processing until the map has been read
+				if (vals[1]) {
+					var that = this;
+					this._require(["image!" + this._filePath + vals[1]], function(map) {
+						that._currentMaterial.normalMap = map;
 						that.processMaterialLines(lines, i + 1, callback);
 					});
 					return;
@@ -240,6 +269,7 @@ define(["crimild"], function(crimild) {
 			if (material) {
 				var textures = [];
 				var uniforms = [];
+
 				if (material.diffuseMap) {
 					textures.push(crimild.objectFactory.inflate({
 						_prototype: crimild.texture,
@@ -270,6 +300,24 @@ define(["crimild"], function(crimild) {
 					});
 				}
 
+				if (material.normalMap) {
+					textures.push(crimild.objectFactory.inflate({
+						_prototype: crimild.texture,
+						name: "uNormalMapSampler",
+						image: {
+							_prototype: crimild.image,
+							data: material.normalMap
+						},
+						flipVertical: true
+					}));
+					uniforms.push({
+						_prototype: crimild.shaderUniform,
+	                    name: "uUseNormalMap",
+	                    data: true,
+	                    type: crimild.shaderUniform.types.BOOL,
+					});
+				}
+
 				geometry.attachComponent(crimild.objectFactory.inflate({
 					_prototype: crimild.effectComponent,
 					effects: [
@@ -278,8 +326,10 @@ define(["crimild"], function(crimild) {
 							diffuse: material.diffuse,
 							ambient: material.ambient,
 							specular: material.specular,
+							shininess: material.shininess,
 							textures: textures,
 							uniforms: uniforms,
+							cullState: { enabled: false }
 						}
 					]
 				}));

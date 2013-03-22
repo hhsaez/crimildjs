@@ -438,8 +438,11 @@ define([
 
 	renderer.enableTextures = function(aProgram, anEffect) {
 		var that = this;
-		this.setUniformBool(aProgram.renderCache.useTexturesUniform, anEffect.textures.count() > 0);
+		//this.setUniformBool(aProgram.renderCache.useTexturesUniform, anEffect.textures.count() > 0);
 		anEffect.textures.each(function(aTexture, index) {
+			if (aTexture.name === "uSampler") {
+				that.setUniformBool(aProgram.renderCache.useTexturesUniform, anEffect.textures.count() > 0);
+			}
 			that.enableTexture(index, aTexture, aProgram);
 		});
 	};

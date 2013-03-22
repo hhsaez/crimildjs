@@ -50,7 +50,7 @@ void main(void) {
         baseColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
     }
 
-    baseColor *= vec4(uMaterial.Diffuse, 1.0);
+    //baseColor *= vec4(uMaterial.Ambient, 1.0);
 
     vec4 result = vec4(1.0, 1.0, 1.0, 1.0);
 
@@ -91,14 +91,14 @@ void main(void) {
                 if (df > 0.0) {
                     // compute specular factor
                     float sf = 0.0;
-                    if (uUseSpecularMap) {
-                        float shininess = texture2D(uSpecularMapSampler, vec2(vTextureCoord.s, vTextureCoord.t)).r * 255.0;
-                        if (shininess < 255.0) {
-                            sf = pow(max(dot(halfVec, normal), 0.0), shininess);
+                    if ( uUseSpecularMap ) {
+                        vec4 specularPixel = texture2D(uSpecularMapSampler, vec2(vTextureCoord.s, vTextureCoord.t)).rgba;
+                        if (specularPixel.r < 1.0) {
+                            sf = pow(max(dot(lightVec, normal), 0.0), uMaterial.Shininess);
                         }
                     }
                     else {
-                        sf = pow(max(dot(halfVec, normal), 0.0), uMaterial.Shininess);
+                        sf = pow(max(dot(lightVec, normal), 0.0), uMaterial.Shininess);
                     }
 
                     // add to color
@@ -123,10 +123,10 @@ void main(void) {
                     // compute specular factor
                     vec3 r = -normalize(reflect(L, vNormal));
                     float sf = 0.0;
-                    if (uUseSpecularMap) {
-                        float shininess = texture2D(uSpecularMapSampler, vec2(vTextureCoord.s, vTextureCoord.t)).r * 255.0;
-                        if (shininess < 255.0) {
-                            sf = pow(max(dot(r, vViewVector), 0.0), shininess);
+                    if ( uUseSpecularMap ) {
+                        vec4 specularPixel = texture2D(uSpecularMapSampler, vec2(vTextureCoord.s, vTextureCoord.t)).rgba;
+                        if (specularPixel.r < 1.0) {
+                            sf = pow(max(dot(r, vViewVector), 0.0), uMaterial.Shininess);
                         }
                     }
                     else {

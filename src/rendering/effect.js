@@ -135,7 +135,7 @@ define([
 
 		this._ambient = vec3.create(spec.ambient || [0.2, 0.2, 0.2]);
 		this._diffuse = vec3.create(spec.diffuse || [0.8, 0.8, 0.8]);
-		this._specular = vec3.create(spec.specular || [0.8, 0.8, 0.8]);
+		this._specular = vec3.create(spec.specular || [1.0, 1.0, 1.0]);
 		this._shininess = spec.shininess || 50;
 		
 		this._alphaState = Object.create(alphaState).set(spec.alphaState);
