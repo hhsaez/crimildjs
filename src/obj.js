@@ -165,6 +165,12 @@ define(["crimild"], function(crimild) {
 			else if (vals[0] === "Ns") {
 				this._currentMaterial.shininess = parseFloat(vals[1])
 			}
+			else if (vals[0] === "d") {
+				var d = parseFloat(vals[1]);
+				if (d < 1) {
+					this._currentMaterial.alphaEnabled = true;
+				}
+			}
 			else if (vals[0] === "map_Kd") {
 				// pause the line processing until the map has been read
 				if (vals[1]) {
@@ -182,6 +188,17 @@ define(["crimild"], function(crimild) {
 					var that = this;
 					this._require(["image!" + this._filePath + vals[1]], function(map) {
 						that._currentMaterial.specularMap = map;
+						that.processMaterialLines(lines, i + 1, callback);
+					});
+					return;
+				}
+			}
+			else if (vals[0] === "map_Ke") {
+				// pause the line processing until the map has been read
+				if (vals[1]) {
+					var that = this;
+					this._require(["image!" + this._filePath + vals[1]], function(map) {
+						that._currentMaterial.emissiveMap = map;
 						that.processMaterialLines(lines, i + 1, callback);
 					});
 					return;
@@ -318,6 +335,24 @@ define(["crimild"], function(crimild) {
 					});
 				}
 
+				if (material.emissiveMap) {
+					textures.push(crimild.objectFactory.inflate({
+						_prototype: crimild.texture,
+						name: "uEmissiveMapSampler",
+						image: {
+							_prototype: crimild.image,
+							data: material.emissiveMap
+						},
+						flipVertical: true
+					}));
+					uniforms.push({
+						_prototype: crimild.shaderUniform,
+	                    name: "uUseEmissiveMap",
+	                    data: true,
+	                    type: crimild.shaderUniform.types.BOOL,
+					});
+				}
+
 				geometry.attachComponent(crimild.objectFactory.inflate({
 					_prototype: crimild.effectComponent,
 					effects: [
@@ -329,7 +364,8 @@ define(["crimild"], function(crimild) {
 							shininess: material.shininess,
 							textures: textures,
 							uniforms: uniforms,
-							cullState: { enabled: false }
+							cullState: { enabled: material.alphaEnabled ? false : true },
+							alphaState: { enabled: material.alphaEnabled },
 						}
 					]
 				}));

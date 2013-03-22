@@ -36,6 +36,8 @@ uniform bool uUseSpecularMap;
 uniform sampler2D uSpecularMapSampler;
 uniform bool uUseNormalMap;
 uniform sampler2D uNormalMapSampler;
+uniform bool uUseEmissiveMap;
+uniform sampler2D uEmissiveMapSampler;
 
 varying vec2 vTextureCoord;
 varying vec4 vPosition;
@@ -49,8 +51,6 @@ void main(void) {
     if (uUseTextures) {
         baseColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
     }
-
-    //baseColor *= vec4(uMaterial.Ambient, 1.0);
 
     vec4 result = vec4(1.0, 1.0, 1.0, 1.0);
 
@@ -141,6 +141,10 @@ void main(void) {
     }
     else {
         result = baseColor;
+    }
+
+    if ( uUseEmissiveMap ) {
+        result += texture2D(uEmissiveMapSampler, vec2(vTextureCoord.s, vTextureCoord.t));
     }
 
     gl_FragColor = result;

@@ -10,10 +10,12 @@
 		<script type="text/javascript">
 			requirejs([
 					"crimild", 
-					"obj!../examples/assets/ironman/Iron_Man.obj"
+					"obj!../examples/assets/ironman/Iron_Man.obj",
+					"text!../shaders/glow.vert", "text!../shaders/glow.frag",
 				], function(
 					crimild, 
-					objScene
+					objScene,
+					glow_vs, glow_fs
 				) {
 
 				var canvas = $("#canvas").get(0);
@@ -40,14 +42,39 @@
 								components: [
 									{ _prototype: crimild.trackpadComponent }
 								]
+							},
+							{
+								_prototype: crimild.cameraNode,
+								aspectRatio: (window.innerWidth / window.innerHeight),
+								local: {
+									translate: [0, 0.5, 3]
+								},
+								components: [
+									{
+										_prototype: crimild.effectComponent,
+										effects: [
+											{
+												_prototype: crimild.effect,
+												shaderProgram: {
+													vertexShader: glow_vs,
+													fragmentShader: glow_fs,
+												},
+												uniforms: [
+												{ name: "uUseBloom", data: true }
+												],
+												update: function(time) {
+													this.getUniform("uUseBloom").data = $("#glow").is(":checked");
+												}
+											}
+										]
+									}
+								]
 							}
 						],
-						local: {
-							translate: [0, 0, -3.25]
-						},
 					},
 					renderer: {
 						canvas: canvas,
+						clearColor: [0, 0, 0, 1]
 					}
 				});
 			});
@@ -60,6 +87,7 @@
 		<div>
 	        <div class="hud">
 	            <p><a href="javascript:window.parent.location = '../index.html';">crimildjs</a> IronMan</p>
+	            <p><input type="checkbox" id="glow" /> glow<br/></p>
 	        </div>
 		</div>
 	</body>

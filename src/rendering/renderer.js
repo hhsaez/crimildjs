@@ -56,6 +56,11 @@ define([
 				return this._defaultFrameBuffer;
 			}
 		},
+		lowResFrameBuffer: {
+			get: function() {
+				return this._lowResFrameBuffer;
+			}
+		},
 		screenPrimitive: {
 			get: function() {
 				return this._screenPrimitive;
@@ -712,7 +717,8 @@ define([
 
 		var that = this;
 		this.enableTexture(0, this.defaultFrameBuffer.texture, aProgram);
-		var i = 1;
+		this.enableTexture(1, this.lowResFrameBuffer.texture, aProgram);
+		var i = 2;
 		anEffect.textures.each(function(aTexture, index) {
 			that.enableTexture(i, aTexture, aProgram);
 			i++;
@@ -721,6 +727,20 @@ define([
 		this.enableMaterialProperties(aProgram, anEffect);
 		this.enableRenderStates(aProgram, anEffect);
 		this.renderPrimitive(aProgram, this.screenPrimitive);
+	};
+
+	renderer.renderLowResFramebuffer = function() {
+		this.enableFrameBuffer(this.lowResFrameBuffer);
+		this.clearBuffers();
+		
+		this.gl.viewport(0, 0, this.lowResFrameBuffer.width, this.lowResFrameBuffer.height);
+
+		var aProgram = this.defaultScreenEffect.shaderProgram;
+		this.enableProgram(aProgram);
+		this.enableTexture(0, this.defaultFrameBuffer.texture, aProgram);
+		this.renderPrimitive(aProgram, this.screenPrimitive);
+		
+		this.disableFrameBuffer(this.lowResFrameBuffer);
 	};
 
 	renderer.loadFrameBuffer = function(aFrameBuffer) {
@@ -770,8 +790,10 @@ define([
 
 	renderer.endRender = function() {
 		this.disableFrameBuffer(this.defaultFrameBuffer);
-		this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+		
+		this.renderLowResFramebuffer();
 
+		this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
 		if (this.camera) {
 			var postProcessingEffects = this.camera.getComponent("effects");
 			if (postProcessingEffects) {
@@ -830,6 +852,13 @@ define([
 		this._defaultFrameBuffer = objectFactory.create(frameBufferObject, {
 			width: mathUtils.pow2roundUp(this.canvas.width, 2048),
 			height: mathUtils.pow2roundUp(this.canvas.height, 1024),
+			clearColor: spec.clearColor,
+		});
+
+		this._lowResFrameBuffer = objectFactory.create(frameBufferObject, {
+			name: "uLowResFrameSampler",
+			width: mathUtils.pow2roundUp(this.canvas.width, 2048) / 8.0,
+			height: mathUtils.pow2roundUp(this.canvas.height, 1024) / 8.0,
 			clearColor: spec.clearColor,
 		});
 

@@ -43,7 +43,7 @@ define(["./renderResource", "./texture"], function(renderResource, texture) {
 
 		renderResource.set.call(this, spec);
 
-		this._texture = spec.texture || Object.create(texture).set();
+		this._texture = spec.texture || Object.create(texture).set({ name: spec.name });
 		this._width = spec.width || 512;
 		this._height = spec.height || 512;
 		this._clearColor = vec4.create(spec.clearColor || [0, 0, 0, 1]);
