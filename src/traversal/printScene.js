@@ -3,10 +3,29 @@ define(["core/nodeVisitor"], function(nodeVisitor) {
 
 	var printScene = Object.create(nodeVisitor);
 
-	printScene._parentCount = 0;
+	Object.defineProperties(printScene, {
+		parentCount: {
+			get: function() {
+				return this._parentCount;
+			}
+		},
+		printCallback: {
+			get: function() {
+				return this._printCallback;
+			},
+			set: function(value) {
+				this._printCallback = value;
+			}
+		}
+	});
 
 	printScene.reset = function() {
 		this._parentCount = 0;
+		if (!this._printCallback) {
+			this._printCallback = function(aNode, identation) {
+				console.log(identation, aNode);
+			}
+		}
 	};
 
 	printScene.visitNode = function(node) {
@@ -14,8 +33,8 @@ define(["core/nodeVisitor"], function(nodeVisitor) {
 		for (var i = 0; i < this._parentCount; i++) {
 			spaces += "\t";
 		};
-		//console.log(spaces + node.name + " " + vec3.str(node.world.translate));
-		console.log(spaces, node);
+
+		this.printCallback(node, spaces);
 	};
 
 	printScene.visitGroupNode = function(group) {

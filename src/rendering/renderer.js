@@ -248,6 +248,9 @@ define([
 					this.setUniformFloat(uniformLocation, uniform.data[0], uniform.data[1], uniform.data[2], uniform.data[3]);
 				}
 			}
+			else if (uniform.type === shaderUniform.types.MATRIX_4) {
+				this.gl.uniformMatrix4fv(uniformLocation, this.gl.TRUE, uniform.data);
+			}
 		}
 	},
 
@@ -317,6 +320,11 @@ define([
 		aProgram.renderCache.vertexTangentAttribute = this.gl.getAttribLocation(aProgram.renderCache, "aVertexTangent");
 		if (aProgram.renderCache.vertexTangentAttribute >= 0) {
 			this.gl.enableVertexAttribArray(aProgram.renderCache.vertexTangentAttribute);
+		}
+
+		aProgram.renderCache.vertexWeightAttribute = this.gl.getAttribLocation(aProgram.renderCache, "aVertexWeight");
+		if (aProgram.renderCache.vertexWeightAttribute >= 0) {
+			this.gl.enableVertexAttribArray(aProgram.renderCache.vertexWeightAttribute);
 		}
 
 		aProgram.renderCache.pMatrixUniform = this.gl.getUniformLocation(aProgram.renderCache, "uPMatrix");
@@ -611,6 +619,17 @@ define([
         			false, 
         			vf.getVertexSizeInBytes(), 
         			vf.getPositionsOffsetInBytes());
+			}
+		}
+
+		if (aProgram.renderCache.vertexWeightAttribute >= 0) {
+			if (vf.weights > 0) {
+        		this.gl.vertexAttribPointer(aProgram.renderCache.vertexWeightAttribute, 
+        			vf.weights, 
+        			this.gl.FLOAT, 
+        			false, 
+        			vf.getVertexSizeInBytes(), 
+        			vf.getWeightsOffsetInBytes());
 			}
 		}
 	};

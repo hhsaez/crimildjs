@@ -44,6 +44,14 @@ define(function() {
 				this._tangents = value;
 			}
 		},
+		weights: {
+			get: function() {
+				return this._weights;
+			},
+			set: function(value) {
+				this._weights = value;
+			}
+		},
 	});
 
 	vertexFormat.getPositionsOffset = function() {
@@ -86,8 +94,16 @@ define(function() {
 		return 4 * this.getTangentsOffset();
 	};
 
+	vertexFormat.getWeightsOffset = function() {
+		return this.getTangentsOffset() + this.tangents;
+	};
+
+	vertexFormat.getWeightsOffsetInBytes = function() {
+		return 4 * this.getWeightsOffset();
+	};
+
 	vertexFormat.getVertexSize = function() {
-		return this.positions + this.normals + this.colors + this.textureCoords + this.tangents;
+		return this.positions + this.normals + this.colors + this.textureCoords + this.tangents + this.weights;
 	};
 
 	vertexFormat.getVertexSizeInBytes = function() {
@@ -103,6 +119,7 @@ define(function() {
 		this._colors = spec.colors || 0;
 		this._textureCoords = spec.textureCoords || 0;
 		this._tangents = spec.tangents || 0;
+		this._weights = spec.weights || 0;
 
 		return this;
 	};
