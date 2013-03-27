@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>CrimildJS Example: IronMan</title>
+	    <script type="text/javascript" src="../lib/jquery-1.9.0.js"></script>
+	    <script type="text/javascript" src="../lib/jquery-ui-1.10.0.custom.min.js"></script>
+		<script data-main="../src/crimild" src="../lib/require.js"></script>
+		<link rel="stylesheet" type="text/css" href="../css/smoothness/jquery-ui-1.10.0.custom.min.css">
+		<link rel="stylesheet" type="text/css" href="../css/example.css" />
+		<script type="text/javascript">
+			requirejs([
+					"crimild", 
+					"text!../examples/assets/ironman/Iron_Man.dae",
+					"image!../examples/assets/ironman/Iron_Man_D.png",
+					"image!../examples/assets/ironman/Iron_Man_N.png",
+					"text!../shaders/animated.vert", "text!../shaders/animated.frag"
+				], function(
+					crimild, 
+					iron_man_dae,
+					iron_man_diff,
+					iron_man_norm,
+					animated_vs, animated_fs
+				) {
+
+				var canvas = $("#canvas").get(0);
+				canvas.width = window.innerWidth;
+				canvas.height = window.innerHeight;
+
+				var colladaNode = Object.create(crimild.groupNode);				
+
+				colladaNode.fetchInstanceByUrl = function(input) {
+					var id = input.attributes.url.value.replace("#", "");
+					return this.document.getElementById(id);
+				};
+
+				colladaNode.fetchInstanceBySourceId = function(input) {
+					var id = input.attributes.source.value.replace("#", "");
+					return this.document.getElementById(id);
+				};
+
+				colladaNode.fetchInstanceByTarget = function(input) {
+					var id = input.attributes.target.value.replace("#", "");
+					return this.document.getElementById(id);
+				};
+
+				colladaNode.fetchValuesFromArray = function(array) {
+					var values = [];
+					if (array) {
+						var arrayData = array.childNodes[0].nodeValue.split(' ')
+						for (var i in arrayData) {
+							values.push(parseFloat(arrayData[i]));
+						}
+					}
+
+					return values;
+				};
+
+				colladaNode.fetchNamesFromArray = function(array) {
+					var values = [];
+					if (array) {
+						values = array.childNodes[0].nodeValue.split(' ')
+					}
+
+					return values;
+				};
+
+				colladaNode.loadFloatArray = function(source) {
+					return this.fetchValuesFromArray(source.getElementsByTagName("float_array")[0]);
+				};
+
+				colladaNode.buildTrianglePrimitive = function(pArray, inputs, weights) {
+					var vertices = [];
+					var indices = [];
+					var positions = inputs["POSITION"];
+					var normals = inputs["NORMAL"];
+					var textureCoords = inputs["TEXCOORD"];
+
+					var vertexCount = positions.length / 3;
+					for (var idx = 0; idx < vertexCount; idx++) {
+						vertices.push(positions[idx * 3 + 0]);
+						vertices.push(positions[idx * 3 + 1]);
+						vertices.push(positions[idx * 3 + 2]);
+
+						if (normals && normals.length > 0) {
+							vertices.push(normals[idx * 3 + 0]);
+							vertices.push(normals[idx * 3 + 1]);
+							vertices.push(normals[idx * 3 + 2]);
+						}
+
+						if (textureCoords && normals.length > 0) {
+							vertices.push(textureCoords[idx * 2 + 0]);
+							vertices.push(textureCoords[idx * 2 + 1]);
+						}
+
+						if (weights && weights.length > 0) {
+							vertices.push(weights[idx * 2 + 0]);
+							vertices.push(weights[idx * 2 + 1]);
+						}
+					}
+
+					return crimild.objectFactory.inflate({
+						_prototype: crimild.primitive,
+						type: crimild.primitive.types.TRIANGLES,
+						vertexBuffer: {
+							_prototype: crimild.vertexBufferObject,
+							vertexFormat: {
+								_prototype: crimild.vertexFormat,
+								positions: positions && positions.length > 0 ? 3 : 0,
+								normals: normals && normals.length > 0 ? 3 : 0,
+								textureCoords: textureCoords && textureCoords.length > 0 ? 2 : 0,
+								weights: weights && weights.length > 0 ? 2 : 0,
+							},
+							vertexCount: vertexCount,
+							data: vertices
+						},
+						indexBuffer: {
+							_prototype: crimild.indexBufferObject,
+							indexCount: pArray.length,
+							data: pArray
+						},
+					});
+				};
+
+				colladaNode.loadGeometry = function(geometry, weights) {
+					console.log(geometry);
+					var mesh = geometry.getElementsByTagName("mesh")[0];
+					if (mesh) {
+						var triangles = mesh.getElementsByTagName("triangles")[0];
+						if (triangles) {
+							var vertices = this.fetchInstanceBySourceId(triangles.getElementsByTagName("input")[0]);
+							var vertexInputs = {};
+							for (var vi in vertices.childNodes) {
+								var input = vertices.childNodes[vi];
+								if (input.nodeName === "input") {
+									vertexInputs[input.attributes.semantic.value] = this.loadFloatArray(this.fetchInstanceBySourceId(input));
+								}
+							}
+
+							var pArray = this.fetchValuesFromArray(triangles.getElementsByTagName("p")[0]);
+							if (pArray) {
+								var primitive = this.buildTrianglePrimitive(pArray, vertexInputs, weights);
+								if (primitive) {
+									var geometryNode = crimild.objectFactory.inflate({
+										_prototype: crimild.geometryNode,
+										primitives: [
+											primitive
+										]
+									});
+									this.nodes.attach(geometryNode);
+									return geometryNode;
+								}
+							}
+						}
+					}
+					return null;
+				};
+
+				colladaNode.loadController = function(controller) {
+					var skin = controller.getElementsByTagName("skin")[0];
+					if (skin) {
+						console.log(skin);
+						var vertexWeights = skin.getElementsByTagName("vertex_weights")[0];
+						var weights = [];
+						if (vertexWeights) {
+							var vcount = this.fetchValuesFromArray(vertexWeights.getElementsByTagName("vcount")[0]);
+							var v = this.fetchValuesFromArray(vertexWeights.getElementsByTagName("v")[0]);
+							var vertexWeightSources = {};
+							for (var i in vertexWeights.childNodes) {
+								var input = vertexWeights.childNodes[i];
+								if (input.nodeName === "input") {
+									var semantic = input.attributes.semantic.value;
+									if (semantic === "WEIGHT") {
+										var source = this.fetchInstanceBySourceId(input);
+										if (source) {
+											vertexWeightSources["WEIGHT"] = this.loadFloatArray(source);
+										}
+									}
+								}
+							}
+
+							var maxWeight = 0;
+							var vertexCount = 0;
+							var jointCount = 0;
+
+							while (vertexCount < vcount.length) {
+								var j = vcount[vertexCount];
+								weights.push(v[jointCount * 2 + 0]);
+								weights.push(v[jointCount * 2 + 1]);
+								if (!isNaN(j)) {
+									jointCount += j;
+								}
+								vertexCount++;
+							}
+						}
+
+						var geometry = this.loadGeometry(this.fetchInstanceBySourceId(skin), weights);
+
+						var joints = skin.getElementsByTagName("joints")[0];
+						if (joints) {
+							var jointInputs = {};
+							for (var i in joints.childNodes) {
+								var input = joints.childNodes[i];
+								if (input.nodeName === "input") {
+									var source = this.fetchInstanceBySourceId(input);
+									if (input.attributes.semantic.value === "JOINT") {
+										jointInputs["JOINT"] = this.fetchNamesFromArray(source.getElementsByTagName("Name_array")[0]);
+									}
+									else if (input.attributes.semantic.value === "INV_BIND_MATRIX") {
+										jointInputs["POSES"] = this.fetchValuesFromArray(source.getElementsByTagName("float_array")[0]);
+									}
+								}
+							}
+							
+							var poses = jointInputs["POSES"];
+							var poseCount = poses.length / 16;
+
+							var uniforms = [{
+								name: "uJointCount",
+								type: crimild.shaderUniform.types.INT,
+								data: jointInputs["JOINT"].length
+							},
+							{
+								name: "uUseVertexSkinning",
+								type: crimild.shaderUniform.types.BOOL,
+								data: true
+							}];
+
+							console.log(poses);
+
+							if (poses) {
+								for (var i = 0; i < poseCount; i++) {
+									var matrix = mat4.create();
+									for (var j = 0; j < 16; j++) {
+										matrix[j] = poses[i * 16 + j];
+									}
+									mat4.inverse(matrix);
+									uniforms.push({
+										name: "uJoints[" + i + "].InvBindPose",
+										type: crimild.shaderUniform.types.MATRIX_4,
+										data: matrix
+									});
+								}
+							}
+
+							geometry.attachComponent(crimild.objectFactory.inflate({
+								_prototype: crimild.shaderUniformComponent,
+								uniforms: uniforms
+							}));
+						}
+
+						return geometry;
+					}
+
+					return null;
+				};
+
+				colladaNode.bindMaterial = function(node, input) {
+					var techniqueCommon = input.getElementsByTagName("technique_common")[0];
+					if (techniqueCommon) {
+						var instanceMaterial = techniqueCommon.getElementsByTagName("instance_material")[0];
+						if (instanceMaterial) {
+							var material = this.fetchInstanceByTarget(instanceMaterial);
+							if (material) {
+								var instanceEffect = material.getElementsByTagName("instance_effect")[0];
+								if (instanceEffect) {
+									var effect = this.fetchInstanceByUrl(instanceEffect);
+									console.log(effect);
+								}
+							}
+						}
+					}
+				};
+
+				colladaNode.loadNode = function(node) {
+					var instanceController = node.getElementsByTagName("instance_controller")[0];
+					if (instanceController) {
+						var node = this.loadController(this.fetchInstanceByUrl(instanceController));
+						/*
+						if (node) {
+							var bindMaterial = instanceController.getElementsByTagName("bind_material")[0];
+							if (bindMaterial) {
+								this.bindMaterial(node, bindMaterial);
+							}
+						}*/
+					}
+				};
+
+				colladaNode.loadJoint = function(node) {
+					var group = crimild.objectFactory.create(crimild.groupNode, { name: node.attributes.sid.value });
+
+					for (var n in node.childNodes) {
+						if (node.childNodes[n].nodeName === "node") {
+							var child = this.loadJoint(node.childNodes[n]);
+							if (child) {
+								group.nodes.attach(child);
+							}
+						}
+					}
+
+					return group;
+				};
+
+				colladaNode.loadVisualScene = function(input) {
+					var visualScene = this.fetchInstanceByUrl(input);
+					for (var i in visualScene.childNodes) {
+						var node = visualScene.childNodes[i];
+						if (node.nodeName === "node") {
+							if (node.attributes.type) {
+								if (node.attributes.type.value === "NODE") {
+									this.loadNode(node);
+								}
+								else if (node.attributes.type.value === "JOINT") {
+									var root = this.loadJoint(node);
+									if (root) {
+										crimild.printScene.printCallback = function(aNode, indentation) {
+											console.log(indentation, aNode.name);
+										};
+										root.perform(crimild.printScene);
+										this.nodes.attach(root);
+									}
+								}
+							}
+						}
+					}
+				};
+
+				colladaNode.load = function() {
+					console.log(this.document);
+
+					var scenes = this.document.getElementsByTagName("scene");
+					if (scenes.length > 0) {
+						var instanceVisualScenes = scenes[0].getElementsByTagName("instance_visual_scene");
+						this.loadVisualScene(instanceVisualScenes[0]);
+					}
+				};
+
+				colladaNode.set = function(spec) {
+					spec = spec || {};
+
+					crimild.groupNode.set.call(this, spec);
+
+					var xmlParser = new DOMParser();
+					this.document = xmlParser.parseFromString(spec.xml, "text/xml");
+					this.load();
+					this.document = null;
+
+					return this;
+				};
+
+				colladaNode.destroy = function() {
+					crimild.groupNode.destroy.call(this);
+				};
+
+				crimild.run({
+					scene: {
+						_prototype: crimild.groupNode,
+						nodes: [
+							{
+								_prototype: crimild.lightNode,
+								local: {
+									translate: [0, 0, 10]
+								},
+							},
+							{
+								_prototype: colladaNode,
+								xml: iron_man_dae,
+								components: [
+									{ 
+										_prototype: crimild.trackpadComponent, 
+									},
+									{
+										_prototype: crimild.effectComponent,
+										effects: [
+											{ 
+												_prototype: crimild.effect,
+												shaderProgram: {
+													vertexShader: animated_vs,
+													fragmentShader: animated_fs
+												},
+												textures: [
+													{
+														_prototype: crimild.texture,
+														name: "uSampler",
+														image: {
+															_prototype: crimild.image,
+															data: iron_man_diff
+														},
+														flipVertical: true
+													},
+													{
+														_prototype: crimild.texture,
+														name: "uNormalMapSampler",
+														image: {
+															_prototype: crimild.image,
+															data: iron_man_norm
+														},
+														flipVertical: true
+													}
+												],
+
+												uniforms: [
+													{ name: "uUseNormalMap", type: crimild.shaderUniform.types.BOOL, data: true }
+												]
+											}
+										]
+									}
+								]
+							}
+						],
+						local: {
+							translate: [0, -2, -5.25]
+						},
+					},
+					renderer: {
+						canvas: canvas,
+					}
+				});
+			});
+		</script>
+	</head>
+	<body>
+        <canvas id="canvas">
+            Your browser does not support WebGL
+        </canvas>
+		<div>
+	        <div class="hud">
+	            <p><a href="javascript:window.parent.location = '../index.html';">crimildjs</a> collada</p>
+	        </div>
+		</div>
+	</body>
+</html>
+
