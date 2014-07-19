@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<script data-main="../../src/crimild" src="../../lib/require.js"></script>
+		<script type="text/javascript">
+			require(["Crimild"], function(C) {
+				new C.Simulation({
+					scene: new C.Group({
+						nodes: [
+							new C.Geometry({
+								primitive: new C.Primitive({
+									vertexBuffer: new C.VertexBufferObject({
+										vertexFormat: C.VertexFormat.VF_P3,
+										count: 3,
+										data: [
+											-1.0, -1.0, 0.0,
+											1.0, -1.0, 0.0,
+											0.0, 1.0, 0.0
+										]
+									}),
+									indexBuffer: new C.IndexBufferObject({
+										count: 3,
+										data: [0, 1, 2]
+									})
+								}),
+								components: [
+									new C.RenderComponent({
+										material: new C.Material({
+											diffuse: [1.0, 0.0, 0.0, 1.0]
+										})
+									})
+								]
+							}),
+							new C.Camera({
+								local: new C.Transformation({
+									local: [0, 0, 5]
+								})
+							})
+						]
+					})
+				}).run();
+			});
+		</script>
+	</head>
+	<body>
+		<canvas id="crimildjs" />
+	</body>
+</html>
+
