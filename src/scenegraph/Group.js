@@ -29,14 +29,43 @@ define(function(require) {
 
 	var Base = require("scenegraph/Node");
 
+	var List = require("foundation/List");
+
 	function Group(spec) {
-		Base.apply(this, spec);
+		spec = spec || {};
+
+		Base.call(this, spec);
+
+		this.nodes = new List({
+			objects: spec.nodes,
+			onAttachCallback: this.onNodeAttached,
+			onDetachCallback: this.onNodeDetached
+		});
 	}
 
 	Group.prototype = Object.create(Base.prototype);
 
+	Object.defineProperties(Group.prototype, {
+		nodes: {
+			get: function() { return this._nodes; },
+			set: function(value) { this._nodes = value; }
+		}
+	});
+
 	Group.prototype.destroy = function() {
 		Base.apply(this);
+	};
+
+	Group.prototype.accept = function(visitor) {
+		visitor.visitGroup(this);
+	};
+
+	Group.prototype.onNodeAttached = function(node) {
+		node.parent = this;
+	};
+
+	Group.prototype.onNodeDetached = function(node) {
+		node.parent = null;
 	};
 
 	return Group;

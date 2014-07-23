@@ -29,17 +29,80 @@ define(function(require) {
 
 	var Base = require("foundation/CrimildObject");
 
-	function Transformation(spec) {
+	function List(spec) {
+		spec = spec || {};
 		Base.call(this, spec);
+
+		this._objects = [];
+
+		this.onAttachCallback = spec.onAttachCallback;
+		this.onDetachCallback = spec.onDetachCallback;
+
+		for (var i in spec.objects) {
+			this.attach(spec.objects[i]);
+		}
 	}
 
-	Transformation.prototype = Object.create(Base.prototype);
+	List.prototype = Object.create(Base.prototype);
 
-	Transformation.prototype.destroy = function() {
+	Object.defineProperties(List.prototype, {
+		onAttachCallback: {
+			get: function() { return this._onAttachCallback; },
+			set: function(value) { this._onAttachCallback = value; },
+		},
+		onDetachCallback: {
+			get: function() { return this._onDetachCallback; },
+			set: function(value) { this._onDetachCallback = value; }
+		},
+	});
+
+	List.prototype.destroy = function() {
+		this.detachAll(true);
 		Base.apply(this);
 	};
 
-	return Transformation;
+	List.prototype.attach = function(object) {
+		this._objects.push(object);
+		if (this.onAttachCallback) {
+			this.onAttachCallback(object);
+		}
+	};
+
+	List.prototype.detach = function(object) {
+		var index = this._objects.indexOf(object);
+		if (index >= 0) {
+			if (this.onDetachCallback) {
+				this.onDetachCallback(object);
+			}
+
+			this._objects.splice(index, 1);
+		}
+		return object;
+	};
+
+	List.prototype.detachAll = function(destroyObjects) {
+		this.each(function(object) {
+			if (this.onDetachCallback) {
+				this.onDetachCallback(object);
+			}
+			if (destroyObjects) {
+				object.destroy();
+			}
+		});
+		this._objects = [];
+	};
+
+	List.prototype.get = function(index) {
+		return this._objects[index];
+	};
+
+	List.prototype.each = function(callback) {
+		for (var i in this._objects) {
+			callback(this._objects[i], i);
+		}
+	};
+
+	return List;
 
 });
 

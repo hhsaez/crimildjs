@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Hugo Hernan Saez
+ * Copyright (c) 2014, Hugo Hernan Saez
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -27,23 +27,32 @@ define(function(require) {
 
 	"use strict";
 
-	var Base = require("simulation/tasks/Task");
+	var Base = require("visitors/NodeVisitor");
 
-	function EndRenderTask(spec) {
+	function ComputeRenderQueue(spec) {
 		Base.call(this, spec);
+
+		this.renderQueue = spec.renderQueue;
 	}
 
-	EndRenderTask.prototype = Object.create(Base.prototype);
+	ComputeRenderQueue.prototype = Object.create(Base.prototype);
 
-	EndRenderTask.prototype.destroy = function() {
+	Object.defineProperties(ComputeRenderQueue.prototype, {
+		renderQueue: {
+			get: function() { return this._renderQueue; },
+			set: function(value) { this._renderQueue = value; }
+		}
+	});
+
+	ComputeRenderQueue.prototype.destroy = function() {
 		Base.apply(this);
 	};
 
-	EndRenderTask.prototype.update = function(simulation) {
-		simulation.renderer.endRender();
-	}
+	ComputeRenderQueue.prototype.visitGeometry = function(geometry) {
+		this.renderQueue.geometries.attach(geometry)
+	};
 
-	return EndRenderTask;
+	return ComputeRenderQueue;
 
 });
 

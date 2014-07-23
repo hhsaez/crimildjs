@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Hugo Hernan Saez
+ * Copyright (c) 2014, Hugo Hernan Saez
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -27,23 +27,36 @@ define(function(require) {
 
 	"use strict";
 
-	var Base = require("simulation/tasks/Task");
+	var Base = require("visitors/NodeVisitor");
 
-	function EndRenderTask(spec) {
+	function UpdateComponents(spec) {
+		spec = spec || {};
 		Base.call(this, spec);
+
+		this.frameTime = spec.frameTime || (1.0 / 60.0);
 	}
 
-	EndRenderTask.prototype = Object.create(Base.prototype);
+	UpdateComponents.prototype = Object.create(Base.prototype);
 
-	EndRenderTask.prototype.destroy = function() {
+	Object.defineProperties(UpdateComponents.prototype, {
+		frameTime: {
+			get: function() { return this._frameTime; },
+			set: function(value) { this._frameTime = value; }
+		}
+	});
+
+	UpdateComponents.prototype.destroy = function() {
 		Base.apply(this);
 	};
 
-	EndRenderTask.prototype.update = function(simulation) {
-		simulation.renderer.endRender();
-	}
+	UpdateComponents.prototype.visitNode = function(node) {
+		var dt = this.frameTime;
+		node.components.each(function(component) {
+			component.update(dt);
+		});
+	};
 
-	return EndRenderTask;
+	return UpdateComponents;
 
 });
 

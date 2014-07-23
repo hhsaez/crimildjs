@@ -30,7 +30,7 @@ define(function(require) {
 	var Base = require("foundation/CrimildObject");
 
 	function Task(spec) {
-		Base.apply(this, spec);
+		Base.call(this, spec);
 	}
 
 	Task.Priorities = {

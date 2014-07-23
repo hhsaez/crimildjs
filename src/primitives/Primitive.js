@@ -30,13 +30,28 @@ define(function(require) {
 	var Base = require("foundation/CrimildObject");
 
 	function Primitive(spec) {
-		Base.apply(this, spec);
+		spec = spec || {};
+		Base.call(this, spec);
+
+		this.vertexBuffer = spec.vertexBuffer;
+		this.indexBuffer = spec.indexBuffer;
 	}
 
 	Primitive.prototype = Object.create(Base.prototype);
 
+	Object.defineProperties(Primitive.prototype, {
+		vertexBuffer: {
+			get: function() { return this._vertexBuffer; },
+			set: function(value) { this._vertexBuffer = value; }
+		},
+		indexBuffer: {
+			get: function() { return this._indexBuffer; },
+			set: function(value) { this._indexBuffer = value; }
+		},
+	});
+
 	Primitive.prototype.destroy = function() {
-		Base.apply(this);
+		Base.prototype.destroy.call(this);
 	};
 
 	return Primitive;

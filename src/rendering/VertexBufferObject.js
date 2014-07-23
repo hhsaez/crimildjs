@@ -27,16 +27,26 @@ define(function(require) {
 
 	"use strict";
 
-	var Base = require("foundation/CrimildObject");
+	var Base = require("rendering/BufferObject");
 
 	function VertexBufferObject(spec) {
-		Base.apply(this, spec);
+		spec = spec || {};
+		Base.call(this, spec);
+
+		this.vertexFormat = spec.vertexFormat;
 	}
 
 	VertexBufferObject.prototype = Object.create(Base.prototype);
 
+	Object.defineProperties(VertexBufferObject.prototype, {
+		vertexFormat: {
+			get: function() { return this._vertexFormat; },
+			set: function(value) { this._vertexFormat = value; }
+		},
+	});
+
 	VertexBufferObject.prototype.destroy = function() {
-		Base.apply(this);
+		Base.prototype.destroy.call(this);
 	};
 
 	return VertexBufferObject;

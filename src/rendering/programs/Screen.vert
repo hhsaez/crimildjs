@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Hugo Hernan Saez
+ * Copyright (c) 2014, Hugo Hernan Saez
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -23,27 +23,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-define(function(require) {
+attribute vec3 aPosition;
 
-	"use strict";
-
-	var Base = require("simulation/tasks/Task");
-
-	function EndRenderTask(spec) {
-		Base.call(this, spec);
-	}
-
-	EndRenderTask.prototype = Object.create(Base.prototype);
-
-	EndRenderTask.prototype.destroy = function() {
-		Base.apply(this);
-	};
-
-	EndRenderTask.prototype.update = function(simulation) {
-		simulation.renderer.endRender();
-	}
-
-	return EndRenderTask;
-
-});
+void main( void )
+{
+	gl_Position = vec4( aPosition.x, aPosition.y, 0.0, 1.0 );
+}
 

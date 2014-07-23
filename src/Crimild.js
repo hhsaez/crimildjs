@@ -29,6 +29,7 @@ define("Crimild", function(require) {
 		version: '2.0',
 
 		// components
+		NodeComponent: require("components/NodeComponent"),
 		RenderComponent: require("components/RenderComponent"),
 
 		// foundation
@@ -44,8 +45,20 @@ define("Crimild", function(require) {
 		IndexBufferObject: require("rendering/IndexBufferObject"),
 		Material: require("rendering/Material"),
 		Renderer: require("rendering/Renderer"),
+		RenderObject: require("rendering/RenderObject"),
+		Shader: require("rendering/Shader"),
+		ShaderAttribute: require("rendering/ShaderAttribute"),
+		ShaderProgram: require("rendering/ShaderProgram"),
+		ShaderUniform: require("rendering/ShaderUniform"),
 		VertexBufferObject: require("rendering/VertexBufferObject"),
 		VertexFormat: require("rendering/VertexFormat"),
+
+		// rendering/programs
+		ScreenProgram: require("rendering/programs/ScreenProgram"),
+
+		// rendering/renderPasses
+		ForwardRenderPass: require("rendering/renderPasses/ForwardRenderPass"),
+		RenderPass: require("rendering/renderPasses/RenderPass"),
 
 		// scenegraph
 		Camera: require("scenegraph/Camera"),
@@ -59,7 +72,15 @@ define("Crimild", function(require) {
 		// simulation tasks
 		BeginRenderTask: require("simulation/tasks/BeginRenderTask"),
 		EndRenderTask: require("simulation/tasks/EndRenderTask"),
-		Task: require("simulation/tasks/Task")
+		Task: require("simulation/tasks/Task"),
+		UpdateSceneTask: require("simulation/tasks/UpdateSceneTask"),
+		RenderSceneTask: require("simulation/tasks/RenderSceneTask"),
+
+		// visitors
+		NodeVisitor: require("visitors/NodeVisitor"),
+		StartComponents: require("visitors/StartComponents"),
+		UpdateComponents: require("visitors/UpdateComponents"),
+		UpdateWorldState: require("visitors/UpdateWorldState"),
 	};
 
 	return Crimild;

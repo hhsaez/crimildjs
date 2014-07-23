@@ -30,7 +30,7 @@ define(function(require) {
 	var Base = require("simulation/tasks/Task");
 
 	function BeginRenderTask(spec) {
-		Base.apply(this, spec);
+		Base.call(this, spec);
 	}
 
 	BeginRenderTask.prototype = Object.create(Base.prototype);

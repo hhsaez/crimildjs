@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Hugo Hernan Saez
+ * Copyright (c) 2014, Hugo Hernan Saez
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -27,23 +27,43 @@ define(function(require) {
 
 	"use strict";
 
-	var Base = require("simulation/tasks/Task");
+	var Base = require("rendering/renderPasses/RenderPass");
 
-	function EndRenderTask(spec) {
+	var RenderComponent = require("components/RenderComponent");
+
+	function ForwardRenderPass(spec) {
 		Base.call(this, spec);
 	}
 
-	EndRenderTask.prototype = Object.create(Base.prototype);
+	ForwardRenderPass.prototype = Object.create(Base.prototype);
 
-	EndRenderTask.prototype.destroy = function() {
+	ForwardRenderPass.prototype.destroy = function() {
 		Base.apply(this);
 	};
 
-	EndRenderTask.prototype.update = function(simulation) {
-		simulation.renderer.endRender();
-	}
+	ForwardRenderPass.prototype.render = function(renderer, renderQueue) {
+		var defaultProgram = renderer.getProgram("forwardPass");
+		
+		renderQueue.geometries.each(function(geometry) {
+			var renderComponent = geometry.components.get(RenderComponent.NAME);
 
-	return EndRenderTask;
+			var material = renderComponent.material;
+
+			var program = material.program || defaultProgram;
+
+			renderer.bindProgram(program);
+			renderer.bindMaterial(program, material);
+			renderer.applyTransformations(program, geometry);
+
+			renderer.renderPrimitive(program, geometry.primitive);
+
+			renderer.restoreTransformations(program, geometry);
+			renderer.unbindMaterial(program, material);
+			renderer.unbindProgram(program);
+		});
+	};
+
+	return ForwardRenderPass;
 
 });
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Hugo Hernan Saez
+ * Copyright (c) 2014, Hugo Hernan Saez
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -27,23 +27,61 @@ define(function(require) {
 
 	"use strict";
 
-	var Base = require("simulation/tasks/Task");
+	var Base = require("foundation/CrimildObject");
 
-	function EndRenderTask(spec) {
+	function RenderObjectCatalog(spec) {
 		Base.call(this, spec);
+
+		this._objects = [];
 	}
 
-	EndRenderTask.prototype = Object.create(Base.prototype);
+	RenderObjectCatalog.prototype = Object.create(Base.prototype);
 
-	EndRenderTask.prototype.destroy = function() {
-		Base.apply(this);
+	RenderObjectCatalog.prototype.destroy = function() {
+		this.unloadAll();
+		Base.destroy.call(this);
 	};
 
-	EndRenderTask.prototype.update = function(simulation) {
-		simulation.renderer.endRender();
+	RenderObjectCatalog.prototype.generateId = function(renderer) {
+		return -1;
 	}
 
-	return EndRenderTask;
+	RenderObjectCatalog.prototype.load = function(renderer, object) {
+		object.renderObjectId = this.generateId(renderer);
+		object.renderObjectCatalog = this;
+		this._objects.push(object);
+	}
+
+	RenderObjectCatalog.prototype.unload = function(renderer, object) {
+		var index = this._objects.indexOf(object);
+		if (index >= 0) {
+			object.renderObjectId = null;
+			object.renderObjectCatalog = null;
+			this._objects.splice(index, 1);
+		}
+	}
+
+	RenderObjectCatalog.prototype.unloadAll = function() {
+		for (var i in this._objects) {
+			var object = this._objects[i];
+			if (object) {
+				this.unload(object);
+			}
+		}
+		this._objects = [];
+	}
+
+	RenderObjectCatalog.prototype.bind = function(renderer, object) {
+		if (!object.renderObjectCatalog) {
+			this.load(renderer, object);
+		}
+	}
+
+	RenderObjectCatalog.prototype.unbind = function(renderer, object) {
+
+	}
+
+	return RenderObjectCatalog;
 
 });
 

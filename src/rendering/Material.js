@@ -30,10 +30,17 @@ define(function(require) {
 	var Base = require("foundation/CrimildObject");
 
 	function Material(spec) {
-		Base.apply(this, spec);
+		Base.call(this, spec);
 	}
 
 	Material.prototype = Object.create(Base.prototype);
+
+	Object.defineProperties(Material.prototype, {
+		program: {
+			get: function() { return this._program; },
+			set: function(value) { this._program = value; }
+		}
+	});
 
 	Material.prototype.destroy = function() {
 		Base.apply(this);

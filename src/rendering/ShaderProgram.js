@@ -27,19 +27,64 @@ define(function(require) {
 
 	"use strict";
 
-	var Base = require("foundation/CrimildObject");
+	var Base = require("rendering/RenderObject");
 
-	function Transformation(spec) {
+	var Map = require("foundation/Map");
+
+	function ShaderProgram(spec) {
+		spec = spec || {};
 		Base.call(this, spec);
+
+		this.vertexShader = spec.vertexShader;
+		this.fragmentShader = spec.fragmentShader;
+
+		if (!this.vertexShader || !this.fragmentShader) {
+			console.log(this, spec);
+		}
+
+		this.attributes = new Map({ objects: spec.attributes });
+		this.uniforms = new Map({ objects: spec.uniforms });
 	}
 
-	Transformation.prototype = Object.create(Base.prototype);
-
-	Transformation.prototype.destroy = function() {
-		Base.apply(this);
+	ShaderProgram.STANDARD_ATTRIBUTES = {
+		VERTEX_POSITION: "aPosition",
+		VERTEX_NORMAL: "aNormal",
+		VERTEX_TEXTURE_COORDS: "aTexCoords"
 	};
 
-	return Transformation;
+	ShaderProgram.STANDARD_UNIFORMS = {
+		PROJECTION_MATRIX: "uPMatrix",
+		MODEL_MATRIX: "uMMatrix",
+		VIEW_MATRIX: "uVMatrix",
+		MODEL_VIEW_MATRIX: "uMVMatrix"
+	};
+
+	ShaderProgram.prototype = Object.create(Base.prototype);
+
+	Object.defineProperties(ShaderProgram.prototype, {
+		vertexShader: {
+			get: function() { return this._vertexShader; },
+			set: function(value) { this._vertexShader = value; }
+		},
+		fragmentShader: {
+			get: function() { return this._fragmentShader; },
+			set: function(value) { this._fragmentShader = value; }
+		},
+		attributes: {
+			get: function() { return this._attributes; },
+			set: function(value) { this._attributes = value; }
+		},
+		uniforms: {
+			get: function() { return this._uniforms; },
+			set: function(value) { this._uniforms = value; }
+		},
+	});
+
+	ShaderProgram.prototype.destroy = function() {
+		Base.destroy.call(this);
+	};
+
+	return ShaderProgram;
 
 });
 

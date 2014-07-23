@@ -5,7 +5,7 @@
 	paths: {
 
 	},
-	name: 'crimild',
-	out: 'build/crimild.js',
+	name: 'Crimild',
+	out: 'build/Crimild.js',
 	preserveLicenseComments: false,
 }

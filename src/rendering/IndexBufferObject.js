@@ -27,16 +27,16 @@ define(function(require) {
 
 	"use strict";
 
-	var Base = require("foundation/CrimildObject");
+	var Base = require("rendering/BufferObject");
 
 	function IndexBufferObject(spec) {
-		Base.apply(this, spec);
+		Base.call(this, spec);
 	}
 
 	IndexBufferObject.prototype = Object.create(Base.prototype);
 
 	IndexBufferObject.prototype.destroy = function() {
-		Base.apply(this);
+		Base.prototype.destroy.call(this);
 	};
 
 	return IndexBufferObject;

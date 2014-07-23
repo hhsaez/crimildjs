@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Hugo Hernan Saez
+ * Copyright (c) 2014, Hugo Hernan Saez
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -27,23 +27,32 @@ define(function(require) {
 
 	"use strict";
 
-	var Base = require("simulation/tasks/Task");
+	var Base = require("rendering/RenderObject");
 
-	function EndRenderTask(spec) {
+	function Shader(spec) {
+		spec = spec || {};
 		Base.call(this, spec);
+
+		this.source = spec.source;
+		if (!this.source) {
+			this.log.error("Missing source code for shader");
+		}
 	}
 
-	EndRenderTask.prototype = Object.create(Base.prototype);
+	Shader.prototype = Object.create(Base.prototype);
 
-	EndRenderTask.prototype.destroy = function() {
-		Base.apply(this);
+	Object.defineProperties(Shader.prototype, {
+		source: {
+			get: function() { return this._source; },
+			set: function(value) { this._source = value; }
+		}
+	});
+
+	Shader.prototype.destroy = function() {
+		Base.destroy.call(this);
 	};
 
-	EndRenderTask.prototype.update = function(simulation) {
-		simulation.renderer.endRender();
-	}
-
-	return EndRenderTask;
+	return Shader;
 
 });
 

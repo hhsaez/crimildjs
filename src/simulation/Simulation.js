@@ -31,18 +31,29 @@ define(function(require) {
 
 	var webgl = require("third-party/webgl-utils");
 	var Renderer = require("rendering/Renderer");
+	
 	var BeginRenderTask = require("simulation/tasks/BeginRenderTask");
 	var EndRenderTask = require("simulation/tasks/EndRenderTask");
+	var RenderSceneTask = require("simulation/tasks/RenderSceneTask");
+	var UpdateSceneTask = require("simulation/tasks/UpdateSceneTask");
+	
+	var StartComponents = require("visitors/StartComponents");
+	var UpdateWorldState = require("visitors/UpdateWorldState");
+	var FetchCameras = require("visitors/FetchCameras");
 
 	function Simulation(spec) {
 		spec = spec || {}
-		Base.apply(this, spec);
+		Base.call(this, spec);
 
 		this.scene = spec.scene || new Group({ name: "Dummy scene" });
-		this.renderer = spec.renderer || new Renderer();
 		
-		this.tasks = [];	// TODO: allow user to add tasks in constructors
+		this.renderer = spec.renderer || new Renderer(spec);
+		this.renderer.configure();
+		
+		this.tasks = [];	// TODO: allow user to add tasks in constructor
 		this.startTask(new BeginRenderTask());
+		this.startTask(new UpdateSceneTask());
+		this.startTask(new RenderSceneTask());
 		this.startTask(new EndRenderTask());
 	}
 
@@ -55,7 +66,11 @@ define(function(require) {
 	Object.defineProperties(Simulation.prototype, {
 		scene: {
 			get: function() { return this._scene; },
-			set: function(value) { this._scene = value; }
+			set: function(value) { this._scene = value; this.setupScene(); }
+		},
+		mainCamera: {
+			get: function() { return this._mainCamera; },
+			set: function(value) { this._mainCamera = value; }
 		},
 		renderer: {
 			get: function() { return this._renderer; },
@@ -67,10 +82,21 @@ define(function(require) {
 		}
 	});
 
+	Simulation.prototype.setupScene = function() {
+		if (this.scene) {
+			var fetchCameras = new FetchCameras();
+			this.scene.perform(fetchCameras);
+			this.mainCamera = fetchCameras.results[0];
+
+			this.scene.perform(new StartComponents());
+			this.scene.perform(new UpdateWorldState());
+		}
+	};
+
 	Simulation.prototype.startTask = function(task) {
 		// TODO: implement priorities
 		this.tasks.push(task);
-	}
+	};
 
 	Simulation.prototype.step = function() {
 		var that = this;
@@ -90,7 +116,7 @@ define(function(require) {
 		}
 
 		this.step();
-	}
+	};
 
 	return Simulation;
 

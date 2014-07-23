@@ -27,16 +27,31 @@ define(function(require) {
 
 	"use strict";
 
-	var Base = require("foundation/CrimildObject");
+	var Base = require("components/NodeComponent");
+
+	var Material = require("rendering/Material");
 
 	function RenderComponent(spec) {
-		Base.apply(this, spec);
+		spec = spec || {};
+		spec.name = RenderComponent.NAME;
+		Base.call(this, spec);
+
+		this.material = new Material();
 	}
+
+	RenderComponent.NAME = "render";
 
 	RenderComponent.prototype = Object.create(Base.prototype);
 
+	Object.defineProperties(RenderComponent.prototype, {
+		material: {
+			get: function() { return this._material; },
+			set: function(value) { this._material = value; }
+		}
+	});
+
 	RenderComponent.prototype.destroy = function() {
-		Base.apply(this);
+		Base.destroy.call(this);
 	};
 
 	return RenderComponent;

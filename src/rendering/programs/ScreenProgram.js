@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Hugo Hernan Saez
+ * Copyright (c) 2014, Hugo Hernan Saez
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -27,23 +27,32 @@ define(function(require) {
 
 	"use strict";
 
-	var Base = require("simulation/tasks/Task");
+	var Base = require("rendering/ShaderProgram");
 
-	function EndRenderTask(spec) {
+	var Shader = require("rendering/Shader");
+	var ShaderAttribute = require("rendering/ShaderAttribute");
+	var ShaderUniform = require("rendering/ShaderUniform");
+
+	function ScreenProgram(spec) {
+		spec = spec || {};
+
+		spec.vertexShader = new Shader({ source: require("text!rendering/programs/Screen.vert" ) });
+		spec.fragmentShader = new Shader({ source: require("text!rendering/programs/Screen.frag" ) });
+
+		spec.attributes = [
+			new ShaderAttribute({ name: Base.STANDARD_ATTRIBUTES.VERTEX_POSITION })
+		];
+
 		Base.call(this, spec);
 	}
 
-	EndRenderTask.prototype = Object.create(Base.prototype);
+	ScreenProgram.prototype = Object.create(Base.prototype);
 
-	EndRenderTask.prototype.destroy = function() {
-		Base.apply(this);
+	ScreenProgram.prototype.destroy = function() {
+		Base.destroy.call(this);
 	};
 
-	EndRenderTask.prototype.update = function(simulation) {
-		simulation.renderer.endRender();
-	}
-
-	return EndRenderTask;
+	return ScreenProgram;
 
 });
 

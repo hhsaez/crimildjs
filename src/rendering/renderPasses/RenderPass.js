@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Hugo Hernan Saez
+ * Copyright (c) 2014, Hugo Hernan Saez
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -27,23 +27,23 @@ define(function(require) {
 
 	"use strict";
 
-	var Base = require("simulation/tasks/Task");
+	var Base = require("foundation/CrimildObject");
 
-	function EndRenderTask(spec) {
+	function RenderPass(spec) {
 		Base.call(this, spec);
 	}
 
-	EndRenderTask.prototype = Object.create(Base.prototype);
+	RenderPass.prototype = Object.create(Base.prototype);
 
-	EndRenderTask.prototype.destroy = function() {
+	RenderPass.prototype.destroy = function() {
 		Base.apply(this);
 	};
 
-	EndRenderTask.prototype.update = function(simulation) {
-		simulation.renderer.endRender();
-	}
+	RenderPass.prototype.render = function(renderer, renderQueue) {
 
-	return EndRenderTask;
+	};
+
+	return RenderPass;
 
 });
 

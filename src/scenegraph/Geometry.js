@@ -30,13 +30,27 @@ define(function(require) {
 	var Base = require("scenegraph/Node");
 
 	function Geometry(spec) {
-		Base.apply(this, spec);
+		spec = spec || {};
+		Base.call(this, spec);
+
+		this.primitive = spec.primitive;
 	}
 
 	Geometry.prototype = Object.create(Base.prototype);
 
+	Object.defineProperties(Geometry.prototype, {
+		primitive: {
+			get: function() { return this._primitive; },
+			set: function(value) { this._primitive = value; }
+		}
+	});
+
 	Geometry.prototype.destroy = function() {
-		Base.apply(this);
+		Base.prototype.destroy.call(this);
+	};
+
+	Geometry.prototype.accept = function(visitor) {
+		visitor.visitGeometry(this);
 	};
 
 	return Geometry;

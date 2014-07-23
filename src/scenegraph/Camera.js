@@ -29,14 +29,30 @@ define(function(require) {
 
 	var Base = require("scenegraph/Node");
 
+	var ForwardRenderPass = require("rendering/renderPasses/ForwardRenderPass");
+
 	function Camera(spec) {
-		Base.apply(this, spec);
+		spec = spec || {};
+		Base.call(this, spec);
+
+		this.renderPass = spec.renderPass || new ForwardRenderPass();
 	}
 
 	Camera.prototype = Object.create(Base.prototype);
 
+	Object.defineProperties(Camera.prototype, {
+		renderPass: {
+			get: function() { return this._renderPass; },
+			set: function(value) { this._renderPass = value; }
+		}
+	});
+
 	Camera.prototype.destroy = function() {
 		Base.apply(this);
+	};
+
+	Camera.prototype.accept = function(visitor) {
+		visitor.visitCamera(this);
 	};
 
 	return Camera;

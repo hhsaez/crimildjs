@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Hugo Hernan Saez
+ * Copyright (c) 2014, Hugo Hernan Saez
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -27,23 +27,46 @@ define(function(require) {
 
 	"use strict";
 
-	var Base = require("simulation/tasks/Task");
+	var Base = require("foundation/CrimildObject");
 
-	function EndRenderTask(spec) {
+	function NodeVisitor(spec) {
 		Base.call(this, spec);
 	}
 
-	EndRenderTask.prototype = Object.create(Base.prototype);
+	NodeVisitor.prototype = Object.create(Base.prototype);
 
-	EndRenderTask.prototype.destroy = function() {
+	NodeVisitor.prototype.destroy = function() {
 		Base.apply(this);
 	};
 
-	EndRenderTask.prototype.update = function(simulation) {
-		simulation.renderer.endRender();
-	}
+	NodeVisitor.prototype.traverse = function(node) {
+		node.accept(this);
+	};
 
-	return EndRenderTask;
+	NodeVisitor.prototype.visitNode = function(node) {
+		// do nothing
+	};
+
+	NodeVisitor.prototype.visitGroup = function(group) {
+		this.visitNode(group);
+
+		var visitor = this;
+		group.nodes.each(function(node) {
+			node.accept(visitor);
+		});
+	};
+
+	NodeVisitor.prototype.visitGeometry = function(geometry) {
+		// by default, treat a geometry as a simple node
+		this.visitNode(geometry);
+	};
+
+	NodeVisitor.prototype.visitCamera = function(camera) {
+		// by default, treat a camera as a simple node
+		this.visitNode(camera);
+	};
+
+	return NodeVisitor;
 
 });
 

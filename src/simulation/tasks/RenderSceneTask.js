@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Hugo Hernan Saez
+ * Copyright (c) 2014, Hugo Hernan Saez
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -29,21 +29,34 @@ define(function(require) {
 
 	var Base = require("simulation/tasks/Task");
 
-	function EndRenderTask(spec) {
+	var RenderQueue = require("rendering/RenderQueue");
+	var ComputeRenderQueue = require("visitors/ComputeRenderQueue");
+
+	function RenderSceneTask(spec) {
 		Base.call(this, spec);
 	}
 
-	EndRenderTask.prototype = Object.create(Base.prototype);
+	RenderSceneTask.prototype = Object.create(Base.prototype);
 
-	EndRenderTask.prototype.destroy = function() {
+	RenderSceneTask.prototype.destroy = function() {
 		Base.apply(this);
 	};
 
-	EndRenderTask.prototype.update = function(simulation) {
-		simulation.renderer.endRender();
+	RenderSceneTask.prototype.update = function(simulation) {
+		if (simulation.scene && simulation.mainCamera) {
+			var renderQueue = new RenderQueue({ 
+				camera: simulation.mainCamera 
+			});
+
+			simulation.scene.perform(new ComputeRenderQueue({
+				renderQueue: renderQueue
+			}));
+
+			simulation.mainCamera.renderPass.render(simulation.renderer, renderQueue);
+		}
 	}
 
-	return EndRenderTask;
+	return RenderSceneTask;
 
 });
 

@@ -29,14 +29,56 @@ define(function(require) {
 
 	var Base = require("foundation/CrimildObject");
 
+	var Map = require("foundation/Map");
+
 	function Node(spec) {
-		Base.apply(this, spec);
+		spec = spec || {};
+		Base.call(this, spec);
+
+		this.parent = null;
+		this.components = new Map({
+			objects: spec.components,
+
+			onAttachCallback: this.onComponentAttached,
+			onDetachCallback: this.onComponentDetached
+		});
 	}
 
 	Node.prototype = Object.create(Base.prototype);
 
+	Object.defineProperties(Node.prototype, {
+		parent: {
+			get: function() { return this._parent; },
+			set: function(value) { this._parent = value; }
+		},
+		components: {
+			get: function() { return this._components; },
+			set: function(value) { this._components = value; }
+		},
+	});
+
 	Node.prototype.destroy = function() {
 		Base.apply(this);
+	};
+
+	Node.prototype.perform = function(visitor) {
+		visitor.traverse(this);
+	};
+
+	Node.prototype.accept = function(visitor) {
+		visitor.visitNode(this);
+	};
+
+	Node.prototype.getComponentName = function(component) {
+		return component.name;
+	};
+
+	Node.prototype.onComponentAttached = function(component) {
+		component.node = this;
+	};
+
+	Node.prototype.onComponentDetached = function(component) {
+		component.node = null;
 	};
 
 	return Node;

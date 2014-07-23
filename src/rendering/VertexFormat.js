@@ -30,16 +30,42 @@ define(function(require) {
 	var Base = require("foundation/CrimildObject");
 
 	function VertexFormat(spec) {
-		Base.apply(this, spec);
+		spec = spec || {};
+		Base.call(this, spec);
+
+		this.positions = spec.positions;
 	}
 
 	VertexFormat.prototype = Object.create(Base.prototype);
 
+	VertexFormat.VF_P3 = new VertexFormat({ positions: 3 });
+
+	Object.defineProperties(VertexFormat.prototype, {
+		positions: {
+			get: function() { return this._positions; },
+			set: function(value) { this._positions = value; }
+		},
+		positionOffset: {
+			get: function() { return 0; }
+		},
+		positionOffsetInBytes: {
+			get: function() { return 4 * this.positionOffset; }
+		},
+		vertexSize: {
+			get: function() { return this.positions; }
+		},
+		vertexSizeInBytes: {
+			get: function() { return 4 * this.vertexSize; }
+		}
+	});
+
 	VertexFormat.prototype.destroy = function() {
-		Base.apply(this);
+		Base.prototype.destroy.call(this);
 	};
 
-	VertexFormat.VF_P3 = new VertexFormat({ positions: 3 });
+	VertexFormat.prototype.hasPositions = function() {
+		return this.positions > 0;
+	};
 
 	return VertexFormat;
 

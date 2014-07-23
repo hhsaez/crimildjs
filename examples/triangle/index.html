@@ -12,15 +12,15 @@
 									vertexBuffer: new C.VertexBufferObject({
 										vertexFormat: C.VertexFormat.VF_P3,
 										count: 3,
-										data: [
+										data: new Float32Array([
 											-1.0, -1.0, 0.0,
 											1.0, -1.0, 0.0,
 											0.0, 1.0, 0.0
-										]
+										])
 									}),
 									indexBuffer: new C.IndexBufferObject({
 										count: 3,
-										data: [0, 1, 2]
+										data: new Uint16Array([0, 1, 2])
 									})
 								}),
 								components: [
@@ -37,13 +37,13 @@
 								})
 							})
 						]
-					})
+					}),
 				}).run();
 			});
 		</script>
 	</head>
 	<body>
-		<canvas id="crimildjs" />
+		<canvas id="crimildjs" width="640" height="480" />
 	</body>
 </html>
 
