@@ -35,8 +35,9 @@ define(function(require) {
 		spec = spec || {};
 		Base.call(this, spec);
 
-		this.geometries = new List();
-		this.camera = spec.camera;
+		this._geometries = new List();
+		this._lights = new List();
+		this._camera = spec.camera;
 	}
 
 	RenderQueue.prototype = Object.create(Base.prototype);
@@ -45,6 +46,10 @@ define(function(require) {
 		geometries: {
 			get: function() { return this._geometries; },
 			set: function(value) { this._geometries = value; }
+		},
+		lights: {
+			get: function() { return this._lights; },
+			set: function(value) { this._lights = value; }
 		},
 		camera: {
 			get: function() { return this._camera; },

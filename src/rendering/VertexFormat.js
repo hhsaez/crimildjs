@@ -33,7 +33,9 @@ define(function(require) {
 		spec = spec || {};
 		Base.call(this, spec);
 
-		this.positions = spec.positions;
+		this._positions = spec.positions || 3;
+		this._normals = spec.normals || 0;
+		this._textureCoords = spec.textureCoords || 0;
 	}
 
 	VertexFormat.prototype = Object.create(Base.prototype);
@@ -51,8 +53,28 @@ define(function(require) {
 		positionOffsetInBytes: {
 			get: function() { return 4 * this.positionOffset; }
 		},
+		normals: {
+			get: function() { return this._normals; },
+			set: function(value) { this._normals = value; }
+		},
+		normalsOffset: {
+			get: function() { return this.positionOffset + this.positions; }
+		},
+		normalsOffsetInBytes: {
+			get: function() { return 4 * this.normalsOffset; }
+		},
+		textureCoords: {
+			get: function() { return this._textureCoords; },
+			set: function(value) { this._textureCoords = value; }
+		},
+		textureCoordsOffset: {
+			get: function() { return this.normalsOffset + this.normals; }
+		},
+		textureCoordsOffsetInBytes: {
+			get: function() { return 4 * this.textureCoordsOffset; }
+		},
 		vertexSize: {
-			get: function() { return this.positions; }
+			get: function() { return this.positions + this.normals + this.textureCoords; }
 		},
 		vertexSizeInBytes: {
 			get: function() { return 4 * this.vertexSize; }
@@ -65,6 +87,14 @@ define(function(require) {
 
 	VertexFormat.prototype.hasPositions = function() {
 		return this.positions > 0;
+	};
+
+	VertexFormat.prototype.hasNormals = function() {
+		return this.normals > 0;
+	};
+
+	VertexFormat.prototype.hasTextureCoords = function() {
+		return this.textureCoords > 0;
 	};
 
 	return VertexFormat;

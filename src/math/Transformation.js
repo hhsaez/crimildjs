@@ -27,13 +27,16 @@ define(function(require) {
 
 	"use strict";
 
-	var Base = require("foundation/CrimildObject");
+	require("third-party/gl-matrix");
 
-	var glMatrix = require("third-party/gl-matrix");
+	var Base = require("foundation/CrimildObject");
 
 	function Transformation(spec) {
 		spec = spec || {};
 		Base.call(this, spec);
+
+		this._translate = vec3.create();
+		this._rotate = quat4.create();
 
 		this.makeIdentity();
 
@@ -51,11 +54,11 @@ define(function(require) {
 	Object.defineProperties(Transformation.prototype, {
 		translate: {
 			get: function() { return this._translate; },
-			set: function(value) { this._translate = value; this.identity = false; }
+			set: function(value) { vec3.set(value, this._translate); this.identity = false; }
 		},
 		rotate: {
 			get: function() { return this._rotate; },
-			set: function(value) { this._rotate = value; this.identity = false; }
+			set: function(value) { quat4.set(value, this._rotate); this.identity = false; }
 		},
 		scale: {
 			get: function() { return this._scale; },

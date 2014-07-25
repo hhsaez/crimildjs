@@ -31,6 +31,8 @@ define(function(require) {
 
 	var RenderComponent = require("components/RenderComponent");
 
+	var ShaderProgram = require("rendering/ShaderProgram");
+
 	function ForwardRenderPass(spec) {
 		Base.call(this, spec);
 	}
@@ -53,15 +55,38 @@ define(function(require) {
 			var program = material.program || defaultProgram;
 
 			renderer.bindProgram(program);
+
 			renderer.bindCamera(program, camera);
+
+			if (renderComponent.enableLighting) {
+				renderer.bindIntUniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.LIGHT_COUNT), renderQueue.lights.count());
+				
+				renderQueue.lights.each(function(light, i) {
+					renderer.bindLight(program, light, i);
+				});
+			}
+			else {
+				renderer.bindIntUniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.LIGHT_COUNT), 0);
+			}
+			
 			renderer.bindMaterial(program, material);
+			
 			renderer.applyTransformations(program, geometry);
 
 			renderer.renderPrimitive(program, geometry.primitive);
 
 			renderer.restoreTransformations(program, geometry);
+			
 			renderer.unbindMaterial(program, material);
+			
+			if (renderComponent.enableLighting) {
+				renderQueue.lights.each(function(light, i) {
+					renderer.unbindLight(light, i);
+				});
+			}
+			
 			renderer.unbindCamera(program, camera);
+			
 			renderer.unbindProgram(program);
 		});
 	};

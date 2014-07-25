@@ -78,6 +78,20 @@ define(function(require) {
 					format.positionsOffsetInBytes);
 			}
 		}
+
+		if (format.hasNormals()) {
+			var normalAttrib = program.attributes.get(ShaderProgram.STANDARD_ATTRIBUTES.VERTEX_NORMAL);
+			if (normalAttrib && normalAttrib.location >= 0) {
+				renderer.gl.enableVertexAttribArray(normalAttrib.location);
+				renderer.gl.vertexAttribPointer(
+					normalAttrib.location, 
+					format.normals, 
+					renderer.gl.FLOAT, 
+					false, 
+					format.vertexSizeInBytes, 
+					format.normalsOffsetInBytes);
+			}
+		}
 	};
 
 	VertexBufferObjectCatalog.prototype.unbind = function(renderer, vbo, program) {
@@ -89,6 +103,13 @@ define(function(require) {
 			var positionAttrib = program.attributes.get(ShaderProgram.STANDARD_ATTRIBUTES.VERTEX_POSITION);
 			if (positionAttrib && positionAttrib.location >= 0) {
 				renderer.gl.disableVertexAttribArray(positionAttrib.location);
+			}
+		}
+
+		if (format.hasNormals()) {
+			var normalAttrib = program.attributes.get(ShaderProgram.STANDARD_ATTRIBUTES.VERTEX_NORMAL);
+			if (normalAttrib && normalAttrib.location >= 0) {
+				renderer.gl.disableVertexAttribArray(normalAttrib.location);
 			}
 		}
 

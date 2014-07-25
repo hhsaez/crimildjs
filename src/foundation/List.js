@@ -61,6 +61,14 @@ define(function(require) {
 		Base.apply(this);
 	};
 
+	List.prototype.count = function() {
+		return this._objects.length;
+	};
+
+	List.prototype.isEmpty = function() {
+		return this._objects.length == 0;
+	};
+
 	List.prototype.attach = function(object) {
 		this._objects.push(object);
 		if (this.onAttachCallback) {
@@ -97,8 +105,9 @@ define(function(require) {
 	};
 
 	List.prototype.each = function(callback) {
-		for (var i in this._objects) {
-			callback(this._objects[i], i);
+		var i = 0;
+		for (var o in this._objects) {
+			callback(this._objects[o], i++);
 		}
 	};
 

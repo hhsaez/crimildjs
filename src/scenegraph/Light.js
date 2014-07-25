@@ -27,51 +27,55 @@ define(function(require) {
 
 	"use strict";
 
-	var Base = require("foundation/CrimildObject");
+	require("third-party/gl-matrix");
 
-	function NodeVisitor(spec) {
+	var Base = require("scenegraph/Node");
+
+	function Light(spec) {
+		spec = spec || {};
 		Base.call(this, spec);
+
+		this._attenuation = vec3.create(spec.attenuation || [1.0, 0, 0.01]);
+		this._color = vec3.create(spec.color || [1, 1, 1]);
+		this._outerCutoff = spec.outerCutoff || 0;
+		this._innerCutoff = spec.innerCutoff || 0;
+		this._exponent = spec.exponent || 0;
 	}
 
-	NodeVisitor.prototype = Object.create(Base.prototype);
+	Light.prototype = Object.create(Base.prototype);
 
-	NodeVisitor.prototype.destroy = function() {
+	Object.defineProperties(Light.prototype, {
+		attenuation: { 
+			get: function() { return this._attenuation; },
+			set: function(value) { vec3.set(value, this._attenuation); }
+		},
+		color: {
+			get: function() { return this._color; },
+			set: function(value) { vec3.set(value, this._color); }
+		},
+		outerCutoff: {
+			get: function() { return this._outerCutoff; },
+			set: function(value) { this._outerCutoff = value; }
+		},
+		innerCutoff: {
+			get: function() { return this._innerCutoff; },
+			set: function(value) { this._innerCutoff = value; },
+		},
+		exponent: {
+			get: function() { return this._exponent; },
+			set: function(value) { this._exponent = value; }
+		}
+	});
+
+	Light.prototype.destroy = function() {
 		Base.apply(this);
 	};
 
-	NodeVisitor.prototype.traverse = function(node) {
-		node.accept(this);
+	Light.prototype.accept = function(visitor) {
+		visitor.visitLight(this);
 	};
 
-	NodeVisitor.prototype.visitNode = function(node) {
-		// do nothing
-	};
-
-	NodeVisitor.prototype.visitGroup = function(group) {
-		this.visitNode(group);
-
-		var visitor = this;
-		group.nodes.each(function(node) {
-			node.accept(visitor);
-		});
-	};
-
-	NodeVisitor.prototype.visitGeometry = function(geometry) {
-		// by default, treat a geometry as a regular node
-		this.visitNode(geometry);
-	};
-
-	NodeVisitor.prototype.visitCamera = function(camera) {
-		// by default, treat a camera as a regular node
-		this.visitNode(camera);
-	};
-
-	NodeVisitor.prototype.visitLight = function(light) {
-		// by default, treat a light as a regular node
-		this.visitNode(light);
-	};
-
-	return NodeVisitor;
+	return Light;
 
 });
 

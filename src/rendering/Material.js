@@ -27,14 +27,18 @@ define(function(require) {
 
 	"use strict";
 
+	require("third-party/gl-matrix");
+
 	var Base = require("foundation/CrimildObject");
 
 	function Material(spec) {
 		spec = spec || {};
 		Base.call(this, spec);
 
-		this.ambient = spec.ambient || [0.2, 0.2, 0.2, 1.0];
-		this.diffuse = spec.diffuse || [0.8, 0.8, 0.8, 1.0];
+		this._ambient = vec3.create(spec.ambient || [0.0, 0.0, 0.0]);
+		this._diffuse = vec3.create(spec.diffuse || [1.0, 1.0, 1.0]);
+		this._specular = vec3.create(spec.specular || [1.0, 1.0, 1.0]);
+		this._shininess = spec.shininess || 50;
 	}
 
 	Material.prototype = Object.create(Base.prototype);
@@ -44,10 +48,22 @@ define(function(require) {
 			get: function() { return this._program; },
 			set: function(value) { this._program = value; }
 		},
+		ambient: {
+			get: function() { return this._ambient; },
+			set: function(value) { vec3.set(value, this._ambient); }
+		},
 		diffuse: {
 			get: function() { return this._diffuse; },
-			set: function(value) { this._diffuse = value; }
-		}
+			set: function(value) { vec3.set(value, this._diffuse); }
+		},
+		specular: {
+			get: function() { return this._specular; },
+			set: function(value) { vec3.set(value, this._specular); }
+		},
+		shininess: {
+			get: function() { return this._shininess; },
+			set: function(value) { vec3.set(value, this._shininess); }
+		},
 	});
 
 	Material.prototype.destroy = function() {

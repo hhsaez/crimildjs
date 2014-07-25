@@ -98,6 +98,14 @@ define(function(require) {
 			get: function() { return this._programs; },
 			set: function(value) { this._programs = value; }
 		},
+		projectionMatrix: {
+			get: function() { return this._projectionMatrix; },
+			set: function(value) { this._projectionMatrix = mat4.create(value); }
+		},
+		viewMatrix: {
+			get: function() { return this._viewMatrix; },
+			set: function(value) { this._viewMatrix = mat4.create(value); }
+		},
 	});
 
 	Renderer.prototype.configure = function(spec) {
@@ -147,6 +155,9 @@ define(function(require) {
 			return false;
 		}
 
+		this.gl.depthFunc(this.gl.LEQUAL);
+		this.gl.enable(this.gl.DEPTH_TEST);
+
 		return true;
 	};
 
@@ -178,24 +189,83 @@ define(function(require) {
 	Renderer.prototype.bindCamera = function(program, camera) {
 		camera.computePVMatrices(this);
 
-		this.bindMatrix4Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.PROJECTION_MATRIX), camera.projectionMatrix);
-		this.bindMatrix4Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.VIEW_MATRIX), camera.viewMatrix);
+		this.projectionMatrix = camera.projectionMatrix;
+		this.viewMatrix = camera.viewMatrix;
+
+		this.bindMatrix4Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.PROJECTION_MATRIX), this.projectionMatrix);
+		this.bindMatrix4Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.VIEW_MATRIX), this.viewMatrix);
 	};
 
 	Renderer.prototype.unbindCamera = function(program, camera) {
 
 	};
 
-	Renderer.prototype.bindVector3Uniform = function(uniform, value) {
+	Renderer.prototype.bindBooleanUniform = function(uniform, value) {
+		this.gl.uniform1i(uniform.location, value == true ? 1 : 0);
+	};
+
+	Renderer.prototype.bindIntUniform = function(uniform, value) {
+		this.gl.uniform1i(uniform.location, value);
+	};
+
+	Renderer.prototype.bindFloat1Uniform = function(uniform, value) {
+		this.gl.uniform1f(uniform.location, value);
+	};
+
+	Renderer.prototype.bindFloat2Uniform = function(uniform, value) {
+		this.gl.uniform2f(uniform.location, value[0], value[1]);
+	};
+
+	Renderer.prototype.bindFloat3Uniform = function(uniform, value) {
+		this.gl.uniform3f(uniform.location, value[0], value[1], value[2]);
+	};
+
+	Renderer.prototype.bindFloat4Uniform = function(uniform, value) {
 		this.gl.uniform4f(uniform.location, value[0], value[1], value[2], value[3]);
+	};
+
+	Renderer.prototype.bindMatrix3Uniform = function(uniform, value) {
+		this.gl.uniformMatrix3fv(uniform.location, false, value);
 	};
 
 	Renderer.prototype.bindMatrix4Uniform = function(uniform, value) {
 		this.gl.uniformMatrix4fv(uniform.location, false, value);
 	};
 
+	Renderer.prototype.bindLight = function(program, light, i) {
+		switch (i) {
+			case 0: {
+				this.bindFloat3Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.LIGHT_0_POSITION), light.world.translate);
+				this.bindFloat3Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.LIGHT_0_COLOR), light.color);
+				break;				
+			}
+			case 1: {
+				this.bindFloat3Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.LIGHT_1_POSITION), light.world.translate);
+				this.bindFloat3Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.LIGHT_1_COLOR), light.color);
+				break;				
+			}
+			case 2: {
+				this.bindFloat3Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.LIGHT_2_POSITION), light.world.translate);
+				this.bindFloat3Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.LIGHT_2_COLOR), light.color);
+				break;				
+			}
+			case 3: {
+				this.bindFloat3Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.LIGHT_3_POSITION), light.world.translate);
+				this.bindFloat3Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.LIGHT_3_COLOR), light.color);
+				break;				
+			}
+		}
+	};
+
+	Renderer.prototype.unbindLight = function(program, light, i) {
+
+	};
+
 	Renderer.prototype.bindMaterial = function(program, material) {
-		this.bindVector3Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.MATERIAL_DIFFUSE), material.diffuse);
+		this.bindFloat4Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.MATERIAL_AMBIENT), material.ambient);
+		this.bindFloat4Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.MATERIAL_DIFFUSE), material.diffuse);
+		this.bindFloat4Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.MATERIAL_SPECULAR), material.specular);
+		this.bindFloat1Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.MATERIAL_SHININESS), material.shininess);
 	};
 	
 	Renderer.prototype.unbindMaterial = function(program, material) {
@@ -203,11 +273,15 @@ define(function(require) {
 	};
 
 	Renderer.prototype.applyTransformations = function(program, geometry) {
-		// console.log(geometry.world.translate, geometry.local.translate);
 		var mMatrix = mat4.create();
 		geometry.world.toMatrix(mMatrix);
-		// console.log(mMatrix);
 		this.bindMatrix4Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.MODEL_MATRIX), mMatrix);
+
+		var normalMatrix = mat3.create();
+		var mvMatrix = mat4.multiply(this.viewMatrix, mMatrix);
+		mat4.toInverseMat3(mvMatrix, normalMatrix);
+		mat3.transpose(normalMatrix);
+		this.bindMatrix3Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.NORMAL_MATRIX), normalMatrix);
 	};
 
 	Renderer.prototype.restoreTransformations = function(program, geometry) {

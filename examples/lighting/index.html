@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>CrimildJS Example: Lighting</title>
+		<script data-main="../../src/crimild" src="../../lib/require.js"></script>
+		<script type="text/javascript">
+			require(["Crimild"], function(C) {
+
+				function createLightObject(color, major, minor, speed, rotate) {
+					return new C.Group({
+						nodes: [
+							new C.Group({
+								nodes: [
+									new C.Geometry({
+										primitive: new C.SpherePrimitive({ radius: 0.05 }),
+										components: [
+											new C.RenderComponent({
+												enableLighting: false,
+												material: new C.Material({
+													diffuse: color
+												}),
+											})
+										]
+									}),
+									new C.Light({
+										color: color
+									})
+								]	
+							}),
+						],
+						components: [
+							new C.OrbitComponent({
+								major: major,
+								minor: minor,
+								speed: speed
+							})
+						],
+						local: new C.Transformation({
+							rotate: rotate
+						})
+					});
+				}
+
+				new C.Simulation({
+					scene: new C.Group({
+						nodes: [
+							createLightObject([1, 0, 0, 1], -1, 1.25, 0.85, quat4.fromAngleAxis(0.5 * Math.PI, vec3.normalize([0, 1, 1]))),
+							createLightObject([0, 1, 0, 1], 1.5, 1.25, -0.65, quat4.fromAngleAxis(-0.5 * Math.PI, vec3.normalize([0, 1, 1]))),
+							createLightObject([0, 0, 1, 1], 1.25, -1, -0.75, quat4.fromAngleAxis(0.5 * Math.PI, vec3.normalize([0, 1, 0]))),
+							new C.Geometry({
+								primitive: new C.TreefoilKnotPrimitive({ divisions: [120, 30] }),
+								components: [
+									new C.RenderComponent({
+										material: new C.Material({
+											diffuse: [0.25, 0.25, 0.25]
+										})
+									}),
+									new C.CallbackComponent({
+										updateCallback: function(node, dt) {
+											quat4.multiply(node.local.rotate, quat4.fromAngleAxis(dt, [0, 1, 0]), node.local.rotate);
+										}
+									})
+								]
+							}),
+							new C.Camera({
+								local: new C.Transformation({
+									translate: [0, 0, 3]
+								}),
+							})
+						]
+					}),
+					renderer: new C.Renderer({
+						fullscreen: true,
+						clearColor: [0, 0, 0, 1]
+					}),
+				}).run();
+			});
+		</script>
+		<style type="text/css">
+			body {
+				padding: 0;
+				margin: 0;
+				overflow: hidden;
+			}
+		</style>
+	</head>
+	<body>
+		<canvas id="crimildjs" width="640" height="480" />
+	</body>
+</html>
+

@@ -29,11 +29,17 @@ define(function(require) {
 
 	var Base = require("scenegraph/Node");
 
+	var RenderComponent = require("components/RenderComponent");
+
 	function Geometry(spec) {
 		spec = spec || {};
 		Base.call(this, spec);
 
-		this.primitive = spec.primitive;
+		this._primitive = spec.primitive;
+
+		if (!this.components.get(RenderComponent.NAME)) {
+			this.components.attach(new RenderComponent());
+		}
 	}
 
 	Geometry.prototype = Object.create(Base.prototype);

@@ -36,7 +36,8 @@ define(function(require) {
 		spec.name = RenderComponent.NAME;
 		Base.call(this, spec);
 
-		this.material = new Material(spec.material);
+		this._material = new Material(spec.material);
+		this._enableLighting = spec.enableLighting == false ? false : true;
 	}
 
 	RenderComponent.NAME = "render";
@@ -47,6 +48,10 @@ define(function(require) {
 		material: {
 			get: function() { return this._material; },
 			set: function(value) { this._material = value; }
+		},
+		enableLighting: {
+			get: function() { return this._enableLighting; },
+			set: function(value) { this._enableLighting = value; }
 		}
 	});
 

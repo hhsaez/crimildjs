@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
+		<title>CrimildJS Example: Triangle</title>
 		<script data-main="../../src/crimild" src="../../lib/require.js"></script>
 		<script type="text/javascript">
 			require(["Crimild"], function(C) {
@@ -43,9 +44,19 @@
 							})
 						]
 					}),
+					renderer: new C.Renderer({
+						fullscreen: true
+					}),
 				}).run();
 			});
 		</script>
+		<style type="text/css">
+			body {
+				padding: 0;
+				margin: 0;
+				overflow: hidden;
+			}
+		</style>
 	</head>
 	<body>
 		<canvas id="crimildjs" width="640" height="480" />

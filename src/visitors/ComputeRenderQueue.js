@@ -52,6 +52,10 @@ define(function(require) {
 		this.renderQueue.geometries.attach(geometry)
 	};
 
+	ComputeRenderQueue.prototype.visitLight = function(light) {
+		this.renderQueue.lights.attach(light)
+	};
+
 	return ComputeRenderQueue;
 
 });

@@ -33,13 +33,23 @@ define(function(require) {
 		spec = spec || {};
 		Base.call(this, spec);
 
-		this.vertexBuffer = spec.vertexBuffer;
-		this.indexBuffer = spec.indexBuffer;
+		this._type = spec.type || Primitive.PRIMITIVE_TYPE.TRIANGLES;
+		this._vertexBuffer = spec.vertexBuffer;
+		this._indexBuffer = spec.indexBuffer;
 	}
+
+	Primitive.PRIMITIVE_TYPE = {
+		LINES: 0,
+		TRIANGLES: 1
+	};
 
 	Primitive.prototype = Object.create(Base.prototype);
 
 	Object.defineProperties(Primitive.prototype, {
+		type: {
+			get: function() { return this._type; },
+			set: function(value) { this._type = value; }
+		},
 		vertexBuffer: {
 			get: function() { return this._vertexBuffer; },
 			set: function(value) { this._vertexBuffer = value; }

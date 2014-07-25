@@ -27,51 +27,38 @@ define(function(require) {
 
 	"use strict";
 
-	var Base = require("foundation/CrimildObject");
+	var Base = require("components/NodeComponent");
 
-	function NodeVisitor(spec) {
+	function OrbitComponent(spec) {
+		spec = spec || {};
+		spec.name = OrbitComponent.NAME;
 		Base.call(this, spec);
+
+		this._x0 = spec._x0 || 0;
+        this._y0 = spec._y0 || 0;
+        this._major = spec.major || 20;
+        this._minor = spec.minor || 20;
+        this._t = 0;
+        this._speed = spec.speed || 1;
+        this._gamma = spec.gamma || 0;
 	}
 
-	NodeVisitor.prototype = Object.create(Base.prototype);
+	OrbitComponent.NAME = "update";
 
-	NodeVisitor.prototype.destroy = function() {
-		Base.apply(this);
+	OrbitComponent.prototype = Object.create(Base.prototype);
+
+	OrbitComponent.prototype.destroy = function() {
+		Base.prototype.destroy.call(this);
 	};
 
-	NodeVisitor.prototype.traverse = function(node) {
-		node.accept(this);
+	OrbitComponent.prototype.update = function(dt) {
+        this.node.local.translate[0] = this._x0 + this._major * Math.cos(this._t) * Math.cos(this._gamma) - this._minor * Math.sin(this._t) * Math.sin(this._gamma);
+        this.node.local.translate[1] = this._y0 + this._major * Math.cos(this._t) * Math.sin(this._gamma) + this._minor * Math.sin(this._t) * Math.cos(this._gamma);
+
+        this._t += this._speed * dt;
 	};
 
-	NodeVisitor.prototype.visitNode = function(node) {
-		// do nothing
-	};
-
-	NodeVisitor.prototype.visitGroup = function(group) {
-		this.visitNode(group);
-
-		var visitor = this;
-		group.nodes.each(function(node) {
-			node.accept(visitor);
-		});
-	};
-
-	NodeVisitor.prototype.visitGeometry = function(geometry) {
-		// by default, treat a geometry as a regular node
-		this.visitNode(geometry);
-	};
-
-	NodeVisitor.prototype.visitCamera = function(camera) {
-		// by default, treat a camera as a regular node
-		this.visitNode(camera);
-	};
-
-	NodeVisitor.prototype.visitLight = function(light) {
-		// by default, treat a light as a regular node
-		this.visitNode(light);
-	};
-
-	return NodeVisitor;
+	return OrbitComponent;
 
 });
 

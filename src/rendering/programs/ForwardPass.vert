@@ -24,13 +24,24 @@
  */
 
 attribute vec3 aPosition;
+attribute vec3 aNormal;
 
 uniform mat4 uPMatrix;
 uniform mat4 uVMatrix;
 uniform mat4 uMMatrix;
+uniform mat3 uNMatrix;
+
+varying vec4 vPosition;
+varying vec3 vNormal;
+varying vec3 vViewVector;
 
 void main( void )
 {
-	gl_Position = uPMatrix * uVMatrix * uMMatrix * vec4( aPosition, 1.0 );
+	vPosition = uVMatrix * uMMatrix * vec4(aPosition, 1.0);	
+	gl_Position = uPMatrix * vPosition;
+
+	vViewVector = normalize(-vPosition.xyz);
+
+	vNormal = normalize(uNMatrix * aNormal);
 }
 

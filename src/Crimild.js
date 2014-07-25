@@ -31,6 +31,7 @@ define("Crimild", function(require) {
 		// components
 		CallbackComponent: require("components/CallbackComponent"),
 		NodeComponent: require("components/NodeComponent"),
+		OrbitComponent: require("components/OrbitComponent"),
 		RenderComponent: require("components/RenderComponent"),
 
 		// foundation
@@ -40,7 +41,11 @@ define("Crimild", function(require) {
 		// math
 		Transformation: require("math/Transformation"),
 
+		// primitives
+		ParametricPrimitive: require("primitives/ParametricPrimitive"),
 		Primitive: require("primitives/Primitive"),
+		SpherePrimitive: require("primitives/SpherePrimitive"),
+		TreefoilKnotPrimitive: require("primitives/TreefoilKnotPrimitive"),
 
 		// rendering
 		IndexBufferObject: require("rendering/IndexBufferObject"),
@@ -65,6 +70,7 @@ define("Crimild", function(require) {
 		Camera: require("scenegraph/Camera"),
 		Group: require("scenegraph/Group"),
 		Geometry: require("scenegraph/Geometry"),
+		Light: require("scenegraph/Light"),
 		Node: require("scenegraph/Node"),
 
 		// simulation
