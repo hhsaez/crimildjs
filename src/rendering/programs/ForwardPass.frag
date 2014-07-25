@@ -23,32 +23,19 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-define(function(require) {
+precision mediump float;
 
-	"use strict";
+struct Material {
+   vec4 ambient;
+   vec4 diffuse;
+   vec4 specular;
+   float shininess;
+};
 
-	var Base = require("visitors/NodeVisitor");
+uniform Material uMaterial;
 
-	function UpdateWorldState(spec) {
-		Base.call(this, spec);
-	}
-
-	UpdateWorldState.prototype = Object.create(Base.prototype);
-
-	UpdateWorldState.prototype.destroy = function() {
-		Base.prototype.destroy.call(this);
-	};
-
-	UpdateWorldState.prototype.visitNode = function(node) {
-		if (node.parent) {
-			node.world.computeFrom(node.parent.world, node.local);
-		}
-		else {
-			node.world.copyFrom(node.local);
-		}
-	};
-
-	return UpdateWorldState;
-
-});
+void main( void )
+{
+	gl_FragColor = vec4( uMaterial.diffuse.rgb, 1.0 );
+}
 

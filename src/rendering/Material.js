@@ -30,7 +30,11 @@ define(function(require) {
 	var Base = require("foundation/CrimildObject");
 
 	function Material(spec) {
+		spec = spec || {};
 		Base.call(this, spec);
+
+		this.ambient = spec.ambient || [0.2, 0.2, 0.2, 1.0];
+		this.diffuse = spec.diffuse || [0.8, 0.8, 0.8, 1.0];
 	}
 
 	Material.prototype = Object.create(Base.prototype);
@@ -39,11 +43,15 @@ define(function(require) {
 		program: {
 			get: function() { return this._program; },
 			set: function(value) { this._program = value; }
+		},
+		diffuse: {
+			get: function() { return this._diffuse; },
+			set: function(value) { this._diffuse = value; }
 		}
 	});
 
 	Material.prototype.destroy = function() {
-		Base.apply(this);
+		Base.prototype.destroy.call(this);
 	};
 
 	return Material;

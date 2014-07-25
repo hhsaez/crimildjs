@@ -31,16 +31,23 @@ define(function(require) {
 
 	var Map = require("foundation/Map");
 
+	var Transformation = require("math/Transformation");
+
 	function Node(spec) {
 		spec = spec || {};
 		Base.call(this, spec);
 
+		this.local = spec.local || new Transformation();
+		this.world = spec.world || new Transformation();
+
 		this.parent = null;
+
+		var node = this;
 		this.components = new Map({
 			objects: spec.components,
 
-			onAttachCallback: this.onComponentAttached,
-			onDetachCallback: this.onComponentDetached
+			onAttachCallback: function(component) { component.node = node; component.onAttach(); },
+			onDetachCallback: function(component) { component.onDetach(); component.node = null; }
 		});
 	}
 
@@ -50,6 +57,14 @@ define(function(require) {
 		parent: {
 			get: function() { return this._parent; },
 			set: function(value) { this._parent = value; }
+		},
+		local: {
+			get: function() { return this._local; },
+			set: function(value) { this._local = value; }
+		},
+		world: {
+			get: function() { return this._world; },
+			set: function(value) { this._world = value; }
 		},
 		components: {
 			get: function() { return this._components; },
@@ -67,18 +82,6 @@ define(function(require) {
 
 	Node.prototype.accept = function(visitor) {
 		visitor.visitNode(this);
-	};
-
-	Node.prototype.getComponentName = function(component) {
-		return component.name;
-	};
-
-	Node.prototype.onComponentAttached = function(component) {
-		component.node = this;
-	};
-
-	Node.prototype.onComponentDetached = function(component) {
-		component.node = null;
 	};
 
 	return Node;

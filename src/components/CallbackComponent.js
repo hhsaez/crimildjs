@@ -27,28 +27,38 @@ define(function(require) {
 
 	"use strict";
 
-	var Base = require("visitors/NodeVisitor");
+	var Base = require("components/NodeComponent");
 
-	function UpdateWorldState(spec) {
+	function CallbackComponent(spec) {
+		spec = spec || {};
+		spec.name = CallbackComponent.NAME;
 		Base.call(this, spec);
+
+		this.updateCallback = spec.updateCallback;
 	}
 
-	UpdateWorldState.prototype = Object.create(Base.prototype);
+	CallbackComponent.NAME = "callback";
 
-	UpdateWorldState.prototype.destroy = function() {
+	CallbackComponent.prototype = Object.create(Base.prototype);
+
+	Object.defineProperties(CallbackComponent.prototype, {
+		updateCallback: {
+			get: function() { return this._updateCallback; },
+			set: function(value) { this._updateCallback = value; }
+		}
+	});
+
+	CallbackComponent.prototype.destroy = function() {
 		Base.prototype.destroy.call(this);
 	};
 
-	UpdateWorldState.prototype.visitNode = function(node) {
-		if (node.parent) {
-			node.world.computeFrom(node.parent.world, node.local);
-		}
-		else {
-			node.world.copyFrom(node.local);
+	CallbackComponent.prototype.update = function(dt) {
+		if (this.updateCallback) {
+			this.updateCallback(this.node, dt);
 		}
 	};
 
-	return UpdateWorldState;
+	return CallbackComponent;
 
 });
 

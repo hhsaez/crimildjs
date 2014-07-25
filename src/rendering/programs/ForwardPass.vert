@@ -23,32 +23,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-define(function(require) {
+attribute vec3 aPosition;
 
-	"use strict";
+uniform mat4 uPMatrix;
+uniform mat4 uVMatrix;
+uniform mat4 uMMatrix;
 
-	var Base = require("visitors/NodeVisitor");
-
-	function UpdateWorldState(spec) {
-		Base.call(this, spec);
-	}
-
-	UpdateWorldState.prototype = Object.create(Base.prototype);
-
-	UpdateWorldState.prototype.destroy = function() {
-		Base.prototype.destroy.call(this);
-	};
-
-	UpdateWorldState.prototype.visitNode = function(node) {
-		if (node.parent) {
-			node.world.computeFrom(node.parent.world, node.local);
-		}
-		else {
-			node.world.copyFrom(node.local);
-		}
-	};
-
-	return UpdateWorldState;
-
-});
+void main( void )
+{
+	gl_Position = uPMatrix * uVMatrix * uMMatrix * vec4( aPosition, 1.0 );
+}
 

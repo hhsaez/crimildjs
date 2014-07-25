@@ -36,7 +36,7 @@ define(function(require) {
 		spec.name = RenderComponent.NAME;
 		Base.call(this, spec);
 
-		this.material = new Material();
+		this.material = new Material(spec.material);
 	}
 
 	RenderComponent.NAME = "render";
@@ -51,7 +51,7 @@ define(function(require) {
 	});
 
 	RenderComponent.prototype.destroy = function() {
-		Base.destroy.call(this);
+		Base.prototype.destroy.call(this);
 	};
 
 	return RenderComponent;

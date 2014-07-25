@@ -27,6 +27,8 @@ define(function(require) {
 
 	"use strict";
 
+	require("third-party/gl-matrix");
+
 	var Base = require("scenegraph/Node");
 
 	var ForwardRenderPass = require("rendering/renderPasses/ForwardRenderPass");
@@ -36,6 +38,12 @@ define(function(require) {
 		Base.call(this, spec);
 
 		this.renderPass = spec.renderPass || new ForwardRenderPass();
+		this.fov = spec.fov || 45.0;
+		this.near = spec.near || 1.0;
+		this.far = spec.far || 1000.0;
+
+		this.viewMatrix = mat4.identity();
+		this.projectionMatrix = mat4.identity();
 	}
 
 	Camera.prototype = Object.create(Base.prototype);
@@ -44,6 +52,26 @@ define(function(require) {
 		renderPass: {
 			get: function() { return this._renderPass; },
 			set: function(value) { this._renderPass = value; }
+		},
+		projectionMatrix: {
+			get: function() { return this._projectionMatrix; },
+			set: function(value) { this._projectionMatrix = value; }
+		},
+		viewMatrix: {
+			get: function() { return this._viewMatrix; },
+			set: function(value) { this._viewMatrix = value; }
+		},
+		fov: {
+			get: function() { return this._fov; },
+			set: function(value) { this._fov = value; }
+		},
+		near: {
+			get: function() { return this._near; },
+			set: function(value) { this._near = value; }
+		},
+		far: {
+			get: function() { return this._far; },
+			set: function(value) { this._far = value; }
 		}
 	});
 
@@ -53,6 +81,17 @@ define(function(require) {
 
 	Camera.prototype.accept = function(visitor) {
 		visitor.visitCamera(this);
+	};
+
+	Camera.prototype.computePVMatrices = function(renderer) {
+		this.world.toMatrixInverse(this._viewMatrix);
+		mat4.perspective(
+			this.fov,
+			renderer.canvas.width / renderer.canvas.height,
+			this.near,
+			this.far,
+			this._projectionMatrix
+		);
 	};
 
 	return Camera;

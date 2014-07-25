@@ -43,7 +43,8 @@ define(function(require) {
 
 	ForwardRenderPass.prototype.render = function(renderer, renderQueue) {
 		var defaultProgram = renderer.getProgram("forwardPass");
-		
+		var camera = renderQueue.camera;
+
 		renderQueue.geometries.each(function(geometry) {
 			var renderComponent = geometry.components.get(RenderComponent.NAME);
 
@@ -52,6 +53,7 @@ define(function(require) {
 			var program = material.program || defaultProgram;
 
 			renderer.bindProgram(program);
+			renderer.bindCamera(program, camera);
 			renderer.bindMaterial(program, material);
 			renderer.applyTransformations(program, geometry);
 
@@ -59,6 +61,7 @@ define(function(require) {
 
 			renderer.restoreTransformations(program, geometry);
 			renderer.unbindMaterial(program, material);
+			renderer.unbindCamera(program, camera);
 			renderer.unbindProgram(program);
 		});
 	};

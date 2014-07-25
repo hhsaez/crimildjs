@@ -56,7 +56,12 @@ define(function(require) {
 		PROJECTION_MATRIX: "uPMatrix",
 		MODEL_MATRIX: "uMMatrix",
 		VIEW_MATRIX: "uVMatrix",
-		MODEL_VIEW_MATRIX: "uMVMatrix"
+		MODEL_VIEW_MATRIX: "uMVMatrix",
+
+		MATERIAL_AMBIENT: "uMaterial.ambient",
+		MATERIAL_DIFFUSE: "uMaterial.diffuse",
+		MATERIAL_SPECULAR: "uMaterial.specular",
+		MATERIAL_SHININESS: "uMaterial.shininess",
 	};
 
 	ShaderProgram.prototype = Object.create(Base.prototype);

@@ -29,14 +29,106 @@ define(function(require) {
 
 	var Base = require("foundation/CrimildObject");
 
+	var glMatrix = require("third-party/gl-matrix");
+
 	function Transformation(spec) {
+		spec = spec || {};
 		Base.call(this, spec);
+
+		this.makeIdentity();
+
+		if (spec) {
+			this.copyFrom(spec);
+		}
 	}
 
 	Transformation.prototype = Object.create(Base.prototype);
 
 	Transformation.prototype.destroy = function() {
-		Base.apply(this);
+		Base.prototype.destroy.call(this);
+	};
+
+	Object.defineProperties(Transformation.prototype, {
+		translate: {
+			get: function() { return this._translate; },
+			set: function(value) { this._translate = value; this.identity = false; }
+		},
+		rotate: {
+			get: function() { return this._rotate; },
+			set: function(value) { this._rotate = value; this.identity = false; }
+		},
+		scale: {
+			get: function() { return this._scale; },
+			set: function(value) { this._scale = value; this.identity = false; }
+		},
+		identity: {
+			get: function() { return this._identity; },
+			set: function(value) { this._identity = value; }
+		}
+	});
+
+	Transformation.prototype.isIdentity = function() {
+		return this.identity;
+	};
+
+	Transformation.prototype.makeIdentity = function() {
+		this.translate = [0, 0, 0];
+		this.rotate = quat4.identity();
+		this.scale = 1.0;
+		this.identity = true;
+	};
+
+	Transformation.prototype.copyFrom = function(t) {
+		this.translate = t.translate || this.translate;
+		this.rotate = t.rotate || this.rotate;
+		this.scale = t.scale || this.scale;
+		this.identity = t.identity || this.identity;
+	};
+
+	Transformation.prototype.computeFrom = function(a, b) {
+		if (a.isIdentity()) {
+			this.copyFrom(b);
+		}
+		else if (b.isIdentity()) {
+			this.copyFrom(a);
+		}
+		else {
+			var temp = vec3.create([0, 0, 0]);
+			quat4.multiplyVec3(a.rotate, b.translate, temp);
+			vec3.add(temp, a.translate, this._translate);
+
+			quat4.identity(this._rotate);
+			quat4.multiply(a.rotate, b.rotate, this._rotate);
+
+			this.scale = a.scale * b.scale;
+			this.identity = false;
+		}
+
+		return this;
+	};
+
+	Transformation.prototype.toMatrix = function(dest) {
+		if (!dest) {
+			dest = mat4.create();
+		}
+
+		mat4.identity(dest);
+		if (!this.isIdentity()) {
+			mat4.fromRotationTranslation(this._rotate, this._translate, dest);
+		}
+
+		return dest;
+	};		
+
+	Transformation.prototype.toMatrixInverse = function(dest) {
+		if (!dest) {
+			dest = mat4.create();
+		}
+
+		this.toMatrix(dest);
+		mat4.inverse(dest);
+
+		return dest;
 	};
 
 	return Transformation;

@@ -15,7 +15,7 @@
 										data: new Float32Array([
 											-1.0, -1.0, 0.0,
 											1.0, -1.0, 0.0,
-											0.0, 1.0, 0.0
+											0.0, 2.0, 0.0
 										])
 									}),
 									indexBuffer: new C.IndexBufferObject({
@@ -26,15 +26,20 @@
 								components: [
 									new C.RenderComponent({
 										material: new C.Material({
-											diffuse: [1.0, 0.0, 0.0, 1.0]
+											diffuse: [0.2, 1.0, 0.8, 1.0]
 										})
+									}),
+									new C.CallbackComponent({
+										updateCallback: function(node, dt) {
+											quat4.multiply(node.local.rotate, quat4.fromAngleAxis(dt, [0, 0, 1]), node.local.rotate);
+										}
 									})
-								]
+								],
 							}),
 							new C.Camera({
 								local: new C.Transformation({
-									local: [0, 0, 5]
-								})
+									translate: [0, 0, 5]
+								}),
 							})
 						]
 					}),

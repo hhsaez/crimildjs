@@ -27,28 +27,43 @@ define(function(require) {
 
 	"use strict";
 
-	var Base = require("visitors/NodeVisitor");
+	var Base = require("rendering/ShaderProgram");
 
-	function UpdateWorldState(spec) {
+	var Shader = require("rendering/Shader");
+	var ShaderAttribute = require("rendering/ShaderAttribute");
+	var ShaderUniform = require("rendering/ShaderUniform");
+
+	function ForwardPassProgram(spec) {
+		spec = spec || {};
+
+		spec.vertexShader = new Shader({ source: require("text!rendering/programs/ForwardPass.vert" ) });
+		spec.fragmentShader = new Shader({ source: require("text!rendering/programs/ForwardPass.frag" ) });
+
+		spec.attributes = [
+			new ShaderAttribute({ name: Base.STANDARD_ATTRIBUTES.VERTEX_POSITION })
+		];
+
+		spec.uniforms = [
+			new ShaderUniform({ name: Base.STANDARD_UNIFORMS.PROJECTION_MATRIX }),
+			new ShaderUniform({ name: Base.STANDARD_UNIFORMS.VIEW_MATRIX }),
+			new ShaderUniform({ name: Base.STANDARD_UNIFORMS.MODEL_MATRIX }),
+
+			new ShaderUniform({ name: Base.STANDARD_UNIFORMS.MATERIAL_AMBIENT }),
+			new ShaderUniform({ name: Base.STANDARD_UNIFORMS.MATERIAL_DIFFUSE }),
+			new ShaderUniform({ name: Base.STANDARD_UNIFORMS.MATERIAL_SPECULAR }),
+			new ShaderUniform({ name: Base.STANDARD_UNIFORMS.MATERIAL_SHININESS }),
+		];
+
 		Base.call(this, spec);
 	}
 
-	UpdateWorldState.prototype = Object.create(Base.prototype);
+	ForwardPassProgram.prototype = Object.create(Base.prototype);
 
-	UpdateWorldState.prototype.destroy = function() {
+	ForwardPassProgram.prototype.destroy = function() {
 		Base.prototype.destroy.call(this);
 	};
 
-	UpdateWorldState.prototype.visitNode = function(node) {
-		if (node.parent) {
-			node.world.computeFrom(node.parent.world, node.local);
-		}
-		else {
-			node.world.copyFrom(node.local);
-		}
-	};
-
-	return UpdateWorldState;
+	return ForwardPassProgram;
 
 });
 

@@ -29,6 +29,7 @@ define("Crimild", function(require) {
 		version: '2.0',
 
 		// components
+		CallbackComponent: require("components/CallbackComponent"),
 		NodeComponent: require("components/NodeComponent"),
 		RenderComponent: require("components/RenderComponent"),
 

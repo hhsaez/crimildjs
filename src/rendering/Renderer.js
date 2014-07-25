@@ -35,7 +35,9 @@ define(function(require) {
 	var ShaderProgramCatalog = require("rendering/catalogs/ShaderProgramCatalog");
 	var VertexBufferObjectCatalog = require("rendering/catalogs/VertexBufferObjectCatalog");
 
+	var ShaderProgram = require("rendering/ShaderProgram");
 	var ScreenProgram = require("rendering/programs/ScreenProgram");
+	var ForwardPassProgram = require("rendering/programs/ForwardPassProgram");
 
 	function Renderer(spec) {
 		spec = spec || {};
@@ -51,7 +53,8 @@ define(function(require) {
 
 		this.programs = new Map({
 			objects: [
-				new ScreenProgram({ name: "forwardPass" })
+				new ForwardPassProgram({ name: "forwardPass" }),
+				new ScreenProgram({ name: "screen" })
 			]
 		});
 	}
@@ -172,8 +175,27 @@ define(function(require) {
 		this.shaderProgramCatalog.unbind(this, program);
 	};
 
-	Renderer.prototype.bindMaterial = function(program, material) {
+	Renderer.prototype.bindCamera = function(program, camera) {
+		camera.computePVMatrices(this);
 
+		this.bindMatrix4Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.PROJECTION_MATRIX), camera.projectionMatrix);
+		this.bindMatrix4Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.VIEW_MATRIX), camera.viewMatrix);
+	};
+
+	Renderer.prototype.unbindCamera = function(program, camera) {
+
+	};
+
+	Renderer.prototype.bindVector3Uniform = function(uniform, value) {
+		this.gl.uniform4f(uniform.location, value[0], value[1], value[2], value[3]);
+	};
+
+	Renderer.prototype.bindMatrix4Uniform = function(uniform, value) {
+		this.gl.uniformMatrix4fv(uniform.location, false, value);
+	};
+
+	Renderer.prototype.bindMaterial = function(program, material) {
+		this.bindVector3Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.MATERIAL_DIFFUSE), material.diffuse);
 	};
 	
 	Renderer.prototype.unbindMaterial = function(program, material) {
@@ -181,7 +203,11 @@ define(function(require) {
 	};
 
 	Renderer.prototype.applyTransformations = function(program, geometry) {
-
+		// console.log(geometry.world.translate, geometry.local.translate);
+		var mMatrix = mat4.create();
+		geometry.world.toMatrix(mMatrix);
+		// console.log(mMatrix);
+		this.bindMatrix4Uniform(program.uniforms.get(ShaderProgram.STANDARD_UNIFORMS.MODEL_MATRIX), mMatrix);
 	};
 
 	Renderer.prototype.restoreTransformations = function(program, geometry) {

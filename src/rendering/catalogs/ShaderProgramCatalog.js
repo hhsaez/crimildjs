@@ -73,7 +73,7 @@ define(function(require) {
 
 		program.uniforms.each(function(uniform) {
 			uniform.location = renderer.gl.getUniformLocation(program.renderObjectId, uniform.name);
-			if (attrib.location < 0) {
+			if (uniform.location < 0) {
 				uniform.log.warning("No location found for uniform: " + uniform.name);
 			}
 		});

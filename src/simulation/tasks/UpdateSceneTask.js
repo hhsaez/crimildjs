@@ -46,7 +46,7 @@ define(function(require) {
 			simulation.scene.perform(new UpdateComponents());
 			simulation.scene.perform(new UpdateWorldState());
 		}
-	}
+	};
 
 	return UpdateSceneTask;
 

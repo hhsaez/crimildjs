@@ -33,13 +33,13 @@ define(function(require) {
 
 	function Group(spec) {
 		spec = spec || {};
-
 		Base.call(this, spec);
 
+		var group = this;
 		this.nodes = new List({
 			objects: spec.nodes,
-			onAttachCallback: this.onNodeAttached,
-			onDetachCallback: this.onNodeDetached
+			onAttachCallback: function(node) { node.parent = group; },
+			onDetachCallback: function(node) { node.parent = null; }
 		});
 	}
 
@@ -58,14 +58,6 @@ define(function(require) {
 
 	Group.prototype.accept = function(visitor) {
 		visitor.visitGroup(this);
-	};
-
-	Group.prototype.onNodeAttached = function(node) {
-		node.parent = this;
-	};
-
-	Group.prototype.onNodeDetached = function(node) {
-		node.parent = null;
 	};
 
 	return Group;
